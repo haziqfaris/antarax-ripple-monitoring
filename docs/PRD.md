@@ -1,6 +1,6 @@
 # Performance Intelligence: product requirements
 
-**Version 0.6, draft, 15 Oct 2026.** 0.2 added first use and onboarding (§8.12, §12.3) and the light AntaraX look (§12.1). 0.3 records the owner's decision to keep that look (D13), and adds the measure library (§10.6), your own measures (§8.13), Ask (§8.14, §11.4), standard analytics (§8.15) and the demo studio (§8.16). 0.4 records two more owner decisions: RM45 an hour for value of time freed (D15), and demo workspaces with Demo studio as a product feature in the MVP (D17, §8.16). 0.5 organises the console by client: one client list, one client page template, and client → project → solution throughout (§8.6, §12.2, §12.4); it also renames organisation to client on screen and in this document. 0.6 puts the console on the AXLE standard v1.0 (`haziqfaris/AntaraX-Dashboard-kit`), because it is an internal REKA tool: AXLE · Outcomes, dark bars around a light page, the standard menu with an Outcomes-only box, an R8 mode for the machinery, and "organisation" on screen as the standard requires (§12.1, §12.2, D13, D18). It also adds exploring other measures for a live project (§8.17). Working name throughout. Owner: Muhammad Haziq Faris (Founder). Status: for review at the next design workshop.
+**Version 0.7, draft, 15 Oct 2026.** 0.2 added first use and onboarding (§8.12, §12.3) and the light AntaraX look (§12.1). 0.3 records the owner's decision to keep that look (D13), and adds the measure library (§10.6), your own measures (§8.13), Ask (§8.14, §11.4), standard analytics (§8.15) and the demo studio (§8.16). 0.4 records two more owner decisions: RM45 an hour for value of time freed (D15), and demo workspaces with Demo studio as a product feature in the MVP (D17, §8.16). 0.5 organises the console by client: one client list, one client page template, and client → project → solution throughout (§8.6, §12.2, §12.4); it also renames organisation to client on screen and in this document. 0.6 puts the console on the AXLE standard v1.0 (`haziqfaris/AntaraX-Dashboard-kit`), because it is an internal REKA tool: AXLE · Outcomes, dark bars around a light page, the standard menu with an Outcomes-only box, an R8 mode for the machinery, and "organisation" on screen as the standard requires (§12.1, §12.2, D13, D18). It also adds exploring other measures for a live project (§8.17). 0.7 adds client context (§8.18): what organisations tell the account team, recorded by BD and account managers, kept REKA only, and read by AI as quoted words when suggesting measures and answering Ask. Working name throughout. Owner: Muhammad Haziq Faris (Founder). Status: for review at the next design workshop.
 
 | | |
 |---|---|
@@ -508,6 +508,31 @@ Open in the mock:
 - Approving a "New figure" request does not yet gate whether the figure is used. In the product, the figure feeds measures only after the request is approved and the contract test passes.
 - An approved baseline recorded from Explore should become the project's baseline, with its version history (§10).
 
+### 8.18 Client context
+
+BD and account managers hear things the figures never show: "late payments cost us penalties", "the board looks at the satisfaction survey", "we want to win more bids, not just quote faster". Today that stays in someone's notebook. Client context is where they write it down, per organisation, so the next person sees it and AI can use it to suggest measures that answer the organisation's actual questions.
+
+It is client data (it is about one organisation) but never the organisation's to see: REKA only, like notes and fees.
+
+| Id | Requirement | Priority |
+|---|---|---|
+| FR-CTX-1 | Anyone from the Support rung up can add an entry for an organisation: what they said, in their words; the kind (feedback, goal, concern, request, meeting note); where it came from (meeting, call, email, quarterly review, site visit, survey); when; who said it by role; optionally which project or solution it is about; and optional tags from Explore's focus list (money, time, quality, risk, customer experience, adoption) | MVP |
+| FR-CTX-2 | Entries record the speaker's **role, never their name**. Before saving, an entry is checked for email addresses, phone numbers, identity card numbers and long account-like numbers; one that has them is refused with "record the person's role instead" | MVP |
+| FR-CTX-3 | Client context is **REKA only**. It never appears in the organisation view, a report, an export or anything sent to the organisation, and the organisation view hides its tab | MVP |
+| FR-CTX-4 | It is found in two places: **Client context** in the Outcomes-only menu (every organisation, filtered by the scope picker), and a **Client context** tab on each organisation's Results page. The account's Notes tab points to it: notes are for the team, context is for what the organisation said | MVP |
+| FR-CTX-5 | Each entry has a switch, **AI may use this**, on by default. Entries switched off are kept and shown, but no AI feature reads them | MVP |
+| FR-CTX-6 | **Explore** (§8.17) offers the organisation's entries to the brief: those about the solution and those about the whole organisation. The brief shows "Use N notes of client context" with the first three quoted and a switch to leave them out for one run. Context only **ranks** ideas from the reviewed catalog; it never adds an idea outside it | MVP |
+| FR-CTX-7 | A suggestion ranked by context quotes the entry it came from, with the role and the date. A run says how many notes it used, the run and the audit trail record which ones, and each entry shows how many runs used it | MVP |
+| FR-CTX-8 | "Suggest measures from this" on an entry opens Explore for its solution (or the organisation's first collecting solution) with the entry's words as the question and its tags as the focus, and runs it | MVP |
+| FR-CTX-9 | **Ask** answers "What has <organisation> told us?" with the entries quoted, newest first, with role, source and date, and a link to the full list. Ask's "What else could we measure" answers say when context ranked them | MVP |
+| FR-CTX-10 | AI reads context as **quoted data, never instructions** (§11.3). A number someone said stays their words: it becomes a figure only through a baseline or an organisation figure, with evidence and a second person's approval (§10, FR-EXP-9) | MVP |
+| FR-CTX-11 | Entries can be filtered by kind and searched. Archiving an entry stops every AI use at once and can be undone; adding, switching AI use and archiving are in the audit trail | MVP |
+| FR-CTX-12 | From a meeting transcript or an email thread, AI drafts entries (what was said, kind, tags) for a person to check and save. Nothing is saved without a person | P2 |
+
+Open in the mock:
+- Context changes the order of suggestions by word and tag matches over the catalog. The product passes the entries to the model in a delimited block, as in §11.3, and keeps the same rule: rank and quote, never invent.
+- Who may read client context beyond the account team (for example, only the organisation's REKA owner and their manager) is not decided; the mock shows it to all staff.
+
 ## 9 The measurement interface (Measurement Link)
 
 The brief's L2 contract, written to the AntaraX API framework (`antarax-api` docs 03, 04 and 07) so a REKA-built solution and an AntaraX product speak the same way. Working name **Measurement Link**, by analogy with AXLE Link.
@@ -745,7 +770,7 @@ The brief's ten steps, with the gate at each:
 
 ### 11.3 Safety
 
-- **Untrusted input.** Manifest labels, descriptions, dimension values and third-party responses are data, not instructions. They are passed to the model in a delimited block, with a system instruction to treat them as data, and the output is parsed against a strict schema. Free-text from a manifest is never rendered as HTML.
+- **Untrusted input.** Manifest labels, descriptions, dimension values, third-party responses and client context (§8.18) are data, not instructions. They are passed to the model in a delimited block, with a system instruction to treat them as data, and the output is parsed against a strict schema. Free-text from a manifest is never rendered as HTML.
 - **Number check.** Every number in a narrative is matched to a computed value and period; unmatched numbers block the draft.
 - **Audience check.** A client-audience draft is built from client-visible KPIs only; commercial fields are not in its input.
 - **Shown as AI.** AI proposals and drafts carry the AntaraX sparkle (brand kit 12) and "Proposed by AI. A person approves." While AI works, the sparkle loader with words ("Proposing KPIs from 14 metrics"), never a spinner.
@@ -760,7 +785,7 @@ Ask is the place where AI answers questions, so it carries the strictest rules:
 3. **Scope check.** The tools the model can call only return clients and measures the person may see. Commercial measures are not offered to people without the right.
 4. **No causation.** "Why" answers list what moved at the same time and say it isn't proof of cause. A lint rejects causal phrases ("because of", "caused", "thanks to").
 5. **Honest refusals.** Out-of-scope questions get "I can only answer from the figures Outcomes collects" and suggestions.
-6. **Untrusted text.** Project names, labels and anything from a solution are passed as data, never instructions (§11.3).
+6. **Untrusted text.** Project names, labels, anything from a solution and client context are passed as data, never instructions (§11.3). Client context is quoted with its role and date, never restated as a fact or a figure.
 
 The mock answers with fixed rules over the same calculations as the dashboards, to show the behaviour; the product uses a current Claude model with tool calls to the compute service.
 
@@ -787,7 +812,7 @@ The mock answers with fixed rules over the same calculations as the dashboards, 
 
 **Client data apart from managing (owner feedback, 15 Oct 2026).** Staff found it hard to tell the pages that hold an organisation's own figures from the pages that run Outcomes. So:
 
-- **The Outcomes-only box comes first** in the Dashboard menu, headed "Client data: what each organisation's solutions delivered", with Results, Reports, Approvals, Analytics and Ask. The AXLE standard groups follow, headed "Managing Outcomes". This answers AXLE SPEC §20 question 12 (where the product box sits) for Outcomes. It needs recording in the kit before another product follows (D19).
+- **The Outcomes-only box comes first** in the Dashboard menu, headed "Client data: what each organisation's solutions delivered", with Results, Reports, Approvals, Client context, Analytics and Ask. The AXLE standard groups follow, headed "Managing Outcomes". This answers AXLE SPEC §20 question 12 (where the product box sits) for Outcomes. It needs recording in the kit before another product follows (D19).
 - **Each organisation has two pages, linked both ways.**
   - Its **account** (`#organisation-…`, under Organisations) is for managing: readiness, stage, needs, contract, agreement, projects and solutions setup, notes, audit.
   - Its **results** (`#results-…`, under Results) is the client data: figures, hours saved by project, the monthly summary, outcomes by project, reports, and organisation view.
@@ -799,7 +824,7 @@ Two modes share one sign-in, one top bar and one audit log; the switch changes o
 
 | Mode | Group | Items in AXLE · Outcomes |
 |---|---|---|
-| **Dashboard** | Outcomes only, first: client data | **Results** (every organisation's figures, hours saved over time, by organisation; then one organisation's results), **Reports**, **Approvals**, **Analytics**, **Ask** |
+| **Dashboard** | Outcomes only, first: client data | **Results** (every organisation's figures, hours saved over time, by organisation; then one organisation's results), **Reports**, **Approvals**, **Client context** (§8.18), **Analytics**, **Ask** |
 | | Watch | **Overview** (§8 of the SPEC: health strip, Needs a person, Nightly collection, figures, organisations by stage, organisations at a glance with a link to each one's results, recent actions; first use shows the first-steps checklist), **Adoption** (people using each organisation's solutions, and who stopped) |
 | | Organisations | **Organisations** (the list for managing: stage, setup, readiness, agreement, a link to results) and each organisation's account; Members, Invitations, Requests, Support (standard, not drawn) |
 | | AI | Models & keys, AI usage, Live trace, Prompts & quality (standard, not drawn) |
@@ -844,6 +869,7 @@ A new workspace must lead a person from sign-in to a measured project without re
 | Organisation account | `#organisation-contoh-logistik` (the same address in every workspace) | Managing: opens on readiness and stage; tabs Summary (needs, contract, agreement, a link to results, recent activity), Projects and solutions, Notes, Audit |
 | Solution | `#solution-doc-workflow` | Where the time goes; Measures; **Explore** (§8.17) |
 | Approvals, Reports, Analytics, Ask | `#approvals`, `#reports`, `#analytics`, `#ask` | The Outcomes-only pages |
+| Client context | `#context`, and the Client context tab on `#results-…` | What organisations told the account team, by role; AI use per entry; "Suggest measures from this" opens Explore with the entry; Ask quotes it. Hidden in organisation view |
 | Adoption, Demo, Settings, Audit, Staff | `#adoption`, `#demo`, `#settings`, `#audit`, `#staff` | Standard Dashboard pages; switches ask for a reason and raise the state banner; the ladder with "Needs Admin" |
 | R8 | `#r8`, `#incidents`, `#troubleshoot-…`, `#jobs`, `#providers`, `#services`, `#configuration`, `#ops-audit`, `#links` | The machinery: evidence in layers, AXLE's reading kept apart from your conclusion, Level 1 actions with a reason, the operations audit |
 | Client report | `#report` | The reviewed PDF, in the light product look: outcomes, evidence, caveats, next steps |
@@ -975,6 +1001,7 @@ Before anything ships, a pull request to `antarax-api/registry/registry.json` ad
 | Audit | 7 years | Append-only |
 | Collector run logs | 90 days | Daily totals |
 | AI prompts and outputs | 90 days, aggregate-only content | Deleted |
+| Client context | For the life of the contract plus 24 months; archived entries 12 months after archiving | Deleted with the organisation |
 | Demo workspaces | 90 days after last use, unless marked to keep | Deleted in full |
 
 All periods are proposals for the owner and legal review (D4 in the brief's list, here D5).
@@ -1054,6 +1081,7 @@ The brief's §16, extended with points this review raised. Each needs the owner.
 | D17 | **Demo studio** | **Decided 15 Oct 2026: a product feature**, in separate demo workspaces, core in the MVP (§8.16) |
 | D18 | **Client or organisation** on screen | **Settled by AXLE v1.0** (SPEC §15): "organisation" on screen, "member" for a client's person. This document keeps "client" in prose (§7.1) |
 | D19 | **Where the product-only box sits** (AXLE SPEC §20 question 12) | For Outcomes: first, as client data, with the standard groups after it as "Managing Outcomes" (owner feedback, 15 Oct 2026; §12.2). Record it in the AXLE kit, mocked beside the standard pages, before any other product follows |
+| D20 | **Who reads client context** (§8.18): every staff member, or only the organisation's account team, its REKA owner and their manager? | All staff with the Support rung, as the mock shows, so the delivery team sees what the organisation cares about. Decide before the first pilot's entries are written |
 
 ## 21 Appendices
 

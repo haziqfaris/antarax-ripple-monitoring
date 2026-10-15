@@ -711,3 +711,22 @@ ol.stepper li.now, ol.stepper li.done { color: var(--ink); }
 .xp .demo-bar { padding: 8px 10px; }
 .xp .kpi .src { display: flex; gap: 6px; align-items: flex-start; }
 @media (max-width: 640px) { .xp .row > .head-actions { grid-column: 2; } }
+
+/* Client context: what organisations told the account team (REKA only) */
+.ctx-entry { display: grid; gap: 10px; padding: 16px 18px; border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-sm); }
+.ctx-entry.off { background: var(--surface-2); }
+.ctx-entry.off blockquote { color: var(--muted); }
+.ctx-top { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+.ctx-ai { margin-left: auto; display: inline-flex; gap: 6px; align-items: center; font-size: .75rem; color: var(--muted); }
+.ctx-ai img { width: 14px; height: 14px; opacity: .5; }
+.ctx-ai.on { color: var(--ai); }
+.ctx-ai.on img { opacity: 1; }
+.ctx-entry blockquote, .xp-ctx { margin: 0; padding: 2px 0 2px 14px; border-left: 3px solid var(--ai-tint); color: var(--ink); font-size: .9375rem; line-height: 1.5; max-width: 80ch; }
+.ctx-meta { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .75rem; color: var(--muted); }
+.ctx-entry .head-actions { justify-content: flex-start; }
+.ctx-form textarea { min-height: 88px; }
+.ctx-form .help.err, .help.err { color: var(--fault-ink); }
+.xp-ctx { display: grid; gap: 2px; font-size: .8125rem; border-left-color: var(--ai); }
+.xp-ctxbox { padding: 12px 14px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); }
+.xp-ctxlist { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 4px; font-size: .8125rem; }
+@media (max-width: 640px) { .ctx-ai { margin-left: 0; width: 100%; } }

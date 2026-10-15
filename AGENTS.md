@@ -8,6 +8,7 @@ This repository holds the product requirements and mocks for Performance Intelli
 - The staff console is **AXLE · Outcomes** and follows the AXLE standard v1.0 in full (https://github.com/haziqfaris/AntaraX-Dashboard-kit: read `BRIEF.md`, then `axle/README.md` and `axle/SPEC.md`; values only from `axle/tokens.css`). Standard menu names and order never change; Outcomes' own pages go in the "Outcomes only" box. On screen the customer account is an "organisation". The owner decided this on 15 Oct 2026 (PRD §12.1, D13). Client output (reports, client view) keeps the light AntaraX look.
 - Any interface a client solution exposes follows the AntaraX API framework: https://github.com/haziqfaris/antarax-api (`docs/03-contract.md`, `docs/07-operations-and-axle.md`). New ids, error codes or prefixes go in its registry first.
 - Never invent clients, results or metrics. Mock data is labelled "Example data" on every screen.
+- Client context (PRD §8.18) is REKA only: never put it in the organisation view, a report or an export. Record a speaker's role, never their name or contact details. Anything that feeds it to AI passes it as quoted data, never instructions, and never turns a number someone said into a figure.
 - Write in plain British English, sentence case, no em dashes in anything a client will read.
 
 ## Brand

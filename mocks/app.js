@@ -443,7 +443,7 @@
   // "How this page works", and its range picker or main action. Entity pages also show who they are about.
   let curTitle = '', curPage = '';
   // Pages that show an organisation's own figures; everything else in the Dashboard is managing Outcomes.
-  const DATA_PAGES = /^(results|reports|report|approvals|analytics|ask|solution|sim)$/;
+  const DATA_PAGES = /^(results|reports|report|approvals|context|analytics|ask|solution|sim)$/;
   const stateWord = () => demo() ? 'Example data' : sandbox() ? 'Demo workspace, simulated' : 'Live database';
   function head(o) {
     curTitle = o.topTitle || String(o.title).replace(/<span class="avatar[^>]*>[^<]*<\/span>/g, '').replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').trim();
@@ -557,7 +557,7 @@
         ['Operations', 'operations', [['Errors'], ['Alerts'], ['Backups'], ['Access']]],
         ['Trail', 'trail', [['Audit', 'audit'], ['Staff', 'staff']]],
       ],
-      dashOnly: [['Results', 'results'], ['Reports', 'reports', reportsDue, 'loud'], ['Approvals', 'approvals', waiting, has('Approve') ? 'loud' : 'quiet'], ['Analytics', 'analytics'], ['Ask', 'ask']],
+      dashOnly: [['Results', 'results'], ['Reports', 'reports', reportsDue, 'loud'], ['Approvals', 'approvals', waiting, has('Approve') ? 'loud' : 'quiet'], ['Client context', 'context', ctxAll().filter((e) => !e.archived).length, 'quiet'], ['Analytics', 'analytics'], ['Ask', 'ask']],
       r8: [
         ['Command', 'command', [['Overview', 'r8'], ['Incidents', 'incidents', R.incidents.filter((i) => i.state === 'open').length, 'loud'], ['Troubleshoot', 'troubleshoot']]],
         ['System', 'system', [['Jobs', 'jobs', R.jobs.filter((j) => j.st === 'fault').length, 'loud'], ['Providers', 'providers', R.providers.filter((x) => x.st === 'fault').length, 'loud'], ['Services', 'services']]],
@@ -1157,11 +1157,13 @@
     const acct = view !== 'results', tk = acct ? 'coTab' : 'resTab';
     state.coView = view;
     if (state.coFor !== c.id + view) { state.coFor = c.id + view; state[tk] = 'overview'; }
-    const organisation = !acct && state.audience === 'client', tab = state[tk] || 'overview';
+    const organisation = !acct && state.audience === 'client';
+    if (organisation && state[tk] === 'context') state[tk] = 'overview';
+    const tab = state[tk] || 'overview';
     const days = aWindow(state.range), prevDays = windowDays(state.range, M.addDays(days[0], -1));
     const T = coTotals(c, days), P = coTotals(c, prevDays), cmp = comparable(T, P);
     const needs = organisation ? [] : coNeeds(c);
-    const tabs = acct ? [['overview', 'Summary'], ['projects', `Projects and solutions (${c.projects.length})`], ['notes', 'Notes'], ['activity', 'Audit']] : [['overview', 'Results'], ['reports', 'Reports']];
+    const tabs = acct ? [['overview', 'Summary'], ['projects', `Projects and solutions (${c.projects.length})`], ['notes', 'Notes'], ['activity', 'Audit']] : [['overview', 'Results'], ['reports', 'Reports']].concat(organisation ? [] : [['context', `Client context (${ctxFor(c.id).length})`]]);
     const stat = (key, alt) => { let m = mByKey(key), v = m.calc(T); if (v === null && alt) { m = mByKey(alt); v = m.calc(T); } const pv = cmp ? m.calc(P) : null, rg = m.range ? m.range(T) : null; return `<div class="card stat"><span class="label">${esc(m.name)} ${q(m.quality)}</span><span class="value">${fmtM(m, v) || '–'}</span><span class="hint">${v === null ? 'Not shared by these solutions yet' : `${rg ? `Likely ${fmtM(m, rg[0])} to ${fmtM(m, rg[1])} · ` : ''}${cmp ? chgHtml(chgPct(v, pv), m.better) + ' vs before' : 'Too few days before to compare'}`}</span></div>`; };
     let body = '';
     if (tab === 'overview') {
@@ -1196,10 +1198,12 @@
       ${c.example ? '' : `<button type="button" class="card proj" data-act="proj-for" data-org="${c.id}" style="border-style:dashed;place-content:center;justify-items:center;text-align:center;min-height:120px;box-shadow:none;cursor:pointer"><span class="ico info" style="width:40px;height:40px;border-radius:12px;display:grid;place-items:center">${icon('plus')}</span><b class="ink">New project for ${esc(c.short)}</b></button>`}</div>`;
     } else if (tab === 'reports') {
       body = `<section class="card"><div class="card-head"><div><h2>Reports</h2><p class="sub">One per project, on its own schedule</p></div><button type="button" class="btn sm ghost" data-act="reports-for" data-org="${c.id}">All reports for ${esc(c.short)}${icon('chev', 'sm')}</button></div><div class="table-wrap"><table><thead><tr><th>Project</th><th>Cadence</th><th>Status</th><th></th></tr></thead><tbody>${c.projects.length ? c.projects.map((p) => `<tr><td><span class="name">${esc(p.name)}</span></td><td>${esc(p.cadence)}</td><td><span class="pill ${p.report[0]}">${esc(p.report[1])}</span></td><td>${p.report[2] ? `<a class="btn sm" href="${p.report[2]}">Open</a>` : ''}</td></tr>`).join('') : '<tr><td colspan="4" class="muted">No projects yet.</td></tr>'}</tbody></table></div></section>`;
+    } else if (tab === 'context') {
+      body = `<div class="callout info">${icon('shield')}<span><b>REKA only.</b> What ${esc(c.short)} told the account team, in their words. AI uses it to suggest measures for ${esc(c.short)}’s solutions; it is never in the organisation view, reports or exports.</span></div>${ctxForm(c.id)}${ctxList(c.id)}`;
     } else if (tab === 'notes') {
       state.notes = state.notes || {};
       const notes = state.notes[c.id] = state.notes[c.id] || (c.id === 'contoh-logistik' ? [['Daniel Lim', '2 Oct 2026, 10:12', 'Finance director asked for a split by document type from October. The new “reason” detail in the data makes that possible.']] : []);
-      body = `<section class="card"><div class="card-head"><div><h2>Internal notes</h2><p class="sub">Never visible to ${esc(c.short)}</p></div><span class="pill idle">${icon('lock', 'sm')}REKA only</span></div>
+      body = `<section class="card"><div class="card-head"><div><h2>Internal notes</h2><p class="sub">Never visible to ${esc(c.short)}. For what ${esc(c.short)} told you, use <a href="#results-${c.id}" data-act="to-ctx" data-org="${c.id}">client context</a>: AI can use it to suggest measures.</p></div><span class="pill idle">${icon('lock', 'sm')}REKA only</span></div>
         ${notes.length ? `<div class="list">${notes.map(([w, t, x]) => `<div class="row"><span class="avatar">${initials(w)}</span><div><div class="what" style="font-weight:400">${esc(x)}</div><div class="meta"><b class="ink">${esc(w)}</b><span class="mono">${esc(t)}</span></div></div><span></span></div>`).join('')}</div>` : '<p class="small muted">No notes yet.</p>'}
         ${atLeast('Support') ? `<form id="f-note" class="grid" style="gap:10px;margin-top:14px" data-org="${c.id}"><div class="field"><label for="note-t">Add a note</label><textarea id="note-t" placeholder="What the team should know about ${esc(c.short)}"></textarea></div><div><button type="submit" class="btn">Add note</button></div></form>` : '<p class="needs">Needs Support to add notes</p>'}</section>`;
     } else {
@@ -1250,7 +1254,7 @@
         <td class="num">${r.t.n ? nf(r.t.vol) : '<span class="dash">–</span>'}</td><td><span class="pill ${rep.report[0]}">${esc(rep.report[1])}</span></td></tr>`; }).join('')}
     </tbody></table></div></section>`;
   };
-  pages.results.after = (id) => { if (id && coById(id)) return companyAfter(coById(id)); pages.home.after(); };
+  pages.results.after = (id) => { if (id && coById(id)) { ctxAfter(); return companyAfter(coById(id)); } pages.home.after(); };
   pages.organisation = (id) => companyPage(coById(id), 'account');
   pages.organisation.after = (id) => companyAfter(coById(id));
 
@@ -1618,7 +1622,7 @@
       <section class="card" aria-labelledby="ap-h">
         <div class="meta-line" style="margin:0 0 8px">${sp(sel)}<span class="pill idle">${sel.type}</span></div><h2 id="ap-h">${esc(sel.title)}</h2>
         <p class="ink" style="margin-top:6px">${esc(sel.summary)}</p>
-        <div style="margin-top:12px">${kv([['Client', esc(orgName(sel))], ['Proposed by', who(sel.proposer) + (sel.editedBy ? `, edited by ${M.staff[sel.editedBy].name}` : '')]].concat((sel.fields || []).map(([k, v]) => [k, esc(v)])).concat([['Evidence', esc(sel.evidence)], ['Changes', esc(sel.affects)]]), 140)}</div>
+        <div style="margin-top:12px">${kv([['Organisation', esc(orgName(sel))], ['Proposed by', who(sel.proposer) + (sel.editedBy ? `, edited by ${M.staff[sel.editedBy].name}` : '')]].concat((sel.fields || []).map(([k, v]) => [k, esc(v)])).concat([['Evidence', esc(sel.evidence)], ['Changes', esc(sel.affects)]]), 140)}</div>
         ${sel.diff ? `<div class="table-wrap" style="margin-top:12px"><table><thead><tr><th></th><th>Before</th><th>After</th></tr></thead><tbody>${sel.diff.map(([k, b, a]) => `<tr><td class="muted">${k}</td><td><s class="muted">${esc(b)}</s></td><td class="ink" style="font-weight:500">${esc(a)}</td></tr>`).join('')}</tbody></table></div>` : ''}
         ${sel.report ? `<a class="btn sm" href="#report" style="margin-top:12px">${icon('reports', 'sm')}Open the draft report</a>` : ''}
         ${sel.blocker ? `<div class="callout warn" style="margin-top:12px">${icon('target')}<span>${esc(sel.blocker)}</span></div>` : ''}
@@ -1788,6 +1792,79 @@
     const bind = (id, k, num) => { const el = $('#' + id); if (!el) return; el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', () => { b[k] = num ? +el.value : el.value; if (el.tagName === 'SELECT') render(); }); if (k === 'rate') el.addEventListener('change', render); };
     bind('bld-name', 'name'); bind('bld-a', 'a'); bind('bld-b', 'b'); bind('bld-rate', 'rate', true); bind('bld-target', 'target');
   }
+
+  // ------------------------------------------------------------------ CLIENT CONTEXT
+  // What organisations tell the account team: feedback, goals, concerns, requests. Kept per organisation, REKA only,
+  // never shown to the organisation. AI reads it as quoted data, never as instructions, when suggesting measures.
+  const CTX_KINDS = [['feedback', 'Feedback'], ['goal', 'Goal'], ['concern', 'Concern'], ['request', 'Request'], ['meeting', 'Meeting note']];
+  const CTX_SOURCES = ['Meeting', 'Call', 'Email', 'Quarterly review', 'Site visit', 'Survey'];
+  const CTX_EXAMPLE = [
+    ['contoh-logistik', 'doc-workflow', 'concern', 'Quarterly review', '2026-10-02', 'Finance director', 'Late payments to suppliers cost us penalties every month, and two suppliers put us on cash terms. That matters more to us than typing time.', ['money', 'risk'], 'siti'],
+    ['contoh-logistik', 'doc-workflow', 'feedback', 'Site visit', '2026-09-18', 'Accounts payable lead', 'The team no longer works late at month end. They now spend the time chasing missing delivery orders.', ['time', 'adoption'], 'siti'],
+    ['contoh-logistik', 'invoice-triage', 'request', 'Email', '2026-10-08', 'Finance director', 'Can the report show which document types still come back for correction? Credit notes seem worst.', ['quality'], 'daniel'],
+    ['acme-plastics', 'shift-planner', 'feedback', 'Call', '2026-09-29', 'Production manager', 'Supervisors used to spend Sunday evening on the plan. Now the plan is ready on Friday, but changeovers still cause downtime on Mondays.', ['time', 'quality'], 'siti'],
+    ['sampel-medik', 'enquiry-triage', 'concern', 'Survey', '2026-10-05', 'Head of patient services', 'Patients still complain about waiting for a reply on weekends. Our satisfaction survey is the number the board looks at.', ['cx', 'time'], 'siti'],
+    ['bina-jaya', 'quote-drafter', 'goal', 'Meeting', '2026-09-24', 'Sales director', 'We lose bids when a quote takes more than two days. We want to win more of the jobs we quote for, not just quote faster.', ['money', 'cx'], 'daniel'],
+  ];
+  function ctxAll() {
+    state.ctx = state.ctx || {};
+    const k = demo() ? 'example' : state.ws;
+    if (!state.ctx[k]) state.ctx[k] = k === 'example' ? CTX_EXAMPLE.map(([org, proj, kind, source, date, from, text, tags, by], i) => ({ id: 'cx' + i, org, proj, kind, source, date, from, text, tags, ai: true, by: M.staff[by].name, at: day(date) + ', 17:30', uses: 0, example: true })) : [];
+    return state.ctx[k];
+  }
+  const ctxFor = (orgId, projId) => ctxAll().filter((e) => e.org === orgId && !e.archived && (!projId || !e.proj || e.proj === projId));
+  const orgOfProj = (proj) => companies().find((c) => coSolutions(c).some((x) => x.id === proj.id)) || null;
+  // Before saving: no names, emails, phone numbers or identity card numbers. Record the role instead.
+  const ctxPersonal = (t) => /[^\s@]+@[^\s@]+\.[a-z]{2,}/i.test(t) || /\b\d{6}-\d{2}-\d{4}\b/.test(t) || /(\+?6?0)[\s-]?1\d[\s-]?\d{3,4}[\s-]?\d{4}\b/.test(t) || /\d{10,}/.test(t);
+  function ctxEntry(e, opts = {}) {
+    const c = coById(e.org), sol = e.proj && coSolutions(c || { projects: [] }).find((x) => x.id === e.proj);
+    const kind = (CTX_KINDS.find((k) => k[0] === e.kind) || [, 'Note'])[1];
+    return `<article class="ctx-entry${e.ai ? '' : ' off'}"><div class="ctx-top"><span class="pill ${e.kind === 'concern' ? 'warn' : e.kind === 'goal' ? 'info' : 'idle'}">${kind}</span>${opts.org ? `<a class="small" href="#results-${e.org}">${esc(c ? c.short : e.org)}</a>` : ''}${sol ? `<span class="xs muted">${esc(sol.name)}</span>` : '<span class="xs muted">Whole organisation</span>'}<span class="ctx-ai ${e.ai ? 'on' : ''}"><img src="${SPARK}" alt="">${e.ai ? 'AI uses this' : 'Not for AI'}</span></div>
+      <blockquote>${esc(e.text)}</blockquote>
+      <div class="ctx-meta"><span><b class="ink">${esc(e.from)}</b> · ${esc(e.source)} · <span class="mono">${dayShort(e.date)}</span></span><span>Added by ${esc(e.by)}</span>${e.tags.length ? `<span>${e.tags.map((t) => esc((XP_FOCUS.find((f) => f[0] === t) || [, t])[1])).join(', ')}</span>` : ''}${e.uses ? `<span>Used in ${e.uses} suggestion run${e.uses === 1 ? '' : 's'}</span>` : ''}${e.example ? '<span class="pill warn" style="padding:1px 8px">Example</span>' : ''}</div>
+      <div class="head-actions">${coSolutions(c || { projects: [] }).some((x) => x.proj) && e.ai ? `<button type="button" class="btn sm" data-act="ctx-explore" data-id="${e.id}"><img src="${SPARK}" alt="" style="width:16px">Suggest measures from this</button>` : ''}${atLeast('Support') ? `<button type="button" class="btn sm ghost" data-act="ctx-ai" data-id="${e.id}">${e.ai ? 'Stop AI using this' : 'Let AI use this'}</button><button type="button" class="btn sm ghost" data-act="ctx-archive" data-id="${e.id}">Archive</button>` : ''}</div></article>`;
+  }
+  function ctxForm(orgId) {
+    const orgs = companies(), sel = orgId || state.ctxOrg || (orgs[0] && orgs[0].id), c = coById(sel), d = state.ctxDraft || { tags: [] };
+    if (!atLeast('Support')) return '<p class="needs">Needs Support to add client context</p>';
+    return `<form id="f-ctx" class="card ctx-form" novalidate><div class="card-head"><div><h2>Add what they told you</h2><p class="sub">Feedback, goals and concerns in their words. Record the person’s role, never their name, email or phone.</p></div></div>
+      <div class="form-grid">
+        ${orgId ? `<input type="hidden" id="ctx-org" value="${orgId}">` : `<div class="field"><label for="ctx-org">Organisation</label><select id="ctx-org">${orgs.map((o) => `<option value="${o.id}" ${o.id === sel ? 'selected' : ''}>${esc(o.short)}</option>`).join('')}</select></div>`}
+        <div class="field"><label for="ctx-proj">About</label><select id="ctx-proj"><option value="">The whole organisation</option>${c ? coSolutions(c).map((x) => `<option value="${x.id}" ${d.proj === x.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('') : ''}</select></div>
+        <div class="field"><label for="ctx-kind">Kind</label><select id="ctx-kind">${CTX_KINDS.map(([k, l]) => `<option value="${k}" ${d.kind === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+        <div class="field"><label for="ctx-source">Where it came from</label><select id="ctx-source">${CTX_SOURCES.map((x) => `<option ${d.source === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
+        <div class="field"><label for="ctx-from">Who said it, by role</label><input id="ctx-from" placeholder="For example: Finance director" value="${esc(d.from || '')}"></div>
+        <div class="field"><label for="ctx-date">When</label><input id="ctx-date" type="date" value="${d.date || today()}"></div>
+        <div class="field full"><label for="ctx-text">What they said</label><textarea id="ctx-text" placeholder="For example: Late payments cost us penalties every month. That matters more than typing time.">${esc(d.text || '')}</textarea><span class="help" id="ctx-help">Plain words, as close to theirs as you can. Numbers they mention are kept as their words: they become figures only through a baseline and approval.</span></div>
+        <div class="field full"><span class="lab">What it is about, optional</span><div class="chips">${XP_FOCUS.map(([k, l]) => `<button type="button" class="chip" data-ctx-tag="${k}" aria-pressed="${d.tags.includes(k)}">${l}</button>`).join('')}</div></div>
+        <label class="check full"><input type="checkbox" id="ctx-ai" ${d.ai === false ? '' : 'checked'}><span>AI may use this when suggesting measures and answering questions about ${esc(c ? c.short : 'this organisation')}. It is never shown to the organisation.</span></label>
+      </div><div class="head-actions" style="margin-top:14px"><button type="submit" class="btn primary">Add to client context</button></div></form>`;
+  }
+  // The client context list, for one organisation or all (Outcomes only → Client context, and the Results page's tab).
+  function ctxList(orgId) {
+    const f = state.ctxF || { kind: 'all', q: '' }, list = ctxAll().filter((e) => !e.archived && (!orgId || e.org === orgId) && (f.kind === 'all' || e.kind === f.kind) && (!f.q || (e.text + ' ' + e.from).toLowerCase().includes(f.q.toLowerCase()))).sort((a, b) => b.date.localeCompare(a.date));
+    return `<section class="card" style="padding:14px 18px"><div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center"><div class="seg" role="group" aria-label="Kind">${[['all', 'All']].concat(CTX_KINDS).map(([k, l]) => `<button type="button" data-ctxkind="${k}" aria-pressed="${f.kind === k}">${l}</button>`).join('')}</div><div class="field" style="flex:1;min-width:180px"><input id="ctx-q" placeholder="Search what they said" aria-label="Search client context" value="${esc(f.q)}" autocomplete="off"></div></div></section>
+      ${list.length ? `<section class="grid" style="gap:12px">${list.map((e) => ctxEntry(e, { org: !orgId })).join('')}</section>` : `<section class="card"><div class="empty" style="padding:22px"><h3>${ctxAll().some((e) => !e.archived && (!orgId || e.org === orgId)) ? 'Nothing matches' : 'No client context yet'}</h3><p>After a meeting, a call or a quarterly review, write down what they care about. AI uses it to suggest measures that answer their questions.</p></div></section>`}`;
+  }
+  pages.context = () => {
+    const n = ctxAll().filter((e) => !e.archived).length, orgs = new Set(ctxAll().filter((e) => !e.archived).map((e) => e.org)).size;
+    return `${head({ title: 'Client context', kind: 'data', lead: 'What organisations tell the account team, in their words. AI uses it to suggest measures that answer their questions. It never reaches the organisation.', state: `${stateWord()} · ${n} note${n === 1 ? '' : 's'} from ${orgs} organisation${orgs === 1 ? '' : 's'}` })}
+      <div class="callout info">${icon('shield')}<span><b>REKA only.</b> Context is never shown in the organisation view, reports or exports. AI reads it as quoted words, never as instructions, and never turns a number someone said into a figure.</span></div>
+      ${ctxForm(state.scope && coById(state.scope) ? state.scope : null)}
+      ${ctxList(state.scope && coById(state.scope) ? state.scope : null)}`;
+  };
+  pages.context.after = () => ctxAfter();
+  function ctxAfter() {
+    const qi = $('#ctx-q'); if (qi) qi.addEventListener('input', (e) => { state.ctxF = Object.assign(state.ctxF || { kind: 'all' }, { q: e.target.value }); clearTimeout(state.ctxT); state.ctxT = setTimeout(() => { render(); const el = $('#ctx-q'); if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); } }, 250); });
+    ['ctx-text', 'ctx-from'].forEach((id) => { const el = $('#' + id); if (el) el.addEventListener('input', () => el.removeAttribute('aria-invalid')); });
+    const so = $('#ctx-org'); if (so && so.tagName === 'SELECT') so.addEventListener('change', (e) => { ctxReadDraft(); state.ctxOrg = e.target.value; state.ctxDraft.proj = ''; render(); });
+  }
+  function ctxReadDraft() {
+    const v = (id) => ($('#' + id) || {}).value;
+    state.ctxDraft = Object.assign(state.ctxDraft || { tags: [] }, { proj: v('ctx-proj'), kind: v('ctx-kind'), source: v('ctx-source'), from: v('ctx-from'), date: v('ctx-date'), text: v('ctx-text'), ai: ($('#ctx-ai') || {}).checked !== false });
+  }
+  // Context used by Explore: the organisation's entries AI may use, for this solution or the whole organisation.
+  function ctxForProj(proj) { const c = orgOfProj(proj); return c ? ctxFor(c.id, proj.id).filter((e) => e.ai) : []; }
 
   // ------------------------------------------------------------------ EXPLORE IMPACT
   // Re-prompt and explore other measures of business impact, for any project collecting data, in every workspace.
@@ -1959,18 +2036,22 @@
     const u = rec.use, how = !u ? `Recorded as ${rec.label.toLowerCase()}, with its source and evidence.` : u.kind === 'vs' ? `Now against ${rec.label.toLowerCase()}, from the organisation’s records.` : `${rec.label} × ${u.fig ? xpFill(xpCatById(u.fig).fig.label, info).toLowerCase() : FIELDS[u.cm.a].label.toLowerCase()}`;
     return Object.assign(base, { t: 'c', rec, how, q: 'estimated', effort: base.effort || 'A short conversation with the organisation' });
   }
-  function xpScore(it, kind, qt, ot, focus) {
+  // ct and ctags: the organisation's client context, as one lower-case text and its tags. Quoted words only: they
+  // move ideas up the list, never add an idea that isn't in the catalog, and never become a figure.
+  function xpScore(it, kind, qt, ot, focus, ct = '', ctags = []) {
     let s;
-    if (it.k.includes(kind)) s = 3; else if (it.k.includes('*')) s = 1; else if (qt && it.words.test(qt)) s = -2; else return -1;
+    if (it.k.includes(kind)) s = 3; else if (it.k.includes('*')) s = 1; else if (qt && it.words.test(qt)) s = -2; else if (ct && it.words.test(ct)) s = -3; else return -1;
     if (qt && it.words.test(qt)) s += 6;
     if (ot && it.words.test(ot)) s += 2;
-    it.tags.forEach((tg) => { if (qt && XP_WORDS[tg].test(qt)) s += 2; if (ot && XP_WORDS[tg].test(ot)) s += 0.5; if (focus.includes(tg)) s += 3; });
+    if (ct && it.words.test(ct)) s += 3;
+    it.tags.forEach((tg) => { if (qt && XP_WORDS[tg].test(qt)) s += 2; if (ot && XP_WORDS[tg].test(ot)) s += 0.5; if (focus.includes(tg)) s += 3; if (ct && XP_WORDS[tg].test(ct)) s += 1; if (ctags.includes(tg)) s += 1.5; });
     return s + (it.t === 'a' ? 0.25 : 0);
   }
   // Chooses and ranks ideas for one brief. Deterministic: same brief and same figures, same answer.
   function xpSuggest(proj, info, brief, xs) {
     const sh = xpShares(proj), qt = (brief.q || '').toLowerCase(), ot = (brief.outcome || '').toLowerCase();
-    const ranked = XP_CATALOG.map((it, i) => ({ it, i, s: xpScore(it, brief.kind, qt, ot, brief.focus || []) })).filter((x) => x.s >= 0).sort((x, y) => y.s - x.s || x.i - y.i);
+    const cx = brief.useCtx === false ? [] : ctxForProj(proj), ct = cx.map((e) => e.text).join(' ').toLowerCase(), ctags = [...new Set(cx.flatMap((e) => e.tags))];
+    const ranked = XP_CATALOG.map((it, i) => ({ it, i, s: xpScore(it, brief.kind, qt, ot, brief.focus || [], ct, ctags) })).filter((x) => x.s >= 0).sort((x, y) => y.s - x.s || x.i - y.i);
     const ids = [], already = [], per = { a: 0, b: 0, c: 0 }, LIM = { a: 3, b: 2, c: 2 }, keys = new Set();
     ranked.forEach(({ it, s }) => {
       const idea = xpResolve(proj, info, it, sh, xs);
@@ -1981,13 +2062,14 @@
       if (keys.has(key)) return;
       keys.add(key); per[idea.t]++; ids.push(idea.id);
     });
-    return { ids, already };
+    return { ids, already, ctx: cx.map((e) => e.id) };
   }
   function xpRun(proj, xs) {
     const info = xpInfo(proj), res = xpSuggest(proj, info, xs.brief, xs);
-    const run = { id: 'r' + state.seq++, at: now(), who: me().name, brief: JSON.parse(JSON.stringify(xs.brief)), ids: res.ids, already: res.already, count: res.ids.length };
+    const run = { id: 'r' + state.seq++, at: now(), who: me().name, brief: JSON.parse(JSON.stringify(xs.brief)), ids: res.ids, already: res.already, count: res.ids.length, ctx: res.ctx };
+    ctxAll().forEach((e) => { if (res.ctx.includes(e.id)) e.uses = (e.uses || 0) + 1; });
     xs.runs.unshift(run); xs.cur = run.id; xs.thinking = false;
-    log(`Asked AI for measure ideas for ${proj.sol}: “${xs.brief.q || 'from the outcome only'}”, ${run.count} suggestion${run.count === 1 ? '' : 's'}`);
+    log(`Asked AI for measure ideas for ${proj.sol}: “${xs.brief.q || 'from the outcome only'}”, ${run.count} suggestion${run.count === 1 ? '' : 's'}${res.ctx.length ? `, using ${res.ctx.length} note${res.ctx.length === 1 ? '' : 's'} of client context` : ''}`);
     return run;
   }
   const xpUnit = (u, v, dp) => u === 'RM' ? 'RM' + nf(v, dp) : u === '%' ? nf(v, dp) + '%' : u === 'h' ? nf(v, dp) + ' h' : nf(v, dp);
@@ -2043,6 +2125,8 @@
     const parts = [`<div class="top"><h3>${esc(idea.t === 'b' && idea.mcm ? idea.mname : idea.name)}</h3>${q(idea.q)}</div>`];
     if (idea.why) parts.push(`<p class="small ink">${esc(idea.why)}</p>`);
     if (idea.needs) parts.push(`<p class="xp-needs">${esc(idea.needs)}</p>`);
+    const run = xs.runs.find((r) => r.id === xs.cur), cite = run && run.ctx && run.ctx.length && ctxForProj(proj).find((e) => run.ctx.includes(e.id) && idea.it.words.test(e.text.toLowerCase()));
+    if (cite) parts.push(`<blockquote class="xp-ctx"><span class="xs muted">From client context</span>“${esc(cite.text.length > 140 ? cite.text.slice(0, 137).replace(/\s+\S*$/, '') + '…' : cite.text)}”<span class="xs muted">${esc(cite.from)}, ${dayShort(cite.date)}</span></blockquote>`);
     let acts = '';
     if (idea.t === 'a') {
       parts.push(xpPreview(proj, idea.cm, idea.better));
@@ -2086,7 +2170,7 @@
     const groups = [['a', 'Ready now', `Worked out from figures ${proj.sol} already shares. The preview uses its own history.`], ['b', 'Needs a new figure from the solution', 'The developer adds it to the Measurement Link. It counts from the day it arrives.'], ['c', 'Needs a baseline or the organisation’s own number', 'Someone records it with its source, and a second person approves it.']];
     const fx = (run.brief.focus || []).map((k) => XP_FOCUS.find((x) => x[0] === k)[1]).join(', ');
     return `<section class="grid" id="xp-results" style="gap:16px">
-      <div class="card-head" style="margin:0"><div><h2>Suggestions</h2><p class="sub">Run ${esc(run.at.replace(' 2026,', ''))} by ${esc(run.who)} · “${esc(run.brief.q || 'from the outcome only')}”${fx ? ' · focus: ' + esc(fx) : ''}</p></div>${aiMark('Suggested by AI from your figures. You decide.')}</div>
+      <div class="card-head" style="margin:0"><div><h2>Suggestions</h2><p class="sub">Run ${esc(run.at.replace(' 2026,', ''))} by ${esc(run.who)} · “${esc(run.brief.q || 'from the outcome only')}”${fx ? ' · focus: ' + esc(fx) : ''}${run.ctx && run.ctx.length ? ` · ${run.ctx.length} note${run.ctx.length === 1 ? '' : 's'} of client context` : ''}</p></div>${aiMark('Suggested by AI from your figures. You decide.')}</div>
       ${ideas.length ? groups.map(([t, h, sub]) => { const xs2 = ideas.filter((x) => x.t === t); return xs2.length ? `<div class="xp-group"><h3>${h} <span class="pill idle">${xs2.length}</span></h3><p class="small muted">${esc(sub)}</p><div class="grid ${xs2.length >= 3 ? 'g3' : 'g2'}">${xs2.map((x) => xpCard(proj, info, xs, x)).join('')}</div></div>` : ''; }).join('') : '<div class="card"><p class="small muted">Nothing in the catalog matched this brief. Try other words, or a focus.</p></div>'}
       ${run.already.length ? `<div class="card flat xp-already"><span class="small muted">Already measured, so not suggested again:</span><div class="chips" style="margin-top:8px">${run.already.map((n) => `<span class="pill ok">${icon('check', 'sm')}${esc(n)}</span>`).join('')}</div></div>` : ''}
     </section>`;
@@ -2135,6 +2219,7 @@
           <div class="field"><label for="xp-kind">Kind of work</label><select id="xp-kind">${kinds.map((k) => `<option value="${k}" ${k === b.kind ? 'selected' : ''}>${esc(xpKindLabel(k))}</option>`).join('')}</select></div>
           <div class="field"><span class="lab">Focus, optional</span><div class="chips">${XP_FOCUS.map(([k, l]) => `<button type="button" class="chip" data-xp-focus="${k}" data-xp-proj="${proj.id}" aria-pressed="${b.focus.includes(k)}">${l}</button>`).join('')}</div></div>
           <div class="field full"><label for="xp-q">What do you want to find out?</label><textarea id="xp-q" rows="2" style="min-height:64px" placeholder="For example: ${esc(exs[0])}">${esc(b.q)}</textarea><div class="chips">${exs.map((x) => `<button type="button" class="chip" data-xp-ex="${esc(x)}" data-xp-proj="${proj.id}">${esc(x)}</button>`).join('')}</div></div>
+          ${xpCtxPanel(proj, b)}
         </div>
         <div class="xp-run"><button type="button" class="btn primary" data-xp-act="run" data-xp-proj="${proj.id}" ${xs.thinking ? 'disabled' : ''}><img src="${SPARK}" alt="" style="width:16px">Suggest measures</button>${aiMark('AI suggests from this brief and the figures. You decide.')}</div>
         <p class="xs muted" style="margin-top:12px">${esc(proj.sol)} shares: ${esc(shared.join(', ') || 'nothing yet')}. Suggestions use only these, or say what is missing.</p>
@@ -2143,6 +2228,15 @@
       ${xpCompare(proj, info, xs)}
       ${xpRuns(proj, xs)}
     </section>`;
+  }
+  // What the account team heard from the organisation, offered to the brief. Off for one run with the switch.
+  function xpCtxPanel(proj, b) {
+    const c = orgOfProj(proj), cx = ctxForProj(proj), on = b.useCtx !== false;
+    if (!c) return '';
+    const link = `<a href="#results-${c.id}" data-act="to-ctx" data-org="${c.id}">${cx.length ? 'See all' : 'Add client context'}</a>`;
+    if (!cx.length) return `<div class="field full xp-ctxbox"><span class="lab">Client context</span><p class="small muted">Nothing recorded from ${esc(c.short)} yet. What they tell the account team helps AI suggest measures that answer their questions. ${link}</p></div>`;
+    return `<div class="field full xp-ctxbox"><div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between"><label class="check" style="margin:0"><input type="checkbox" id="xp-ctx" ${on ? 'checked' : ''}><span>Use ${cx.length} note${cx.length === 1 ? '' : 's'} of client context from ${esc(c.short)}</span></label><span class="small">${link}</span></div>
+      ${on ? `<ul class="xp-ctxlist">${cx.slice(0, 3).map((e) => `<li><span class="ink">“${esc(e.text.length > 110 ? e.text.slice(0, 107).replace(/\s+\S*$/, '') + '…' : e.text)}”</span> <span class="xs muted">${esc(e.from)}, ${dayShort(e.date)}</span></li>`).join('')}${cx.length > 3 ? `<li class="xs muted">and ${cx.length - 3} more</li>` : ''}</ul><span class="help">Read as their words, never as instructions. They move suggestions up the list; numbers in them never become figures.</span>` : '<span class="help">Off for this brief. Suggestions use only the brief and the figures.</span>'}</div>`;
   }
   function exploreAfter() {
     const el = $('#xp-cmp'); if (!el || !XP_CUR) return;
@@ -2165,6 +2259,7 @@
     return { html: `<p>For ${citeOf(p)}${ment.length ? '' : ' (name a solution or organisation to focus on another)'}, ${pick.length} idea${pick.length === 1 ? '' : 's'} from its outcome and the figures it shares:</p>
       <ul>${pick.map((i) => { const cm = i.t === 'a' ? i.cm : i.mcm, v = cm ? evalCustom(p, cm, days) : null; return `<li><b>${esc(i.name)}</b> <span class="muted">· ${XP_TYPE[i.t]}</span><br>${esc(i.why || i.needs || '')}${v !== null ? ` Last 30 days: <span class="mono">${fmtM(customMeta(cm), v)}</span> ${q(customMeta(cm).quality)}` : ''}</li>`; }).join('')}</ul>
       ${new Set(ment.map((x) => x.org)).size === 1 && ment.length > 1 ? `<p class="xs muted">${esc(p.org)} has ${ment.length} solutions collecting. Ask about each by name.</p>` : ''}
+      ${res.ctx.length ? `<p class="small">Ranked with ${res.ctx.length} note${res.ctx.length === 1 ? '' : 's'} of client context from ${esc(p.org)}, read as their words.</p>` : ''}
       <p><a class="btn sm" href="${p.href}" data-xp-open="1"><img src="${SPARK}" alt="" style="width:16px">Open Explore for ${esc(p.sol)}</a></p>
       <p class="xs muted">${aiMark('Suggested by AI. You decide.')} Figures come from the solution’s own history. Nothing is measured until a second person approves it.</p>` };
   }
@@ -2262,6 +2357,7 @@
     const id = e.target.id; if (!/^xp-/.test(id) || !XP_CUR) return;
     const xs = xpStore(XP_CUR, xpInfo(XP_CUR));
     if (id === 'xp-kind') { xpReadBrief(xs); render(); }
+    if (id === 'xp-ctx') { xpReadBrief(xs); xs.brief.useCtx = e.target.checked; render(); }
     if (id === 'xp-rs' && xs.recDraft) xs.recDraft.s = e.target.value;
   });
 
@@ -2347,8 +2443,19 @@
     return { days, prev: windowDays(n, M.addDays(days[0], -1)), label: RANGES[n].toLowerCase(), prevLabel: `the ${n === 365 ? '12 months' : n + ' days'} before` };
   }
   const citeOf = (p) => `<a class="cite" href="${p.href}">${esc(p.sol)}</a>`;
+  // "What has <organisation> told us?": the client context, quoted with who said it and when. Staff only, like Ask.
+  function ctxAsk(ql) {
+    if (!/(told|tell us|feedback|said|say|context|concern|complain|asked for|care about|goals?\b|priorit)/.test(ql)) return null;
+    const co = companies().find((c) => [c.name, c.short].some((x) => ql.includes(x.toLowerCase())) || ql.includes(c.short.split(' ')[0].toLowerCase()));
+    if (!co) return null;
+    const list = ctxFor(co.id).sort((a, b) => b.date.localeCompare(a.date)), link = `<a href="#results-${co.id}" data-act="to-ctx" data-org="${co.id}">client context for ${esc(co.short)}</a>`;
+    if (!list.length) return { html: `<p>Nothing recorded from <b>${esc(co.short)}</b> yet. After a meeting or a call, add what they said to the ${link}.</p>` };
+    return { html: `<p>What <b>${esc(co.short)}</b> has told the account team, newest first:</p><ul>${list.slice(0, 5).map((e) => `<li>“${esc(e.text)}” <span class="muted">· ${esc(e.from)}, ${esc(e.source.toLowerCase())}, ${dayShort(e.date)}${e.ai ? '' : ' · not for AI'}</span></li>`).join('')}</ul>${list.length > 5 ? `<p class="small">And ${list.length - 5} more in the ${link}.</p>` : `<p class="small">From the ${link}.</p>`}
+      <p class="xs muted">Quoted as recorded, by role. REKA only: never shown to ${esc(co.short)}. Numbers in what people said are their words, not measured figures.</p>` };
+  }
   function askAnswer(raw) {
     const ql = raw.toLowerCase(), ps = projects();
+    const cxa = ctxAsk(ql); if (cxa) return cxa;
     if (!ps.length) return { html: '<p>There are no figures to answer from yet. Connect a solution, or simulate one in Demo studio, and ask again.</p>' };
     const xpa = exploreAsk(ql, ps); if (xpa) return xpa;
     const per = askPeriod(ql);
@@ -2422,7 +2529,7 @@
   function askSuggestions() {
     const p = projects()[0];
     const c = companies().find((x) => coProjs(x).length);
-    return [`How many hours did we save in ${monthName(lastFullMonth())}?`, 'What needs my attention?', c ? `How is ${c.short} doing this month?` : null, p ? `Why did ${p.sol} change this week?` : null, p ? `What else could we measure for ${p.sol}?` : null, 'Which project improved most this month?', 'Compare all projects', 'Show the trend of work handled', 'How is hours saved worked out?'].filter(Boolean);
+    return [`How many hours did we save in ${monthName(lastFullMonth())}?`, 'What needs my attention?', c ? `How is ${c.short} doing this month?` : null, c ? `What has ${c.short} told us?` : null, p ? `Why did ${p.sol} change this week?` : null, p ? `What else could we measure for ${p.sol}?` : null, 'Which project improved most this month?', 'Compare all projects', 'Show the trend of work handled', 'How is hours saved worked out?'].filter(Boolean);
   }
   pages.ask = () => {
     const chat = state.chat = state.chat || [];
@@ -2663,7 +2770,7 @@
     return [h, null, h];
   }
   let last = '';
-  const TITLES = { results: 'Results', analytics: 'Analytics', ask: 'Ask', signin: 'Sign in', welcome: 'Welcome', home: 'Overview', organisations: 'Organisations', 'new-organisation': 'New organisation', 'new-project': 'New project', connect: 'Connect a solution', approvals: 'Approvals', reports: 'Reports', report: 'Report', settings: 'Settings', guide: 'AXLE guide', adoption: 'Adoption', demo: 'Demo', audit: 'Audit', staff: 'Staff', r8: 'Overview', incidents: 'Incidents', troubleshoot: 'Troubleshoot', jobs: 'Jobs', providers: 'Providers', services: 'Services', configuration: 'Configuration', 'ops-audit': 'Operations audit', links: 'Measurement links' };
+  const TITLES = { results: 'Results', analytics: 'Analytics', ask: 'Ask', signin: 'Sign in', welcome: 'Welcome', home: 'Overview', organisations: 'Organisations', 'new-organisation': 'New organisation', 'new-project': 'New project', connect: 'Connect a solution', approvals: 'Approvals', reports: 'Reports', report: 'Report', settings: 'Settings', guide: 'AXLE guide', adoption: 'Adoption', demo: 'Demo', audit: 'Audit', staff: 'Staff', r8: 'Overview', incidents: 'Incidents', troubleshoot: 'Troubleshoot', jobs: 'Jobs', providers: 'Providers', services: 'Services', configuration: 'Configuration', 'ops-audit': 'Operations audit', links: 'Measurement links', context: 'Client context' };
   // "How this page works" for the standard pages (SPEC §3.6). Pages may pass their own.
   const HOW = {
     home: 'Start with <b>Needs a person</b>: each row says what is wrong and links to the fix; a technical problem opens Troubleshoot in R8. Every figure is worked out from the solutions’ daily figures and opens the list behind it. Hours saved and value are estimates against agreed baselines, always shown with a likely range. Fees need the Commercial right; without it you see a dash, never a zero.',
@@ -2673,6 +2780,7 @@
     r8: 'One word for the whole platform, then what needs an operator, worst first. Each row opens Troubleshoot. R8 words stay in R8; the Dashboard says “not answering” and links here.',
     jobs: 'Every background job with its schedule in plain words, its last run and what failed. Run now and Retry failures are Level 1 actions: they ask for a reason and go to the operations audit.',
     providers: 'Every outside service Outcomes depends on. Test provider makes one real call and shows the result and the time. Keys and secrets are never shown here; they live in the vault.',
+    context: 'Anyone with Support or above adds what an organisation told them: feedback, goals, concerns, requests and meeting notes, by the person’s role, never their name. Entries marked for AI feed Explore impact and Ask for that organisation only, as quoted words, never as instructions or figures. Nothing here reaches the organisation. Archive an entry to stop using it; the audit keeps who added or changed it.',
     links: 'Each organisation’s solution exposes a read-only Measurement Link. This page shows each link’s state, its last good collection, the nightly contract test and its key’s age. A failing link opens Troubleshoot.',
   };
   function render() {
@@ -2765,6 +2873,16 @@
     export: () => toast('Exports download in the real product. The mock can\u2019t save files.'),
     'tour-start': () => { tourGo(0); },
     'ask-client': (d) => askSubmit(`How is ${d.name} doing this month?`),
+    'to-ctx': (d) => { state.coFor = d.org + 'results'; state.resTab = 'context'; state.audience = 'staff'; go('results-' + d.org); },
+    'ctx-ai': (d) => { const e = ctxAll().find((x) => x.id === d.id); if (!e) return; e.ai = !e.ai; const c = coById(e.org); log(`${e.ai ? 'Let AI use' : 'Stopped AI using'} a client context note from ${c ? c.short : e.org} (${e.from})`); render(); toast(e.ai ? 'AI may use this note.' : 'AI won’t use this note.'); },
+    'ctx-archive': (d) => { const e = ctxAll().find((x) => x.id === d.id); if (!e) return; e.archived = true; const c = coById(e.org); log(`Archived a client context note from ${c ? c.short : e.org} (${e.from})`); render(); toast('Archived. AI no longer uses it.', () => { e.archived = false; render(); }); },
+    'ctx-explore': (d) => {
+      const e = ctxAll().find((x) => x.id === d.id), c = e && coById(e.org); if (!c) return;
+      const sols = coSolutions(c).filter((x) => x.proj && x.href), sol = sols.find((x) => x.id === e.proj) || sols[0]; if (!sol) return;
+      const proj = sol.proj, xs = xpStore(proj, xpInfo(proj));
+      xs.brief.q = e.text; xs.brief.focus = e.tags.slice(); xs.brief.useCtx = true;
+      xpRun(proj, xs); state.solTab = 'explore'; go(sol.href.slice(1)); toast(`Suggestions for ${sol.name}, from what the ${e.from.toLowerCase()} said.`);
+    },
     'reports-for': (d) => { state.repFor = { k: repKey(), id: d.org }; go('reports'); },
     'cf-reset': () => { state.cf = { show: 'all', sort: state.cf.sort, q: '' }; render(); },
     'tour-next': () => { if (state.tour >= TOUR.length - 1) { state.tour = null; render(); toast('Demo finished. Demo studio is yours.'); return; } tourGo(state.tour + 1); },
@@ -2796,6 +2914,8 @@
     if (d.provsel) { state.provSel = d.provsel; render(); return; }
     if (d.cfshow) { state.cf.show = d.cfshow; render(); return; }
     if (d.cotab) { state[state.coView === 'results' ? 'resTab' : 'coTab'] = d.cotab; render(); return; }
+    if (d.ctxTag) { ctxReadDraft(); const tg = state.ctxDraft.tags, i = tg.indexOf(d.ctxTag); if (i >= 0) tg.splice(i, 1); else tg.push(d.ctxTag); render(); return; }
+    if (d.ctxkind) { ctxReadDraft(); state.ctxF = Object.assign(state.ctxF || { q: '' }, { kind: d.ctxkind }); render(); return; }
     if (d.repfor) { state.repFor = d.repfor === 'all' ? null : { k: repKey(), id: d.repfor }; render(); return; }
     if (d.tab) { state.solTab = d.tab; render(); return; }
     if (d.demo) { state.demoState = d.demo; render(); return; }
@@ -2824,6 +2944,19 @@
   });
   document.addEventListener('change', (e) => { if (e.target.id === 'ev-sim') { state.eventSim = e.target.value; render(); } if (e.target.id === 'sb-name') { state.sandboxName = e.target.value.trim() || 'Demo workspace'; render(); } });
   document.addEventListener('submit', (e) => {
+    if (e.target.id === 'f-ctx') {
+      e.preventDefault(); ctxReadDraft();
+      const dr = state.ctxDraft, org = ($('#ctx-org') || {}).value, text = (dr.text || '').trim(), from = (dr.from || '').trim(), help = $('#ctx-help');
+      const bad = (id, msg) => { const el = $('#' + id); el.setAttribute('aria-invalid', 'true'); if (msg && help) { help.textContent = msg; help.classList.add('err'); } el.focus(); };
+      if (!coById(org)) return;
+      if (text.length < 10) { bad('ctx-text', 'Write what they said, in a sentence or more.'); return; }
+      if (!from) { bad('ctx-from', 'Say who said it, by role: for example, Finance director.'); return; }
+      if (ctxPersonal(text + ' ' + from)) { bad('ctx-text', 'That looks like an email, phone or identity card number. Take it out and record the person’s role instead.'); return; }
+      const c = coById(org);
+      ctxAll().unshift({ id: 'cn' + state.seq++, org, proj: dr.proj || null, kind: dr.kind || 'feedback', source: dr.source || CTX_SOURCES[0], date: dr.date || today(), from, text, tags: dr.tags.slice(), ai: dr.ai !== false, by: me().name, at: now(), uses: 0 });
+      log(`Added client context from ${c.short} (${from}, ${(dr.source || CTX_SOURCES[0]).toLowerCase()})`);
+      state.ctxDraft = null; render(); toast(dr.ai !== false ? `Added. AI can use it for ${c.short}.` : 'Added. AI won’t use it.'); return;
+    }
     if (e.target.id === 'f-note') { e.preventDefault(); const t = ($('#note-t').value || '').trim(); if (!t) return; const id = e.target.dataset.org; state.notes[id].unshift([me().name, now(), t]); log(`Added a note on ${coById(id).short}`); render(); toast('Note added.'); return; }
     if (e.target.id === 'reason-form') { e.preventDefault(); const r = ($('#reason-t').value || '').trim(); if (r.length < 3) { $('#reason-t').setAttribute('aria-invalid', 'true'); $('#reason-t').focus(); return; } r8Do(state.reasonFor, r); return; }
     if (e.target.id === 'f-ws') { e.preventDefault(); state.setup.workspace = $('#ws-name').value.trim() || 'REKA Inisiatif'; state.setup.step = 2; render(); }

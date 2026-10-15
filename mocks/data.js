@@ -31,6 +31,7 @@
     nurul: { id: 'nurul', name: 'Nurul Aina', initials: 'NA', rung: 'Support', rights: ['Measurement'], note: 'Analyst' },
     daniel: { id: 'daniel', name: 'Daniel Lim', initials: 'DL', rung: 'Operator', rights: ['Approve'], note: 'Project manager' },
     aisyah: { id: 'aisyah', name: 'Aisyah Rahman', initials: 'AR', rung: 'Admin', rights: ['Approve', 'Commercial'], note: 'Platform admin, leadership' },
+    siti: { id: 'siti', name: 'Siti Mariam', initials: 'SM', rung: 'Support', rights: [], note: 'Account manager' },
   };
 
   // ---- organisations, projects, solutions ----

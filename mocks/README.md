@@ -49,12 +49,13 @@ In the demo workspace, the dashed **Demo studio** button in the top bar shows th
 | Mode | Where | What it shows |
 |---|---|---|
 | Dashboard: client data (Outcomes only, first) | **Results** (`#results`, `#results-…`) | Every organisation's figures and hours saved over time; then one organisation's figures, hours saved by project, the monthly summary, outcomes by project and reports, with staff view and organisation view |
-| | **Reports**, **Approvals**, **Analytics**, **Ask** | Reports by organisation; separation of duties; any measure by organisation or solution; questions in plain words |
+| | **Reports**, **Approvals**, **Analytics**, **Ask** | Reports by organisation; separation of duties; any measure by organisation or solution; questions in plain words, including "What has Contoh told us?" |
+| | **Client context** (`#context`, and a tab on each organisation's results) | What organisations told BD and account managers, by role, never by name: feedback, goals, concerns, requests, meeting notes. Each entry can be left out of AI; "Suggest measures from this" opens Explore with it. REKA only: hidden in organisation view, reports and exports |
 | Dashboard: managing | **Overview** (`#home`) | First use: the checklist. Later: health strip, Needs a person (a technical problem opens Troubleshoot), Nightly collection, figures that open their lists, organisations by stage, organisations at a glance with readiness, hours saved, recent actions |
 | | **Adoption** | People using each organisation's solutions, change, 12 weeks, and who stopped |
 | | **Organisations** (`#organisations`) | Stats strip as filters, search, sort, group by stage or industry, export |
 | | An organisation's account (`#organisation-…`) | Managing it: readiness and stage first; tabs Summary, Projects and solutions, Notes (REKA only), Audit; a link to its results |
-| | A solution | **Measures** (13 standard measures; add your own) and **Explore**: re-prompt and explore other measures of business impact |
+| | A solution | **Measures** (13 standard measures; add your own) and **Explore**: re-prompt and explore other measures of business impact, ranked with the organisation's client context and quoting it |
 | | **Demo**, **Settings**, **Audit**, **Staff** | Demo workspaces; platform switches that ask for a reason and raise the state banner; the audit; the ladder with "Needs Admin" |
 | R8 | **Overview** (`#r8`) | One word for the platform, the build, Needs an operator, services, Outcomes' machinery, incidents, cost per organisation (Commercial right only), recent operations |
 | | **Troubleshoot** (`#troubleshoot-quote-drafter` in example data) | Evidence in layers, timeline, AXLE's reading kept apart from your conclusion, Level 1 actions that ask for a reason |
@@ -72,6 +73,7 @@ The 0.5 addresses (`#clients`, `#client-…`, `#new-client`) and `#org-…` redi
 | Daniel Lim (you, by default) | Operator. Approve, except what he set up himself; Level 1 R8 actions |
 | Nurul Aina | Support. Suggest KPIs and measures, not approve; acknowledge incidents; no fees |
 | Aisyah Rahman | Admin. Approve; sees running cost and fees; staff and key rotation |
+| Siti Mariam | Support. An account manager: adds client context and lets AI use it; no approvals, no fees |
 
 ## Files
 
