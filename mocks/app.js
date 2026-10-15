@@ -2011,19 +2011,19 @@
     let acts = '';
     if (idea.t === 'a') {
       parts.push(xpPreview(proj, idea.cm, idea.better));
-      acts = idea.dup ? xpCmStatus(proj, idea.dup) : `<div class="xp-acts"><button type="button" class="btn sm primary" data-xp-act="add" data-xp-proj="${proj.id}" data-xp-id="${idea.id}">${icon('plus', 'sm')}Add as a measure</button><button type="button" class="btn sm" data-xp-act="builder" data-xp-proj="${proj.id}" data-xp-id="${idea.id}">Open in builder</button>${xpPickChip(proj, xs, 'i:' + idea.id)}</div>`;
+      acts = idea.dup ? xpCmStatus(proj, idea.dup) : `<div class="xp-acts"><button type="button" class="btn sm" data-xp-act="add" data-xp-proj="${proj.id}" data-xp-id="${idea.id}">${icon('plus', 'sm')}Add as a measure</button><button type="button" class="btn sm" data-xp-act="builder" data-xp-proj="${proj.id}" data-xp-id="${idea.id}">Open in builder</button>${xpPickChip(proj, xs, 'i:' + idea.id)}</div>`;
     } else if (idea.t === 'b') {
       const f = idea.fig, req = xpReqOf(xs, idea), a = req && xpAp(proj, req.apId);
       parts.push(`<div class="xp-def">${kv([['Key', `<span class="mono">${esc(f.key)}</span>`], ['Type', esc(f.type + (f.agg ? ' · ' + f.agg : ''))], ['Unit', `<span class="mono">${esc(f.unit)}</span>`], ['Means', esc(f.desc)], ['Split by', esc(f.dims.length ? f.dims.join(', ') : 'Nothing. A daily total only.')]], 76)}</div>`);
       if (idea.mcm) parts.push(xpPreview(proj, idea.mcm, idea.better));
-      if (!req) acts = `<div class="xp-acts"><button type="button" class="btn sm primary" data-xp-act="request" data-xp-proj="${proj.id}" data-xp-id="${idea.id}">${icon('connect-ai', 'sm')}Ask the developer for it</button></div>`;
+      if (!req) acts = `<div class="xp-acts"><button type="button" class="btn sm" data-xp-act="request" data-xp-proj="${proj.id}" data-xp-id="${idea.id}">${icon('connect-ai', 'sm')}Ask the developer for it</button></div>`;
       else {
         const st = req.shipped ? (idea.mcm ? '<span class="pill ok"><span class="dot"></span>Arriving</span>' : `<span class="pill ok"><span class="dot"></span>Shipped</span><span class="small muted">First figures from ${dayShort(M.addDays(req.shipped, 1))}</span>`) : '<span class="pill info"><span class="dot"></span>Requested</span>';
         acts = `<div class="xp-acts">${st}${a ? `<span class="small muted">Request:</span>${XP_AP_PILL[a.status] || ''}${xpMockApprove(proj, a)}` : ''}</div>`;
         acts += `<details class="xp-brief" ${xs.open === idea.id ? 'open' : ''}><summary>Developer brief</summary><div><div class="code-block" id="xp-dev-${idea.id}">${esc(xpDevBrief(proj, info, idea))}</div><div class="xp-acts"><button type="button" class="btn sm" data-xp-act="copy" data-xp-proj="${proj.id}" data-xp-id="${idea.id}">${icon('copy', 'sm')}Copy brief</button></div></div></details>`;
         if (!req.shipped) acts += sandbox() && f.gen ? `<div class="demo-bar"><span class="tag">MOCK CONTROLS</span><button type="button" class="btn sm" data-xp-act="ship" data-xp-proj="${proj.id}" data-xp-id="${idea.id}">The developer shipped it</button></div>` : `<p class="xs muted">It arrives after the developer ships it and the next nightly collection runs.</p>`;
         else if (!idea.mcm) acts += `<div class="demo-bar"><span class="tag">MOCK CONTROLS</span><span>Nothing has arrived yet.</span><button type="button" class="btn sm" data-adv="7">Move the date on a week</button></div>`;
-        else acts += idea.dup ? xpCmStatus(proj, idea.dup) : `<div class="xp-acts"><button type="button" class="btn sm primary" data-xp-act="add" data-xp-proj="${proj.id}" data-xp-id="${idea.id}">${icon('plus', 'sm')}Add as a measure</button>${xpPickChip(proj, xs, 'i:' + idea.id)}</div>`;
+        else acts += idea.dup ? xpCmStatus(proj, idea.dup) : `<div class="xp-acts"><button type="button" class="btn sm" data-xp-act="add" data-xp-proj="${proj.id}" data-xp-id="${idea.id}">${icon('plus', 'sm')}Add as a measure</button>${xpPickChip(proj, xs, 'i:' + idea.id)}</div>`;
       }
     } else {
       const rec = xpRecOf(xs, idea), a = rec && xpAp(proj, rec.apId);
@@ -2039,7 +2039,7 @@
           <div class="field"><label for="xp-rs">Source</label><select id="xp-rs">${['The organisation’s records', 'A timed sample', 'The organisation’s estimate', 'A staff survey'].map((x) => `<option ${x === dr.s ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select></div>
           <div class="field"><label for="xp-re">Evidence</label><input id="xp-re" value="${esc(dr.e)}" placeholder="e.g. Finance report, Jan to Jun 2026"><span class="help">Kept with the approval. A second person checks it.</span></div>
           <div class="xp-acts"><button type="button" class="btn sm primary" data-xp-act="rec-save" data-xp-proj="${proj.id}" data-xp-id="${idea.id}">Send for approval</button><button type="button" class="btn sm ghost" data-xp-act="rec-cancel" data-xp-proj="${proj.id}">Cancel</button></div></div>`;
-      } else acts = `<div class="xp-acts"><button type="button" class="btn sm primary" data-xp-act="rec-open" data-xp-proj="${proj.id}" data-xp-id="${idea.id}">Record it</button></div>`;
+      } else acts = `<div class="xp-acts"><button type="button" class="btn sm" data-xp-act="rec-open" data-xp-proj="${proj.id}" data-xp-id="${idea.id}">Record it</button></div>`;
     }
     parts.push(kv([['Worked out', esc(idea.how)], ['Effort', esc(idea.effort)]], 76));
     parts.push(acts);

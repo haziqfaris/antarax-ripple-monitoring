@@ -480,6 +480,34 @@ Detailed in [§11](#11-ai-assistance-and-approval-gates).
 | FR-DEMO-9 | The guided demo walks a new project from nothing to its first report, then measures, analytics and Ask, in about 20 steps. It runs only in a demo workspace and clears it first | P2 |
 | FR-DEMO-10 | "Rehearse a report": from a real project in planning, create a demo copy with its kind of work, expected volume and agreed baseline, to show the client what their monthly report will look like | P2 |
 
+### 8.17 Exploring other measures for a live project
+
+A project's first KPIs are agreed before go-live, from what the team guessed would matter. Once a solution is running, staff need to ask again: "has it reduced late payments?", "is the team using the freed time well?". Explore lets them re-prompt from a new brief, see candidate measures of business impact previewed on the project's own history, and turn the useful ones into measures, figure requests or baselines. Every step goes through the same approvals as any KPI.
+
+The ideas come in three kinds:
+- **Ready now:** worked out from figures the solution already shares.
+- **Needs a new figure from the solution:** proposed in the Measurement Link contract's shape (§9). The developer adds it, and it counts from the day it arrives.
+- **Needs a baseline or the organisation's own number:** for example a penalty per late invoice. It is recorded with its evidence and approved.
+
+| Id | Requirement | Priority |
+|---|---|---|
+| FR-EXP-1 | Every solution collecting data has an Explore tab after Measures, also opened from "Explore other measures" on the Measures tab and from Ask ("What else could we measure for …?") | MVP |
+| FR-EXP-2 | Suggestions are based on an editable brief: the outcome in the organisation's words (prefilled from the project), the kind of work, a free-text question and optional focus (money, time, quality, risk, customer experience, adoption) | MVP |
+| FR-EXP-3 | Every run is kept with its brief, time, who ran it and how many suggestions it made. Any run can be re-opened or run again, and each run is in the audit trail | MVP |
+| FR-EXP-4 | Suggestions come from a reviewed catalog of candidate measures for each kind of work, chosen and ranked by kind, the brief's words, focus and the figures the solution shares. The same brief and figures give the same answer. AI never invents a figure. The mock's catalog holds 61 ideas | MVP |
+| FR-EXP-5 | A measure the project already has, standard or custom, shows as "Already measured" and is not suggested again | MVP |
+| FR-EXP-6 | Each suggestion shows why it matters for the outcome, how it is worked out, its quality (measured, derived, estimated), the effort, and one caveat | MVP |
+| FR-EXP-7 | "Ready now" suggestions preview from the project's own history (value for the period, change against the period before only when comparable, 12-week trend) and can be added as a measure through the same approval as the builder (§8.13), or opened in the builder | MVP |
+| FR-EXP-8 | A suggestion that needs a figure the solution doesn't share shows the proposed metric in the Measurement Link contract's shape (key, type, unit, description, dimensions). "Ask the developer" creates a "New figure" approval and a developer brief (add the metric, bump `metric_catalog_version`, re-run the contract test). It counts only from the day the figure arrives, never backfilled with zeros | MVP |
+| FR-EXP-9 | A suggestion that needs a baseline or the organisation's own number is recorded with value, unit, source and evidence, and sent for approval. It is used only once approved | MVP |
+| FR-EXP-10 | Staff can compare two or three suggestions or existing measures on one 12-week chart, as an index (first week = 100), labelled as such and with no claim of cause | P2 |
+| FR-EXP-11 | The page states the rules: AI suggests, people decide. Nothing reaches the organisation or a report until a second person approves it. A new figure changes the solution's catalog and goes through the developer and approval | MVP |
+| FR-EXP-12 | In a demo workspace, Demo studio can simulate that a developer shipped a requested figure. Its daily figures are simulated deterministically from the next simulated day | MVP |
+
+Open in the mock:
+- Approving a "New figure" request does not yet gate whether the figure is used. In the product, the figure feeds measures only after the request is approved and the contract test passes.
+- An approved baseline recorded from Explore should become the project's baseline, with its version history (§10).
+
 ## 9 The measurement interface (Measurement Link)
 
 The brief's L2 contract, written to the AntaraX API framework (`antarax-api` docs 03, 04 and 07) so a REKA-built solution and an AntaraX product speak the same way. Working name **Measurement Link**, by analogy with AXLE Link.
