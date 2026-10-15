@@ -41,7 +41,7 @@
     audit: M.audit.slice(), myAudit: [],
     reportApproved: false, narrativeApproved: false,
     studio: false, sf: null, eventSim: null,
-    tour: null, tourCtx: {},
+    tour: null, tourCtx: {}, ws: 'real', stash: {}, sandboxName: 'Demo workspace',
   };
   try { const t = localStorage.getItem('outcomes-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) { /* storage blocked */ }
 
@@ -50,6 +50,20 @@
   const RUNGS = ['Viewer', 'Support', 'Operator', 'Admin', 'Owner'];
   const atLeast = (rung) => RUNGS.indexOf(me().rung) >= RUNGS.indexOf(rung);
   const demo = () => state.mode === 'demo';
+  // Workspaces: your real one, a demo workspace (Demo studio and the guided demo live only here), and the example clients.
+  const WS_FIELDS = ['orgs', 'sims', 'myApprovals', 'myAudit', 'simReports', 'focusSim', 'simDay', 'wiz', 'sf', 'eventSim', 'an', 'bld', 'chat'];
+  const freshWs = () => ({ orgs: [], sims: [], myApprovals: [], myAudit: [], simReports: {}, focusSim: null, simDay: START_DAY, wiz: freshWizard(), sf: null, eventSim: null, an: null, bld: null, chat: [] });
+  const sandbox = () => state.mode === 'new' && state.ws === 'sandbox';
+  function setWs(kind) {
+    if (state.playing) { clearInterval(state.playing); state.playing = null; }
+    state.studio = false;
+    if (kind === 'example') { if (state.mode === 'new') { state.stash[state.ws] = {}; WS_FIELDS.forEach((f) => { state.stash[state.ws][f] = state[f]; }); state.wsLoaded = false; } state.mode = 'demo'; state.chat = []; state.an = null; state.bld = null; return; }
+    if (state.mode === 'new' && state.ws === kind) return;
+    if (state.mode === 'new') { state.stash[state.ws] = {}; WS_FIELDS.forEach((f) => { state.stash[state.ws][f] = state[f]; }); }
+    Object.assign(state, state.stash[kind] || freshWs());
+    state.ws = kind; state.mode = 'new';
+  }
+  const wsName = () => demo() ? 'Example clients' : sandbox() ? state.sandboxName : state.setup.workspace;
 
   // ------------------------------------------------------------------ formats (brand kit 13)
   const nf = (n, dp = 0) => Number(n).toLocaleString('en-GB', { minimumFractionDigits: dp, maximumFractionDigits: dp });
@@ -541,7 +555,8 @@
         <div class="rel"><button type="button" class="btn primary new-btn" data-act="new-menu" aria-haspopup="true">${icon('plus', 'sm')}New</button>
           <div class="pop" id="new-pop" hidden style="left:0;right:auto;top:48px;width:100%"><a href="#new-organisation">${icon('organisation', 'sm')}<span>Organisation</span></a><a href="#new-project">${icon('projects', 'sm')}<span>Project</span></a><a href="#connect">${icon('connect-ai', 'sm')}<span>Connect a solution</span></a></div></div>
         <nav class="nav" aria-label="Main">${navHtml(route)}</nav>
-        <div class="workspace"><span class="ws">${initials(state.setup.workspace)}</span><div style="min-width:0"><b>${esc(state.setup.workspace)}</b><span>${demo() ? 'Example data' : 'Your workspace'}</span></div></div>
+        <div class="rel"><button type="button" class="workspace" data-act="ws-menu" aria-haspopup="true" style="width:100%;cursor:pointer;text-align:left"><span class="ws" style="${sandbox() ? 'background:var(--ai)' : demo() ? 'background:var(--warn)' : ''}">${initials(wsName())}</span><div style="min-width:0;flex:1"><b>${esc(wsName())}</b><span>${demo() ? 'Example data' : sandbox() ? 'Demo workspace · simulated' : 'Your workspace'}</span></div>${icon('chev-down', 'sm')}</button>
+          <div class="pop" id="ws-pop" hidden style="left:0;right:auto;top:auto;bottom:62px;width:100%"><h4>Switch workspace</h4>${[['real', state.setup.workspace, 'Real clients and their data'], ['sandbox', state.sandboxName, 'Simulated clients for demos, training and rehearsing reports'], ['example', 'Example clients', 'Five fixed example clients']].map(([k, n, d2]) => `<button type="button" data-ws="${k}" aria-pressed="${(k === 'example' ? demo() : !demo() && state.ws === k)}"><span class="ws" style="flex:none;width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-size:.6875rem;font-weight:700;color:var(--surface);background:${k === 'sandbox' ? 'var(--ai)' : k === 'example' ? 'var(--warn)' : 'var(--ink)'}">${initials(n)}</span><span><b class="ink">${esc(n)}</b><small>${d2}</small></span></button>`).join('')}</div></div>
       </aside>
       <div class="scrim" id="scrim" hidden></div>
       <div class="main">
@@ -550,18 +565,19 @@
           <button type="button" class="search" data-act="palette">${icon('search', 'sm')}<span class="t">Search organisations, solutions, pages</span><kbd>⌘K</kbd></button>
           <div class="top-right">
             <a class="btn sm ghost" href="#ask" style="gap:6px"><img src="${SPARK}" alt="" style="width:16px">Ask</a>
-            ${demo() ? '<span class="pill warn" title="Every figure is invented">Example data</span>' : `<button type="button" class="studio-btn" data-act="studio" aria-expanded="${state.studio}">${icon('flask', 'sm')}<span class="lbl">Demo studio</span><span class="date">${dayShort(today())}</span></button>`}
+            ${demo() ? '<span class="pill warn" title="Every figure is invented">Example data</span>' : sandbox() ? `<button type="button" class="studio-btn" data-act="studio" aria-expanded="${state.studio}">${icon('flask', 'sm')}<span class="lbl">Demo studio</span><span class="date">${dayShort(today())}</span></button>` : ''}
             <div class="rel"><button type="button" class="icon-btn" data-act="bell" aria-label="Notifications">${icon('bell')}${demo() || alert ? '<span class="badge"></span>' : ''}</button><div class="pop" id="bell-pop" hidden>${bellHtml()}</div></div>
             <div class="rel"><button type="button" class="user-btn" data-act="user" aria-haspopup="true"><span class="avatar">${u.initials}</span><span class="nm">${u.name}</span>${icon('chev-down', 'sm')}</button>
               <div class="pop" id="user-pop" hidden>
                 <h4>Signed in as</h4>${Object.values(M.staff).map((s) => `<button type="button" data-role="${s.id}" aria-pressed="${s.id === state.role}"><span class="avatar">${s.initials}</span><span><b class="ink">${s.name}</b><small>${s.note}</small></span></button>`).join('')}
                 <p class="xs muted" style="padding:2px 10px 6px">Mock only: switch person to see how permissions change.</p>
                 <hr><h4>Appearance</h4><div style="padding:4px 10px 8px"><div class="seg">${[['light', 'Light'], ['dark', 'Dark'], ['system', 'System']].map(([v, l]) => `<button type="button" data-theme-set="${v}" aria-pressed="${theme === v}">${l}</button>`).join('')}</div></div>
-                <hr><button type="button" data-act="switch-mode">${icon('overview', 'sm')}<span>${demo() ? 'Back to my workspace' : 'Open the example workspace'}</span></button>
+                <hr><h4>Workspace</h4>${[['real', state.setup.workspace], ['sandbox', state.sandboxName], ['example', 'Example clients']].map(([k, n]) => `<button type="button" data-ws="${k}" aria-pressed="${(k === 'example' ? demo() : !demo() && state.ws === k)}">${icon(k === 'sandbox' ? 'flask' : k === 'example' ? 'overview' : 'home', 'sm')}<span>${esc(n)}</span></button>`).join('')}
                 <button type="button" data-act="signout">${icon('logout', 'sm')}<span>Sign out</span></button>
               </div></div>
           </div>
         </header>
+        ${sandbox() ? `<div class="ws-banner">${icon('flask', 'sm')}<span><b>${esc(state.sandboxName)}.</b> Every client and figure here is simulated. Nothing is sent to clients or counted in real totals.</span><button type="button" class="btn sm" data-act="studio">Demo studio</button></div>` : ''}
         <main class="content" id="view" tabindex="-1">${inner}</main>
       </div>
     </div>
@@ -594,7 +610,7 @@
   }
   function homeMine() {
     const collecting = state.sims.filter((s) => s.stage === 'collecting');
-    const greet = head({ title: `Good morning, ${me().name.split(' ')[0]}`, lead: `${dayLong(today())} · ${esc(state.setup.workspace)}`, actions: collecting.length ? rangeSeg() : '' });
+    const greet = head({ title: `Good morning, ${me().name.split(' ')[0]}`, lead: `${dayLong(today())} · ${esc(wsName())}`, actions: collecting.length ? rangeSeg() : '' });
     if (!collecting.length) {
       return `${greet}
       <section class="grid g-side">${checklistCard(false)}
@@ -1253,7 +1269,7 @@
     return `${head({ crumbs: crumbs(['Reports', '#reports'], [`${o.name}, ${monthName(ym)}`]), title: `${monthName(ym)} report`,
       meta: `${approved ? '<span class="pill ok"><span class="dot"></span>Approved, ready to send</span>' : '<span class="pill warn"><span class="dot"></span>Ready to review</span>'}${aiMark('Drafted by AI from the figures')}<span>Every figure checked</span>`,
       actions: approved ? `<button type="button" class="btn primary" data-act="send-report">Send to ${esc(o.name)}</button>` : gate(canApprove, 'Approve report', 'Needs approval rights', `data-act="approve-sim-report" data-sim="${s.id}"`) })}
-    ${paper({ title: `${s.project.name}: ${monthName(ym)}`, org: o.name, period: `1 to ${monthWindow(ym).length} ${MON[+ym.slice(5) - 1]} ${ym.slice(0, 4)}`, generated: `${day(today())}, 06:12 MYT`, tag: 'Simulated data', cols: [MONTHS[+ym.slice(5) - 1], hasPrev ? MONTHS[+pm.slice(5) - 1] : '–'],
+    ${paper({ title: `${s.project.name}: ${monthName(ym)}`, org: o.name, period: `1 to ${monthWindow(ym).length} ${MON[+ym.slice(5) - 1]} ${ym.slice(0, 4)}`, generated: `${day(today())}, 06:12 MYT`, tag: sandbox() ? 'Demo workspace · simulated' : 'Example data', cols: [MONTHS[+ym.slice(5) - 1], hasPrev ? MONTHS[+pm.slice(5) - 1] : '–'],
       headline: [[`${cap(K.nouns)} handled`, nf(cur.vol), hasPrev ? `${delta(cur.vol, prev.vol)} on ${MONTHS[+pm.slice(5) - 1]} · measured<sup>1</sup>` : 'first month · measured<sup>1</sup>'], ['Hours freed', s.kpis.includes('impact') && hasBase(s) ? nf(cur.mid) : '–', s.kpis.includes('impact') && hasBase(s) ? `likely ${nf(cur.low)} to ${nf(cur.high)} · estimated<sup>2</sup>` : 'needs a baseline'], [cap(K.qual.label), pct(cur.rate), `${nf(K.qual.from, 1)}% at the start · derived<sup>3</sup>`]],
       rows,
       changed: [firstMonth ? `This is the first full month of figures from ${esc(s.name)}.` : `${cap(K.nouns)} handled ${cur.vol >= prev.vol ? 'rose' : 'fell'} by ${nf(Math.abs(100 * (cur.vol - prev.vol) / prev.vol), 0)}% on the month before.`, cur.rate !== null && hasPrev && prev.rate !== null ? `The share ${K.qual.label} ${cur.rate <= prev.rate ? 'fell' : 'rose'} from ${pct(prev.rate)} to ${pct(cur.rate)}.` : `The share ${K.qual.label} was ${pct(cur.rate)}.`, cur.missing ? `${cur.missing} day${cur.missing > 1 ? 's are' : ' is'} missing and not counted.` : 'Every day of the month was collected.'],
@@ -1492,7 +1508,7 @@
       <section class="card"><div class="card-head"><h2>Team</h2><button type="button" class="btn sm" data-act="invite">${icon('user-plus', 'sm')}Invite</button></div>
         <div class="list">${Object.values(M.staff).map((s) => `<div class="row"><span class="avatar">${s.initials}</span><div><div class="what">${s.name}</div><div class="meta">${s.note}</div></div><span class="pill idle">${s.rights.includes('Approve') ? 'Can approve' : 'Can suggest'}${s.rights.includes('Commercial') ? ' · sees fees' : ''}</span></div>`).join('')}</div>
         <p class="small muted" style="margin-top:12px">Analysts suggest KPIs. Project managers approve them. Only people with the commercial right see fees.</p></section>
-      <section class="card"><div class="card-head"><h2>Collection</h2></div>${kv([['Nightly figures', '06:00 MYT'], ['Health checks', 'Every 15 minutes'], ['Data kept in', 'Singapore'], ['Kept for', 'The contract plus 24 months, then monthly totals']], 140)}</section>
+      <section class="card"><div class="card-head"><h2>Collection and measures</h2></div>${kv([['Nightly figures', '06:00 MYT'], ['Health checks', 'Every 15 minutes'], ['Data kept in', 'Singapore'], ['Kept for', 'The contract plus 24 months, then monthly totals'], ['Hourly staff cost', 'RM45 an hour, for every client. Used for \u201cvalue of time freed\u201d, always shown as an estimate'], ['Demo workspaces', 'Simulated only, never send anything, cleared after 90 days unless kept']], 140)}</section>
       <section class="card"><div class="card-head"><h2>Audit trail</h2><span class="pill idle">${icon('lock', 'sm')}Can’t be edited</span></div>${activityList(10)}</section>
       <section class="card"><div class="card-head"><h2>Integration pack</h2></div><p class="small">Everything a developer needs to add a measurement link: the contract, examples and a test to run before handing over.</p><div class="code-block" style="margin-top:12px">npx @reka/measure-test https://your-solution/internal/measure/v1</div></section>
     </div>`;
@@ -1512,9 +1528,10 @@
     if (!state.eventSim || !simById(state.eventSim)) state.eventSim = live[0] ? live[0].id : null;
     const es = simById(state.eventSim);
     return `<div class="scrim" data-act="studio-close"></div><aside class="studio" role="dialog" aria-label="Demo studio">
-      <div class="studio-head">${icon('flask')}<h2>Demo studio</h2><span class="mock-tag">MOCK ONLY</span><button type="button" class="icon-btn" data-act="studio-close" aria-label="Close">${icon('x')}</button></div>
+      <div class="studio-head">${icon('flask')}<h2>Demo studio</h2><span class="pill ai">${esc(state.sandboxName)}</span><button type="button" class="icon-btn" data-act="studio-close" aria-label="Close">${icon('x')}</button></div>
       <div class="studio-body">
-        <section class="studio-sec"><h3>${icon('live', 'sm')}Guided demo</h3><p class="help">Plays a new client from nothing to its first report, then adds three more. It starts a fresh workspace.</p><button type="button" class="btn primary" data-act="tour-start">Start the guided demo</button></section>
+        <section class="studio-sec"><h3>${icon('settings', 'sm')}This demo workspace</h3><div class="field"><label for="sb-name">Name</label><input id="sb-name" value="${esc(state.sandboxName)}"><span class="help">For example \u201cDemo for Harapan Foods\u201d before a sales call. Only REKA staff see it. It never sends anything to clients and is cleared after 90 days unless kept.</span></div></section>
+        <section class="studio-sec"><h3>${icon('live', 'sm')}Guided demo</h3><p class="help">Plays a new client from nothing to its first report, then measures, analytics and Ask. It clears this demo workspace first.</p><button type="button" class="btn primary" data-act="tour-start">Start the guided demo</button></section>
         <section class="studio-sec"><h3>${icon('plus', 'sm')}Simulate a new project</h3><p class="help">Creates the client, project and solution, with daily figures already flowing. Every name and number is invented.</p>
           <div class="field"><label for="sf-name">Client</label><input id="sf-name" value="${esc(f.name)}"></div>
           <div class="field"><label for="sf-project">Project</label><input id="sf-project" value="${esc(f.project)}"></div>
@@ -1530,7 +1547,7 @@
           <div class="chips"><button type="button" class="chip warn" data-ev="stale">Data stops arriving</button><button type="button" class="chip fault" data-ev="down">Stops answering</button><button type="button" class="chip" data-ev="spike">Volume spike</button><button type="button" class="chip" data-ev="quality">Quality drops</button><button type="button" class="chip" data-ev="manifest">New detail in data</button></div>
           <div class="chips"><button type="button" class="chip ok" data-ev="recover">Recover</button><button type="button" class="chip ok" data-ev="backfill">Recover and fill the gap</button></div>
           <p class="help">Status now: ${STATUS[simStatus(es)][1]}${es.ev.spike ? ' · volume spike on' : ''}${es.ev.quality ? ' · quality drop on' : ''}</p>` : '<p class="help">Create or connect a solution first.</p>'}</section>
-        <section class="studio-sec"><h3>${icon('x', 'sm')}Start over</h3><div class="head-actions"><button type="button" class="btn sm" data-act="reset-ws">Clear my workspace</button></div></section>
+        <section class="studio-sec"><h3>${icon('x', 'sm')}Start over</h3><div class="head-actions"><button type="button" class="btn sm" data-act="reset-ws">Clear this demo workspace</button></div><p class="help">Your real workspace is never touched.</p></section>
       </div></aside>`;
   }
   function createSimProject(f, quiet) {
@@ -1569,7 +1586,7 @@
   const T = state.tourCtx;
   const tsim = () => simById(T.simId);
   const TOUR = [
-    { t: 'Meet Outcomes', d: 'REKA builds AI solutions for clients. Outcomes shows each client what their solution changed. Let’s take a new client from nothing to their first report.', go() { resetWorkspace(true); go('home'); } },
+    { t: 'Meet Outcomes', d: 'REKA builds AI solutions for clients. Outcomes shows each client what their solution changed. Let’s take a new client from nothing to their first report.', go() { setWs('sandbox'); resetWorkspace(true); go('home'); } },
     { t: 'Add the client', d: 'Everything starts with the organisation and its signed data agreement. Nothing is collected until it’s signed.', mark: '#f-org', go() { state.draftOrg = 'Harapan Foods'; go('new-organisation'); } },
     { t: 'Client added', d: 'Harapan Foods is in. Next, the project REKA agreed with them.', go() { if (!T.orgId) { const o = newOrg('Harapan Foods', 'Food and beverage'); T.orgId = o.id; log('Added organisation Harapan Foods'); } go('org-' + T.orgId); } },
     { t: 'Create the project', d: 'Pick the kind of work: it steers which KPIs AI suggests. The outcome is written in the client’s own words.', mark: '#f-proj', go() { state.newKind = 'documents'; state.draftProj = 'Supplier invoices'; state.newProjOrg = T.orgId; go('new-project'); } },
@@ -1621,7 +1638,6 @@
     if (state.playing) { clearInterval(state.playing); state.playing = null; }
     state.orgs = []; state.sims = []; state.myApprovals = []; state.myAudit = []; state.simReports = {}; state.focusSim = null; state.simDay = START_DAY; state.wiz = freshWizard(); state.sf = null; state.eventSim = null;
     Object.keys(T).forEach((k) => delete T[k]);
-    state.mode = 'new';
     if (!forTour) state.tour = null;
   }
 
@@ -1654,7 +1670,7 @@
     if (page === 'solution' && (!demo() || !M.solutions[arg] || M.solutions[arg].status === 'not_connected')) { page = 'home'; raw = page; }
     if ((page === 'org' && (demo() || !state.orgs.some((o) => o.id === arg))) || (page === 'sim' && (demo() || !simById(arg)))) { page = demo() ? 'home' : 'organisations'; raw = page; }
     if (page === 'report' && arg && (demo() || !simById(arg))) { page = 'reports'; raw = page; }
-    if (page === 'connect' && demo()) { state.mode = 'new'; }
+    if (page === 'connect' && demo()) { setWs('real'); }
     if (!pages[page]) { page = 'home'; raw = 'home'; }
     if (state.playing && /^(new-|connect)/.test(page)) { clearInterval(state.playing); state.playing = null; }
     const root = $('#root');
@@ -1667,7 +1683,7 @@
   }
 
   // ------------------------------------------------------------------ events
-  const closePops = (except) => ['#new-pop', '#bell-pop', '#user-pop'].forEach((s) => { const p = $(s); if (p && s !== except) p.hidden = true; });
+  const closePops = (except) => ['#new-pop', '#bell-pop', '#user-pop', '#ws-pop'].forEach((s) => { const p = $(s); if (p && s !== except) p.hidden = true; });
   const toggle = (sel) => { const p = $(sel); closePops(sel); p.hidden = !p.hidden; };
   const readSf = () => { const f = state.sf; if (!f) return; ['name', 'project', 'vol', 'base'].forEach((k) => { const el = $('#sf-' + k); if (el) f[k] = el.type === 'number' ? +el.value : el.value; }); };
   const acts = {
@@ -1678,7 +1694,8 @@
     'new-menu': () => toggle('#new-pop'), bell: () => toggle('#bell-pop'), user: () => toggle('#user-pop'),
     palette: openPalette, 'close-palette': closePalette,
     signout: () => { state.signedIn = false; state.mode = null; state.setup.step = 1; state.tour = null; state.studio = false; location.hash = '#signin'; render(); },
-    'switch-mode': () => { state.mode = demo() ? 'new' : 'demo'; state.tour = null; state.studio = false; location.hash = '#home'; render(); toast(demo() ? 'Example workspace opened.' : 'Back to your workspace.'); },
+    'switch-mode': () => { setWs(demo() ? 'real' : 'example'); state.tour = null; location.hash = '#home'; render(); toast(demo() ? 'Example clients opened.' : 'Back to your workspace.'); },
+    'ws-menu': () => toggle('#ws-pop'),
     'w-next': wizardNext,
     'w-back': () => { state.wiz.step--; render(); },
     'copy-prompt': () => {
@@ -1693,11 +1710,11 @@
     'approve-sim-report': (d) => { const s = simById(d.sim), ym = lastFullMonth(); state.simReports[s.id + ym] = true; log(`Approved the ${monthName(ym)} report for ${orgOf(s).name}`); render(); toast('Report approved.', () => { delete state.simReports[s.id + ym]; render(); }); },
     'to-month-end': () => { const t = M.toDate(today()); const target = new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth() + 1, 1)).toISOString().slice(0, 10); advance(Math.round((M.toDate(target) - t) / 864e5)); render(); toast(`Moved to ${day(today())}.`); },
     'approve-report': () => { state.reportApproved = true; const a = state.approvals.find((x) => x.report); if (a) a.status = 'approved'; log('Approved the September report for Contoh Logistik'); render(); toast('Report approved.', () => { state.reportApproved = false; if (a) a.status = 'waiting'; auditList().shift(); render(); }); },
-    'send-report': () => toast('Email delivery comes in phase 2. The PDF is ready.'),
+    'send-report': () => toast(sandbox() ? 'Demo workspaces never send anything to clients.' : 'Email delivery comes in phase 2. The PDF is ready.'),
     'approve-narrative': () => { state.narrativeApproved = true; log('Approved the September summary for Contoh Logistik'); render(); toast('Summary approved.', () => { state.narrativeApproved = false; auditList().shift(); render(); }); },
     retry: () => toast('Retrying now.'),
     invite: () => toast('Invites come from your REKA account directory.'),
-    studio: () => { if (demo()) { state.mode = 'new'; location.hash = '#home'; } state.studio = !state.studio; render(); },
+    studio: () => { if (!sandbox()) { setWs('sandbox'); state.studio = true; location.hash = '#home'; render(); toast('Opened the demo workspace. Your real workspace is unchanged.'); return; } state.studio = !state.studio; render(); },
     'studio-close': () => { readSf(); state.studio = false; render(); },
     'sf-create': () => { readSf(); const s = createSimProject(state.sf); state.sf = null; state.eventSim = s.stage === 'collecting' ? s.id : state.eventSim; go(s.stage === 'draft' ? 'org-' + s.orgId : 'sim-' + s.id); },
     'sf-three': () => { addThree(); state.sf = null; go('home'); toast('Three projects added.'); },
@@ -1718,7 +1735,7 @@
     'ask-clear': () => { state.chat = []; render(); },
     'an-ask': () => { const m = mByKey(state.an.measure); askSubmit(`Which project improved most on ${m.name.toLowerCase()} this month?`); },
     export: () => toast('Exports download in the real product. The mock can\u2019t save files.'),
-    'tour-start': () => { if (demo()) state.mode = 'new'; tourGo(0); },
+    'tour-start': () => { tourGo(0); },
     'tour-next': () => { if (state.tour >= TOUR.length - 1) { state.tour = null; render(); toast('Demo finished. Demo studio is yours.'); return; } tourGo(state.tour + 1); },
     'tour-back': () => tourGo(state.tour - 1),
     'tour-end': () => { state.tour = null; render(); },
@@ -1751,7 +1768,8 @@
     if (d.sfappr) { readSf(); state.sf.approval = d.sfappr; render(); return; }
     if (d.adv) { readSf(); advance(+d.adv); render(); toast(`Moved to ${day(today())}.`); return; }
     if (d.ev) { const s = simById(($('#ev-sim') || {}).value || state.eventSim); if (!s) return; state.eventSim = s.id; applyEvent(s, d.ev); render(); toast(({ stale: 'Data stopped arriving.', down: 'Solution stopped answering.', spike: s.ev.spike ? 'Volume spike on.' : 'Volume spike off.', quality: s.ev.quality ? 'Quality drop on.' : 'Quality drop off.', manifest: 'New detail sent for approval.', recover: 'Recovered. The gap stays.', backfill: 'Recovered and filled in.' })[d.ev]); return; }
-    if (d.start) { if (d.start === 'tour') { state.mode = 'new'; tourGo(0); return; } state.mode = d.start; location.hash = '#home'; render(); toast(d.start === 'demo' ? 'Example workspace opened.' : 'Your workspace is ready.'); return; }
+    if (d.start) { if (d.start === 'tour') { tourGo(0); return; } setWs(d.start === 'demo' ? 'example' : 'real'); location.hash = '#home'; render(); toast(d.start === 'demo' ? 'Example clients opened.' : 'Your workspace is ready.'); return; }
+    if (d.ws) { const k = d.ws; closePops(); state.tour = null; setWs(k); location.hash = '#home'; render(); toast(k === 'sandbox' ? `${state.sandboxName} opened.` : k === 'example' ? 'Example clients opened.' : `${state.setup.workspace} opened.`); return; }
     if (d.role) { state.role = d.role; closePops(); render(); toast(`Now signed in as ${me().name}.`); return; }
     if (d.themeSet) {
       const v = d.themeSet;
@@ -1762,7 +1780,7 @@
     if (t.id === 'menu-btn') { $('#sidebar').classList.add('open'); $('#scrim').hidden = false; return; }
     if (d.act && acts[d.act]) { e.preventDefault(); acts[d.act](d); }
   });
-  document.addEventListener('change', (e) => { if (e.target.id === 'ev-sim') { state.eventSim = e.target.value; render(); } });
+  document.addEventListener('change', (e) => { if (e.target.id === 'ev-sim') { state.eventSim = e.target.value; render(); } if (e.target.id === 'sb-name') { state.sandboxName = e.target.value.trim() || 'Demo workspace'; render(); } });
   document.addEventListener('submit', (e) => {
     if (e.target.id === 'f-ws') { e.preventDefault(); state.setup.workspace = $('#ws-name').value.trim() || 'REKA Inisiatif'; state.setup.step = 2; render(); }
   });

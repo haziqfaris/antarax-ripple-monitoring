@@ -1,6 +1,6 @@
 # Performance Intelligence: product requirements
 
-**Version 0.3, draft, 15 Oct 2026.** 0.2 added first use and onboarding (§8.12, §12.3) and the light AntaraX look (§12.1). 0.3 records the owner's decision to keep that look (D13), and adds the measure library (§10.6), your own measures (§8.13), Ask (§8.14, §11.4), standard analytics (§8.15) and the demo studio (§8.16). Working name throughout. Owner: Muhammad Haziq Faris (Founder). Status: for review at the next design workshop.
+**Version 0.4, draft, 15 Oct 2026.** 0.2 added first use and onboarding (§8.12, §12.3) and the light AntaraX look (§12.1). 0.3 records the owner's decision to keep that look (D13), and adds the measure library (§10.6), your own measures (§8.13), Ask (§8.14, §11.4), standard analytics (§8.15) and the demo studio (§8.16). 0.4 records two more owner decisions: RM45 an hour for value of time freed (D15), and demo workspaces with Demo studio as a product feature in the MVP (D17, §8.16). Working name throughout. Owner: Muhammad Haziq Faris (Founder). Status: for review at the next design workshop.
 
 | | |
 |---|---|
@@ -452,17 +452,22 @@ Detailed in [§11](#11-ai-assistance-and-approval-gates).
 | FR-ANL-5 | Export the current view as CSV, named `outcomes-<measure>-<YYYY-MM-DD>.csv` | P2 |
 | FR-ANL-6 | Breakdowns by a solution's own dimensions (for example document type, reason) once approved | P2 |
 
-### 8.16 Demo studio and guided demo
+### 8.16 Demo workspaces and Demo studio
 
-For sales conversations, training new staff, and testing reports before a real client goes live.
+**A product feature (owner decision, 15 Oct 2026, D17).** REKA uses it to show prospects what they would get, to train new staff, and to rehearse a client's first report before go-live, using the client's own expected volumes and baseline. It runs on the same compute, measures, analytics, Ask and report code as real workspaces; only the source of the daily figures differs.
 
 | Id | Requirement | Priority |
 |---|---|---|
-| FR-DEMO-1 | A demo workspace, separate from real ones and marked "Demo" or "Example data" on every screen, never mixed into real totals, audit or reports | P2 |
-| FR-DEMO-2 | Simulate a new project: client, project, kind of work, daily volume, minutes by hand (or none), history (2 weeks to 4 months), and whether its KPIs are approved, waiting, or not yet connected | P2 |
-| FR-DEMO-3 | Move the simulated date forward (a day, a week, a month, or play a day a second); nightly collection, first data and monthly report drafts happen as they would for real | P2 |
-| FR-DEMO-4 | Cause events on a simulated solution: data stops, stops answering, recovers (with or without filling the gap), volume spike, quality drop, a new detail in its data | P2 |
-| FR-DEMO-5 | A guided demo that walks a new project from nothing to its first report, then measures, analytics and Ask, in about 20 steps | P2 |
+| FR-DEMO-1 | Demo workspaces are separate workspaces. Every screen carries a banner saying the clients and figures are simulated. Their data never reaches real totals, audit, reports, exports or Ask in a real workspace | MVP |
+| FR-DEMO-2 | Any staff member can open a demo workspace and name it (for example "Demo for Harapan Foods"). A switcher in the sidebar and profile menu moves between the real workspace, demo workspaces and the example clients | MVP |
+| FR-DEMO-3 | Demo studio simulates a new project: client, project, kind of work, daily volume, minutes by hand (or none), history (2 weeks to 4 months), and whether its KPIs are approved, waiting, or not yet connected | MVP |
+| FR-DEMO-4 | Move the simulated date forward (a day, a week, a month, or play a day a second). Nightly collection, first data, alerts and report drafts on the 1st happen exactly as they would for real | MVP |
+| FR-DEMO-5 | Cause events on a simulated solution: data stops, stops answering, recovers (with or without filling the gap), volume spike, quality drop, a new detail in its data | MVP |
+| FR-DEMO-6 | Demo workspaces never send anything: no e-mails, no report delivery, no calls to real solutions, no share links. Buttons that would send say so | MVP |
+| FR-DEMO-7 | Demo workspaces may not hold real client data. Simulated names come from an invented list; a typed name is allowed but flagged in audit | MVP |
+| FR-DEMO-8 | A demo workspace is cleared 90 days after its last use unless someone marks it to keep | MVP |
+| FR-DEMO-9 | The guided demo walks a new project from nothing to its first report, then measures, analytics and Ask, in about 20 steps. It runs only in a demo workspace and clears it first | P2 |
+| FR-DEMO-10 | "Rehearse a report": from a real project in planning, create a demo copy with its kind of work, expected volume and agreed baseline, to show the client what their monthly report will look like | P2 |
 
 ## 9 The measurement interface (Measurement Link)
 
@@ -656,7 +661,7 @@ The same definitions for every project, so projects and clients can be compared.
 | Operations | Needed a person to fix | Items sent back or corrected ÷ items handled | derived | Lower |
 | Operations | Straight-through rate | Items with no correction ÷ items handled | derived | Higher |
 | Business impact | Hours saved | Items × (minutes by hand − machine − review) ÷ 60, with a likely range | estimated | Higher |
-| Business impact | Value of time freed | Hours saved × the hourly staff cost agreed with the client (RM45 in the mock); an estimate, not cash saved | estimated | Higher |
+| Business impact | Value of time freed | Hours saved × RM45, the hourly staff cost used for every client (D15); an estimate, not cash saved, with the rate stated wherever it is shown | estimated | Higher |
 | Business impact | Faster than before | Turnaround now against turnaround before go-live | derived | Higher |
 | Commercial (REKA only) | Running cost per item | Running cost from AX Frame ÷ work handled | derived | Lower |
 
@@ -779,7 +784,7 @@ A new workspace must lead a person from sign-in to a measured project without re
 | Measures | a solution, Measures tab | The 13-measure library in five domains; add your own with a live preview; commercial gated |
 | Analytics | `#analytics` | Trend against the period before, by project, by weekday; fair-comparison guard |
 | Ask | `#ask` | Grounded answers with sources, inline charts and tables, honest refusals |
-| Demo studio | top bar, "Demo studio" | Simulate projects, move the date, cause problems; the 23-step guided demo |
+| Demo workspace and Demo studio | workspace switcher, then "Demo studio" | A separate simulated workspace with its banner; simulate projects, move the date, cause problems; the 23-step guided demo |
 
 ### 12.5 States
 
@@ -828,6 +833,7 @@ From AXLE §12 and brand kit 13: organisation, member, staff; Sign in; `RM1,200`
 - **Prompt injection.** As §11.3.
 - **Incident response.** A failed isolation test, a leaked credential or a commercial figure in a client output is a P1 incident, with the steps written in the operations guide.
 - **Two-person rule** (AXLE §4.2) for deleting an organisation's data and for authorising personal-data metrics.
+- **Demo workspaces** are their own workspaces in the data model, with the same isolation as any other. Their collector reads only the simulator, and every outbound channel (e-mail, report delivery, share links, embeds) is switched off for them in the service layer, not only hidden in the screen.
 
 ## 15 Architecture and stack
 
@@ -866,6 +872,10 @@ flowchart LR
 | L5 Intelligence and impact | Compute service (deterministic) and AI service (proposals, narratives) |
 | L6 Presentation and delivery | Console, report renderer, later embed and read-only API |
 
+### 15.1a The simulator
+
+Demo workspaces get their daily figures from a simulator instead of a Measurement Link. It is a collector source like any other: it writes observations in the same shape, through the same validator, so everything downstream (compute, measures, analytics, Ask, reports) is the code real clients use. Each kind of work has a profile (volume, weekend pattern, turnaround, time agreed, corrections, people, failure rate, improvement over time); events change the profile from a given day. A simulated clock per demo workspace drives nightly collection and month-end drafts.
+
 ### 15.2 Stack proposal
 
 Matching what AntaraX products already run (antarax-api 08):
@@ -900,6 +910,7 @@ Before anything ships, a pull request to `antarax-api/registry/registry.json` ad
 | Audit | 7 years | Append-only |
 | Collector run logs | 90 days | Daily totals |
 | AI prompts and outputs | 90 days, aggregate-only content | Deleted |
+| Demo workspaces | 90 days after last use, unless marked to keep | Deleted in full |
 
 All periods are proposals for the owner and legal review (D4 in the brief's list, here D5).
 
@@ -921,8 +932,8 @@ These appear on the Collection health page for staff.
 | Phase | Scope | Exit criteria |
 |---|---|---|
 | **0 Design and pilot selection** (1 to 2 weeks) | Pick two dissimilar REKA projects; interview process owners; record baseline availability; lock Measurement Link v1; data agreements drafted; decide D1 to D8 | Signed-off PRD, contract and pilot list |
-| **1 Internal MVP** | Registry; integration pack and contract tests; collector and validator; observations; KPI builder with approvals; compute; four dashboard levels; one PDF report; alerts for collection; audit; roles and rights | Brief §15, all of it (below) |
-| **2 Reliability and automation** | Backfill; AXLE Link adapter; AI KPI discovery improvements; baseline quality checks; anomaly alerts; scheduled report e-mail; Find; dashboard layout as configuration; third-party adapter | Six solutions live; freshness target held 60 days |
+| **1 Internal MVP** | Registry; integration pack and contract tests; collector and validator; observations; KPI builder with approvals; compute; four dashboard levels; measure library and your own measures; analytics; Ask; one PDF report; alerts for collection; audit; roles and rights; demo workspaces with Demo studio and the simulator | Brief §15, all of it (below) |
+| **2 Reliability and automation** | Guided demo; rehearse a report; backfill; AXLE Link adapter; AI KPI discovery improvements; baseline quality checks; anomaly alerts; scheduled report e-mail; Find; dashboard layout as configuration; third-party adapter | Six solutions live; freshness target held 60 days |
 | **3 Client experience** | Share links; read-only API and embed for client dashboards; organisation rollup refinements; report feedback; Bahasa Malaysia reports | Two clients reading the embed |
 | **4 AntaraX graduation** | Third-party adapters; tenant self-service; packaging; billing; quotas; integrations catalogue; support; brand sheet | Graduation rule met (brand kit 01) |
 
@@ -973,9 +984,9 @@ The brief's §16, extended with points this review raised. Each needs the owner.
 | D12 | **Roles**: map the brief's roles onto the AXLE ladder plus Measurement, Approve and Commercial rights (§4.2)? | Yes |
 | D13 | **Look** | **Decided 15 Oct 2026: keep the light AntaraX look for Outcomes** (§12.1) |
 | D14 | **AXLE standard**: should other staff consoles also be allowed the light look? | Raise against AXLE SPEC §3 and §17; Outcomes stays light either way |
-| D15 | **Value of time freed**: one hourly staff cost per client, agreed in writing, or none at all in client output? | Per client, agreed and shown as an estimate; hidden until agreed |
+| D15 | **Value of time freed** | **Decided 15 Oct 2026: RM45 an hour for every client**, always shown as an estimate with the rate stated |
 | D16 | **Ask**: model, logging and retention of questions; whether clients ever get Ask | Current Claude model with tool calls; 90-day log; staff only in the MVP |
-| D17 | **Demo studio** as a product feature for sales and training, or mock only? | Product feature in Phase 2, in its own demo workspace |
+| D17 | **Demo studio** | **Decided 15 Oct 2026: a product feature**, in separate demo workspaces, core in the MVP (§8.16) |
 
 ## 21 Appendices
 

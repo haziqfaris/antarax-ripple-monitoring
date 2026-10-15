@@ -2,7 +2,7 @@
 
 REKA's console for measuring what its client AI solutions actually deliver: whether each is healthy and used, how it performs, and what business outcome it produces against an agreed baseline. It starts inside REKA, supporting the Managed AI service's "we watch it, we improve it" promise, and is built so it can graduate to an AntaraX product later.
 
-> **Status:** product requirements draft 0.2 and a clickable product mock, 15 Oct 2026. Nothing is built yet. Every organisation, person and figure in the mock is invented.
+> **Status:** product requirements draft 0.4 and a clickable product mock, 15 Oct 2026. Nothing is built yet. Every organisation, person and figure in the mock is invented.
 
 ## What is here
 

@@ -485,3 +485,7 @@ details.more > div { margin-top: 10px; }
 .cite:hover { text-decoration: none; background: var(--primary-tint-2); }
 .an-controls { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; }
 @media (max-width: 900px) { .an-controls { grid-template-columns: minmax(0, 1fr); } }
+.ws-banner { display: flex; align-items: center; gap: 10px; padding-block: 8px; padding-left: max(24px, env(safe-area-inset-left, 0px)); padding-right: max(24px, env(safe-area-inset-right, 0px)); background: var(--ai-tint); color: var(--ink); font-size: .8125rem; border-bottom: 1px solid var(--line); }
+.ws-banner > span { flex: 1; min-width: 0; }
+.ws-banner .i { color: var(--ai); }
+@media (max-width: 640px) { .ws-banner .btn { display: none; } }
