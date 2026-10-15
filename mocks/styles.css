@@ -254,6 +254,8 @@ td .name { color: var(--ink); font-weight: 500; display: block; }
 td .sub { color: var(--muted); font-size: .75rem; }
 tbody tr.link { cursor: pointer; }
 tbody tr.link:hover td { background: var(--surface-2); }
+tbody tr.sel td { background: var(--primary-tint); }
+tbody tr.sel td:first-child { box-shadow: inset 3px 0 0 var(--primary); }
 
 /* tabs */
 .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); overflow-x: auto; }
@@ -489,3 +491,9 @@ details.more > div { margin-top: 10px; }
 .ws-banner > span { flex: 1; min-width: 0; }
 .ws-banner .i { color: var(--ai); }
 @media (max-width: 640px) { .ws-banner .btn { display: none; } }
+
+/* client list on phones: give the name room */
+@media (max-width: 600px) {
+  .client-table td:first-child { min-width: 180px; }
+  .client-table .avatar { display: none; }
+}

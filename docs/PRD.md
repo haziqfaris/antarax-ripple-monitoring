@@ -1,6 +1,6 @@
 # Performance Intelligence: product requirements
 
-**Version 0.4, draft, 15 Oct 2026.** 0.2 added first use and onboarding (§8.12, §12.3) and the light AntaraX look (§12.1). 0.3 records the owner's decision to keep that look (D13), and adds the measure library (§10.6), your own measures (§8.13), Ask (§8.14, §11.4), standard analytics (§8.15) and the demo studio (§8.16). 0.4 records two more owner decisions: RM45 an hour for value of time freed (D15), and demo workspaces with Demo studio as a product feature in the MVP (D17, §8.16). Working name throughout. Owner: Muhammad Haziq Faris (Founder). Status: for review at the next design workshop.
+**Version 0.5, draft, 15 Oct 2026.** 0.2 added first use and onboarding (§8.12, §12.3) and the light AntaraX look (§12.1). 0.3 records the owner's decision to keep that look (D13), and adds the measure library (§10.6), your own measures (§8.13), Ask (§8.14, §11.4), standard analytics (§8.15) and the demo studio (§8.16). 0.4 records two more owner decisions: RM45 an hour for value of time freed (D15), and demo workspaces with Demo studio as a product feature in the MVP (D17, §8.16). 0.5 organises the console by client: one client list, one client page template, and client → project → solution throughout (§8.6, §12.2, §12.4). Working name throughout. Owner: Muhammad Haziq Faris (Founder). Status: for review at the next design workshop.
 
 | | |
 |---|---|
@@ -338,10 +338,12 @@ Priority: **MVP** is Phase 1; **P2**, **P3**, **P4** are later phases (§18). Ea
 
 All four levels share one widget library and are configured, not coded (brief §2, §6 L6).
 
+**Organised by client.** REKA staff think in clients, so the console does too. Every screen follows one path: client (an organisation in the data model) → project → solution. On screen, organisations are called **clients**. The same client model and the same page template serve the real workspace, demo workspaces and the example workspace, so a client looks the same wherever it appears.
+
 | Id | Requirement | Priority |
 |---|---|---|
 | FR-DSH-1 | **Portfolio** (REKA): what needs a person; collection status; organisations at a glance (projects, solutions, KPI coverage, freshness, outcome trend, renewal); outcome trend; instrumentation gaps; commercial summary for those with the right | MVP |
-| FR-DSH-2 | **Organisation**: outcome KPIs across projects with deduplicated totals; period over period; executive narrative (AI draft, approved); projects list; what the client sees | MVP |
+| FR-DSH-2 | **Client page** (organisation): one template with tabs. **Overview**: what needs you for this client; hours saved, value of time freed, work handled and time agreed (or quality), each with change against the period before; hours saved by project, one line per project; executive narrative (AI draft, approved); projects table (solutions with status, hours saved, work handled, change, 12-week trend, report status); contract and agreement (REKA only). **Projects**: each project's outcome in the client's words and its solutions. **Reports**: each project's cadence and next report. **Activity**: audit entries for this client (REKA only). Totals are deduplicated across projects | MVP |
 | FR-DSH-3 | **Project**: objectives and the KPIs that answer them; contributing solutions; baseline comparison; exceptions; improvement backlog | MVP |
 | FR-DSH-4 | **Solution**: outcomes, usage, technical health, operational KPIs, metric catalog, collection diagnostics, trend detail | MVP |
 | FR-DSH-5 | Every figure shows its quality tag and its freshness on hover or tap: "Measured · from Document workflow · updated 14:00 MYT" | MVP |
@@ -349,6 +351,12 @@ All four levels share one widget library and are configured, not coded (brief §
 | FR-DSH-7 | **Audience preview**: on organisation and solution pages, staff can switch to "As the client sees it", which hides commercial figures, unapproved KPIs and internal notes | MVP |
 | FR-DSH-8 | Widget kinds in the MVP: figure tile, KPI card (current, baseline, target, quality), trend line (with baseline line and gaps), impact breakdown bar, status strip, attention list, table, freshness chip, narrative block | MVP |
 | FR-DSH-9 | Dashboard layout per solution is a saved configuration (JSON), proposed by AI or staff, approved like a KPI | P2 |
+| FR-DSH-10 | **Client list**: every client with its projects (a status dot per solution), hours saved and value, change, 12-week trend, next report, fee (commercial right only) and renewal. Headline figures: clients (live and getting started), clients that need you, hours saved and value across clients | MVP |
+| FR-DSH-11 | The client list filters by all, needs you, live, getting started; searches client and project names; sorts by needs you first (default; worst status next), most hours saved, biggest improvement, or A to Z. Filter, search and sort live in the address | MVP |
+| FR-DSH-12 | "Needs you" is worked out per client from the same rules as the home attention list (late or failing solutions, quality shifts, missing baselines, reports to review) plus approvals waiting for that client. One count everywhere: list, card and client page | MVP |
+| FR-DSH-13 | Home shows one card per client, those needing you first: hours saved (or work handled before a baseline) with a 12-week trend, and up to three projects with a status dot per solution | MVP |
+| FR-DSH-14 | The sidebar lists the three clients opened most recently, per workspace, and a link to all clients. Breadcrumbs read Clients › client › project › solution on every solution, connection and project page | MVP |
+| FR-DSH-15 | "Ask about this client" on the client page asks Ask about that client only (§8.14). Analytics can show all clients, one client or one solution, and compare by client or by solution (§8.15) | MVP |
 
 ### 8.7 AI assistance
 
@@ -432,11 +440,11 @@ Detailed in [§11](#11-ai-assistance-and-approval-gates).
 
 | Id | Requirement | Priority |
 |---|---|---|
-| FR-ASK-1 | A chat page where staff ask about their projects in plain words: values for a period, why a figure moved, which project is best or most improved, comparisons, trends, how a measure is worked out, and what needs attention | MVP |
+| FR-ASK-1 | A chat page where staff ask about their clients and projects in plain words: how a client is doing (hours saved, work handled, each project, what needs you), values for a period, why a figure moved, which project is best or most improved, comparisons, trends, how a measure is worked out, and what needs attention | MVP |
 | FR-ASK-2 | Every number in an answer comes from the compute service, never from the model. Answers name the projects and period they used, link to the source pages, and say how many days are missing | MVP |
 | FR-ASK-3 | "Why" answers list what moved at the same time and say plainly that this is not proof of cause | MVP |
 | FR-ASK-4 | When a question can't be answered from the collected figures, Ask says so and suggests questions it can answer | MVP |
-| FR-ASK-5 | Ask respects rights: no commercial figures without the Commercial right, only organisations the person can see | MVP |
+| FR-ASK-5 | Ask respects rights: no commercial figures without the Commercial right, only clients the person can see | MVP |
 | FR-ASK-6 | Ask can answer with a small chart or table inline, and suggests follow-up questions from the data | MVP |
 | FR-ASK-7 | Every question and answer is logged (who, when, which figures were read); kept 90 days | MVP |
 | FR-ASK-8 | "Ask about this" from Analytics and project pages opens Ask with the context filled in | P2 |
@@ -445,8 +453,8 @@ Detailed in [§11](#11-ai-assistance-and-approval-gates).
 
 | Id | Requirement | Priority |
 |---|---|---|
-| FR-ANL-1 | One Analytics page: pick any measure (standard or approved custom), one project or all, and a period (30 days, 90 days, 12 months) | MVP |
-| FR-ANL-2 | Standard views: headline with the period before, change and days with data; trend by day or week against the period before; by project with share bars and trends; by weekday | MVP |
+| FR-ANL-1 | One Analytics page: pick any measure (standard or approved custom), all clients, one client or one solution, and a period (30 days, 90 days, 12 months) | MVP |
+| FR-ANL-2 | Standard views: headline with the period before, change and days with data; trend by day or week against the period before; by client or by solution, with share bars and trends (click a row to focus on it); by weekday | MVP |
 | FR-ANL-3 | Combining projects follows the rollup rules (§10.4): sums for additive measures, rates and averages recomputed from combined totals, people never added across days | MVP |
 | FR-ANL-4 | Missing days are gaps in every view, and the days-with-data figure is always on screen | MVP |
 | FR-ANL-5 | Export the current view as CSV, named `outcomes-<measure>-<YYYY-MM-DD>.csv` | P2 |
@@ -742,15 +750,15 @@ Client output (report, later embed) uses the same light treatment, with the REKA
 
 | Item | Holds |
 |---|---|
-| **Home** | First use: the getting-started checklist. After that: what each client's solutions delivered, what needs you, projects, recent activity |
-| **Organisations** | Every client; under each, its projects and solutions. A solution has Overview and Measures tabs |
-| **Analytics** | Any measure over time, by project and by weekday, against the period before (§8.15) |
+| **Home** | First use: the getting-started checklist. After that: what each client's solutions delivered, what needs you, a card per client (needs you first), recent activity |
+| **Clients** | The client list (FR-DSH-10, 11). Under it in the sidebar, the three most recent clients. A client page has Overview, Projects, Reports and Activity tabs; a solution has Overview and Measures tabs |
+| **Analytics** | Any measure over time for all clients, one client or one solution; by client or by solution, and by weekday; against the period before (§8.15) |
 | **Ask** | Questions about the data in plain words (§8.14) |
 | **Approvals** | KPIs, baselines, mappings, client visibility and reports waiting for a second person. Counter is blue when one is yours |
 | **Reports** | Scheduled, drafted, approved and sent reports |
 | **Settings** | Team and rights, collection schedule, audit trail, integration pack |
 | **Help** | What measured, derived and estimated mean; never a false zero; support address |
-| **New** | Organisation, project, or connect a solution, from anywhere |
+| **New** | Client, project, or connect a solution, from anywhere |
 
 ### 12.3 First use
 
@@ -776,13 +784,14 @@ A new workspace must lead a person from sign-in to a measured project without re
 | Add organisation, create project | `#new-organisation`, `#new-project` | Plain forms; the data agreement gate |
 | Connect a solution | `#connect` | The full guided connection, with the baseline captured up front |
 | Your solution | `#sim-…` | Waiting states, then first figures computed from the baseline you typed |
-| Home, established | `#home` (example workspace) | Hours saved with range, what needs you, project cards |
-| Organisation | `#organisation-contoh-logistik` | Deduplicated totals explained; AI summary with approval; team view and client view; fees gated by right |
+| Home, established | `#home` (example workspace) | Hours saved with range, what needs you, client cards, needs you first |
+| Client list | `#organisations` | Every client on one screen; filter, search, sort; needs you counted per client; fees gated by right |
+| Client | `#organisation-contoh-logistik`, or a client in your own or a demo workspace | One template everywhere; tabs; hours saved by project; deduplicated totals explained; AI summary with approval; Ask about this client; team view and client view; fees gated by right |
 | Solution | `#solution-doc-workflow` | Where the time goes (measured vs estimated); usage, health, data and connection; late and not answering states |
 | Approvals | `#approvals` | Separation of duties; reason required; undo |
 | Client report | `#report` | The reviewed PDF: outcomes, evidence, caveats, next steps |
 | Measures | a solution, Measures tab | The 13-measure library in five domains; add your own with a live preview; commercial gated |
-| Analytics | `#analytics` | Trend against the period before, by project, by weekday; fair-comparison guard |
+| Analytics | `#analytics` | Trend against the period before, by client or solution, by weekday; scope to one client; fair-comparison guard |
 | Ask | `#ask` | Grounded answers with sources, inline charts and tables, honest refusals |
 | Demo workspace and Demo studio | workspace switcher, then "Demo studio" | A separate simulated workspace with its banner; simulate projects, move the date, cause problems; the 23-step guided demo |
 

@@ -440,7 +440,7 @@
   const rangeSeg = () => `<div class="seg" role="group" aria-label="Date range">${[[7, '7D'], [30, '30D'], [90, '90D'], [365, '12M']].map(([v, l]) => `<button type="button" data-range="${v}" aria-pressed="${state.range === v}" aria-label="${RANGES[v]}">${l}</button>`).join('')}</div>`;
   const gate = (ok, label, need, attrs = '', cls = 'btn primary') => ok ? `<button ${/type=/.test(attrs) ? '' : 'type="button"'} class="${cls}" ${attrs}>${label}</button>` : `<span class="head-actions"><button type="button" class="${cls}" disabled>${label}</button><span class="needs">${need}</span></span>`;
   const head = (o) => `<header class="page-head"><div style="min-width:0">${o.crumbs ? `<nav class="crumbs" aria-label="Breadcrumbs">${o.crumbs}</nav>` : ''}<h1>${o.title}</h1>${o.lead ? `<p class="lead">${o.lead}</p>` : ''}${o.meta ? `<div class="meta-line">${o.meta}</div>` : ''}</div><div class="head-actions">${o.actions || ''}</div></header>`;
-  const crumbs = (...parts) => parts.map((p, i) => i < parts.length - 1 ? `<a href="${p[1]}">${esc(p[0])}</a>${icon('chev', 'sm')}` : `<span>${esc(p[0])}</span>`).join('');
+  const crumbs = (...parts) => parts.map((p, i) => i < parts.length - 1 ? `${p[1] ? `<a href="${p[1]}">${esc(p[0])}</a>` : `<span>${esc(p[0])}</span>`}${icon('chev', 'sm')}` : `<span>${esc(p[0])}</span>`).join('');
   const kv = (rows, w = 130) => `<div class="list">${rows.map(([k, v]) => `<div class="row" style="grid-template-columns:${w}px minmax(0,1fr)"><span class="small muted">${k}</span><span class="small ink">${v}</span></div>`).join('')}</div>`;
   const emptyArt = '<div class="art" style="background-image:url(assets/spot-quiet.svg)"></div>';
   const gridFor = (n) => n >= 4 ? 'g4' : n === 3 ? 'g3' : 'g2';
@@ -490,7 +490,7 @@
     if (s.step === 1) return authShell(`${dots}<div><p class="xs muted">Step 1 of 3</p><h1>Welcome, Daniel</h1><p class="muted" style="margin-top:6px">Let’s set up your workspace. It takes about a minute.</p></div>
         <form id="f-ws" class="grid" style="gap:16px">
           <div class="field"><label for="ws-name">Workspace name</label><input id="ws-name" value="${esc(s.workspace)}" required><span class="help">Usually your company. Clients never see it.</span></div>
-          <div class="field"><label for="ws-tz">Reporting time zone</label><select id="ws-tz"><option>Asia/Kuala_Lumpur (MYT)</option><option>Asia/Singapore (SGT)</option><option>Asia/Jakarta (WIB)</option></select><span class="help">Each organisation can use its own.</span></div>
+          <div class="field"><label for="ws-tz">Reporting time zone</label><select id="ws-tz"><option>Asia/Kuala_Lumpur (MYT)</option><option>Asia/Singapore (SGT)</option><option>Asia/Jakarta (WIB)</option></select><span class="help">Each client can use its own.</span></div>
           <div class="callout info">${icon('shield')}<span>Data is kept in Singapore. Outcomes only collects totals, never client documents or personal data.</span></div>
           <button type="submit" class="btn lg primary block">Continue</button>
         </form>`);
@@ -510,10 +510,11 @@
   function navHtml(route) {
     const waiting = (demo() ? state.approvals : state.myApprovals).filter((a) => a.status === 'waiting').length;
     const reportsDue = demo() ? (state.reportApproved ? 0 : 1) : state.sims.filter((s) => simReportState(s).st === 'ready').length;
-    const items = [['home', 'Home', 'home'], ['organisations', 'Organisations', 'organisation'], ['analytics', 'Analytics', 'analytics'], ['ask', 'Ask', 'ask'], ['approvals', 'Approvals', 'shield', waiting, has('Approve')], ['reports', 'Reports', 'reports', reportsDue]];
+    const items = [['home', 'Home', 'home'], ['organisations', 'Clients', 'organisation'], ['analytics', 'Analytics', 'analytics'], ['ask', 'Ask', 'ask'], ['approvals', 'Approvals', 'shield', waiting, has('Approve')], ['reports', 'Reports', 'reports', reportsDue]];
     const isCur = (k) => route === k || (k === 'organisations' && /^(new-organisation|new-project|connect)$/.test(route)) || (k === 'reports' && /^report/.test(route));
-    const sub = (href, label) => `<a class="sub" href="#${href}" ${route === href ? 'aria-current="page"' : ''}>${esc(label)}</a>`;
-    const subs = demo() ? sub('organisation-contoh-logistik', 'Contoh Logistik') + sub('solution-doc-workflow', 'Document workflow') : state.orgs.slice(0, 5).map((o) => sub('org-' + o.id, o.name)).join('') + (state.orgs.length > 5 ? `<a class="sub" href="#organisations">${state.orgs.length - 5} more</a>` : '');
+    const rec = recentClients(), all = companies(), fill = all.filter((c) => !rec.some((r) => r.id === c.id)).slice(0, Math.max(0, 3 - rec.length)).map((c) => ({ id: c.id, name: c.short, href: c.href.slice(1) }));
+    const shown = rec.concat(fill), cur = (r) => route === r.href || routeClient(route) === r.id;
+    const subs = shown.map((r) => `<a class="sub" href="#${r.href}" ${cur(r) ? 'aria-current="page"' : ''}>${esc(r.name)}</a>`).join('') + (all.length > shown.length ? `<a class="sub" href="#organisations">All ${all.length} clients</a>` : '');
     return items.map(([k, l, ic, c, loud], i) => `<a href="#${k}" ${isCur(k) ? 'aria-current="page"' : ''}>${icon(ic)}<span>${l}</span>${c ? `<span class="count ${loud ? 'loud' : ''}" aria-label="${c} waiting">${c}</span>` : ''}</a>${i === 1 ? subs : ''}`).join('')
       + `<span class="grp">Workspace</span><a href="#settings" ${route === 'settings' ? 'aria-current="page"' : ''}>${icon('settings')}<span>Settings</span></a><a href="#guide" ${route === 'guide' ? 'aria-current="page"' : ''}>${icon('insight')}<span>Help</span></a>`;
   }
@@ -562,7 +563,7 @@
       <div class="main">
         <header class="topbar">
           <button type="button" class="icon-btn menu-btn" id="menu-btn" aria-label="Open navigation" aria-controls="sidebar">${icon('menu')}</button>
-          <button type="button" class="search" data-act="palette">${icon('search', 'sm')}<span class="t">Search organisations, solutions, pages</span><kbd>⌘K</kbd></button>
+          <button type="button" class="search" data-act="palette">${icon('search', 'sm')}<span class="t">Search clients, projects, solutions</span><kbd>⌘K</kbd></button>
           <div class="top-right">
             <a class="btn sm ghost" href="#ask" style="gap:6px"><img src="${SPARK}" alt="" style="width:16px">Ask</a>
             ${demo() ? '<span class="pill warn" title="Every figure is invented">Example data</span>' : sandbox() ? `<button type="button" class="studio-btn" data-act="studio" aria-expanded="${state.studio}">${icon('flask', 'sm')}<span class="lbl">Demo studio</span><span class="date">${dayShort(today())}</span></button>` : ''}
@@ -620,7 +621,7 @@
           <div class="card"><h3>Want to see it working first?</h3><p class="small muted" style="margin:6px 0 12px">Watch a new project go from nothing to its first report, or open a workspace with five example clients.</p><div class="head-actions"><button type="button" class="btn primary sm" data-act="tour-start">Watch the guided demo</button><button type="button" class="btn sm" data-act="switch-mode">Example workspace</button></div></div>
         </div>
       </section>
-      ${state.orgs.length ? `<section class="card"><div class="card-head"><h2>Your organisations</h2></div>${myOrgTable()}</section>` : ''}`;
+      ${state.orgs.length ? clientGrid(aWindow(state.range)) : ''}`;
     }
     const days = simWindow(state.range), withBase = collecting.filter(hasBase);
     const tot = withBase.reduce((a, s) => { const r = simSum(s, days); return { mid: a.mid + r.mid, low: a.low + r.low, high: a.high + r.high }; }, { mid: 0, low: 0, high: 0 });
@@ -642,40 +643,13 @@
       <div class="card"><div class="card-head"><h2>Needs you</h2><span class="pill idle">${att.length}</span></div>
         ${att.length ? `<div class="list">${att.slice(0, 6).map(([sev, ic, t, m, h, a]) => `<div class="row"><span class="ico ${sev}">${icon(ic, 'sm')}</span><div><div class="what">${esc(t)}</div><div class="meta">${esc(m)}</div></div><a class="btn sm" href="${h}">${a}</a></div>`).join('')}</div>` : `<div class="empty" style="padding:16px"><p>Nothing needs you. Every solution sent its figures on time.</p></div>`}</div>
     </section>
-    <section class="grid" style="gap:12px"><div class="card-head" style="margin:0"><h2>Projects</h2><a class="btn sm ghost" href="#organisations">All organisations${icon('chev', 'sm')}</a></div>
-      <div class="grid g3">${state.sims.map((s) => simCard(s, days)).join('')}
-        <a class="card proj" href="#new-project" style="border-style:dashed;place-content:center;justify-items:center;text-align:center;min-height:200px;box-shadow:none"><span class="ico info" style="width:44px;height:44px;border-radius:12px;display:grid;place-items:center">${icon('plus')}</span><b class="ink">Add a project</b><span class="small muted">Or simulate one in Demo studio</span></a></div></section>
+    ${clientGrid(aWindow(state.range))}
     <section class="card"><div class="card-head"><h2>Recent activity</h2><a class="btn sm ghost" href="#settings">Audit trail${icon('chev', 'sm')}</a></div>${activityList(6)}</section>`;
   }
   function activityList(n) {
     const list = auditList().slice(0, n);
     if (!list.length) return '<p class="small muted">Nothing yet.</p>';
     return `<div class="list">${list.map(([t, w, what]) => `<div class="row"><span class="avatar">${w === 'Collector' ? icon('live', 'sm') : w === 'AI proposals' ? `<img src="${SPARK}" alt="" style="width:16px">` : initials(w.split(' · ')[0])}</span><div class="small"><b class="ink">${esc(w.split(' · ')[0])}</b> ${esc(what)}</div><span class="xs muted mono">${esc(t.replace(' 2026,', ''))}</span></div>`).join('')}</div>`;
-  }
-  function simCard(s, days) {
-    const o = orgOf(s), st = simStatus(s);
-    let fig, spark = '';
-    if (s.stage === 'collecting' && hasBase(s)) {
-      const r = simSum(s, days);
-      fig = `<div class="stat"><span class="label">Hours saved ${q('estimated')}</span><span class="value ${st !== 'fresh' ? 'stale-val' : ''}" style="font-size:1.5rem">${nf(r.mid)}<small>h</small></span></div>`;
-      spark = sparkline(bucket(simDaily(s, simWindow(Math.min(state.range, 90))), state.range > 30).map((p) => (p.gap || p.before) ? null : p.mid));
-    } else if (s.stage === 'collecting') {
-      const r = simSum(s, days);
-      fig = `<div class="stat"><span class="label">${cap(kindOf(s).nouns)} handled</span><span class="value" style="font-size:1.5rem">${nf(r.vol)}</span><span class="hint">Hours saved needs a baseline</span></div>`;
-      spark = sparkline(bucket(simDaily(s, simWindow(Math.min(state.range, 90))), state.range > 30).map((p) => (p.gap || p.before) ? null : p.v));
-    } else fig = `<div class="stat"><span class="label">Hours saved</span><span class="value" style="font-size:1.5rem">${dash()}</span><span class="hint">${({ draft: 'Not connected yet', review: 'KPIs waiting for approval', approved: 'First data tonight' })[s.stage]}</span></div>`;
-    const live = s.stage === 'collecting' ? s.kpis.filter((k) => k !== 'impact' || hasBase(s)).length : 0;
-    return `<a class="card proj" href="#${s.stage === 'draft' ? 'connect-' + s.id : 'sim-' + s.id}">
-      <div class="top"><div><div class="org">${esc(o.name)}</div><h3>${esc(s.project.name)}</h3></div>${statusPill(st)}</div>
-      <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px">${fig}${spark}</div>
-      <div><div class="xs muted" style="display:flex;justify-content:space-between;margin-bottom:6px"><span>KPIs live</span><span class="mono">${live} of ${s.kpis.length || '–'}</span></div><div class="bar-track"><div class="bar-fill" style="width:${s.kpis.length ? 100 * live / s.kpis.length : 0}%"></div></div></div></a>`;
-  }
-  function myOrgTable() {
-    return `<div class="table-wrap"><table><thead><tr><th>Organisation</th><th>Projects</th><th>Data</th><th>Hours saved, ${rangeLabel().toLowerCase()}</th></tr></thead><tbody>${state.orgs.map((o) => {
-      const sims = simsOf(o), worst = ['failing', 'stale', 'review', 'approved', 'not_connected', 'fresh'].find((st) => sims.some((s) => simStatus(s) === st));
-      const hs = sims.filter((s) => s.stage === 'collecting' && hasBase(s));
-      return `<tr class="link" data-go="org-${o.id}" tabindex="0"><td><div style="display:flex;gap:10px;align-items:center"><span class="avatar" style="border-radius:10px">${initials(o.name)}</span><div><span class="name">${esc(o.name)}</span><span class="sub">${esc(o.industry)}</span></div></div></td><td>${sims.length ? sims.map((s) => esc(s.project.name)).join(', ') : '<span class="muted">None yet</span>'}</td><td>${worst ? statusPill(worst) : '<span class="muted">–</span>'}</td><td>${hs.length ? `<span class="mono ink">${nf(hs.reduce((a, s) => a + simSum(s, simWindow(state.range)).mid, 0))} h</span> ${q('estimated')}` : dash()}</td></tr>`;
-    }).join('')}</tbody></table></div>`;
   }
   pages.home.after = () => {
     if (demo()) {
@@ -705,7 +679,6 @@
     const waiting = state.approvals.filter((a) => a.status === 'waiting').length;
     const change = prev.mid > 0 && state.range < 90 ? Math.round(100 * (imp.mid - prev.mid) / prev.mid) : null;
     const att = demoAtt();
-    const projects = [['contoh-logistik', 'doc-workflow'], ['acme-plastics', 'shift-planner'], ['bina-jaya', 'quote-drafter'], ['sampel-medik', 'enquiry-triage'], ['teladan-properties', 'lease-reader']];
     return `
     ${head({ title: `Good morning, ${me().name.split(' ')[0]}`, lead: 'Here’s what your clients’ solutions delivered, and what needs you.', actions: rangeSeg() })}
     <section class="grid g4 stats">
@@ -720,43 +693,212 @@
       <div class="card"><div class="card-head"><h2>Needs you</h2><span class="pill idle">${att.length}</span></div>
         <div class="list">${att.map(([sev, ic, t, m, h, a]) => `<div class="row"><span class="ico ${sev}">${icon(ic, 'sm')}</span><div><div class="what">${esc(t)}</div><div class="meta">${esc(m)}</div></div><a class="btn sm" href="${h}">${a}</a></div>`).join('')}</div></div>
     </section>
-    <section class="grid" style="gap:12px"><div class="card-head" style="margin:0"><h2>Projects</h2><a class="btn sm ghost" href="#organisations">All organisations${icon('chev', 'sm')}</a></div>
-      <div class="grid g3">${projects.map(([o, s]) => projCard(o, s, days)).join('')}
-        <a class="card proj" href="#connect" style="border-style:dashed;place-content:center;justify-items:center;text-align:center;min-height:200px;box-shadow:none"><span class="ico info" style="width:44px;height:44px;border-radius:12px;display:grid;place-items:center">${icon('plus')}</span><b class="ink">Connect another solution</b><span class="small muted">About a day of developer time</span></a></div></section>
+    ${clientGrid(windowDays(state.range))}
     <section class="card"><div class="card-head"><h2>Recent activity</h2><a class="btn sm ghost" href="#settings">Audit trail${icon('chev', 'sm')}</a></div>${activityList(5)}</section>`;
   }
-  function projCard(oid, sid, days) {
-    const o = orgById(oid), s = M.solutions[sid], st = solStatus(sid);
-    let fig, spark = '';
-    if (M.impact[sid]) {
-      const r = impactSum(sid, days);
-      fig = `<div class="stat"><span class="label">Hours saved ${q('estimated')}</span><span class="value ${st !== 'fresh' ? 'stale-val' : ''}" style="font-size:1.5rem">${nf(r.mid)}<small>h</small></span></div>`;
-      spark = sparkline(bucket(impactDaily(sid, windowDays(Math.min(state.range, 90))), state.range > 30).map((p) => (p.gap || p.before) ? null : p.mid));
-    } else fig = `<div class="stat"><span class="label">Hours saved</span><span class="value" style="font-size:1.5rem">${dash()}</span><span class="hint">${sid === 'enquiry-triage' ? 'Needs a baseline' : 'Not connected yet'}</span></div>`;
-    const k = s.kpis;
-    return `<a class="card proj" href="#${sid === 'lease-reader' ? 'organisation-teladan-properties' : 'solution-' + sid}">
-      <div class="top"><div><div class="org">${esc(o.short)}</div><h3>${esc(o.projects[0].name)}</h3></div>${statusPill(st)}</div>
+  // ------------------------------------------------------------------ CLIENTS: one model for every workspace (client → project → solution)
+  const EX_INDUSTRY = { 'contoh-logistik': 'Logistics', 'acme-plastics': 'Manufacturing', 'sampel-medik': 'Healthcare', 'bina-jaya': 'Engineering and construction', 'teladan-properties': 'Property and real estate' };
+  const EX_REPORT = { 'contoh-logistik': () => state.reportApproved ? ['ok', 'September approved', '#report'] : ['warn', 'September ready to review', '#report'], 'acme-plastics': () => ['ok', 'September sent 3 Oct', null], 'bina-jaya': () => ['ok', 'Q3 sent 7 Oct', null], 'sampel-medik': () => ['idle', 'Drafts 1 Nov', null], 'teladan-properties': () => ['idle', 'Not scheduled', null] };
+  const STATUS_ORDER = ['failing', 'stale', 'review', 'approved', 'not_connected', 'fresh', 'collecting'];
+  const worstOf = (list) => STATUS_ORDER.find((st) => list.includes(st)) || 'not_connected';
+  function companies() {
+    if (demo()) {
+      const dp = demoProjects();
+      return M.orgs.map((o) => ({ id: o.id, name: o.name, short: o.short, industry: EX_INDUSTRY[o.id], stage: o.stage, href: '#organisation-' + o.id, signed: true, agreement: o.agreement, renewal: o.renewal, renewalRisk: o.renewalRisk, contract: o.contract, runCost: o.runCost, contact: 'Client contact on file', example: true,
+        projects: o.projects.map((p) => ({ id: p.id, name: p.name, objective: p.objective, kind: M.solutions[p.solutions[0]].kind, cadence: 'Monthly', report: EX_REPORT[o.id](),
+          solutions: p.solutions.map((sid) => { const s = M.solutions[sid]; return { id: sid, name: s.name, status: solStatus(sid), href: s.status === 'not_connected' ? null : '#solution-' + sid, proj: dp.find((x) => x.id === sid) || null, kpis: [s.kpis.approved, s.kpis.total] }; }) })) }));
+    }
+    return state.orgs.map((o) => {
+      const sims = simsOf(o);
+      const projects = sims.map((s) => { const r = simReportState(s); return { id: s.id, name: s.project.name, objective: s.project.objective, kind: kindOf(s).label, cadence: s.project.cadence, sim: s,
+        report: r.st === 'ready' ? ['warn', `${monthName(r.ym)} ready to review`, '#report-' + s.id] : r.st === 'approved' ? ['ok', `${monthName(r.ym)} approved`, '#report-' + s.id] : r.st === 'waiting' ? ['info', `First draft ${nextMonthStart()}`, null] : ['idle', s.stage === 'collecting' ? 'Not scheduled' : 'Waiting for data', null],
+        solutions: [{ id: s.id, name: s.name, status: simStatus(s), href: s.stage === 'draft' ? '#connect-' + s.id : '#sim-' + s.id, proj: s.stage === 'collecting' ? projOfSim(s) : null, kpis: [s.stage === 'collecting' ? s.kpis.filter((k) => k !== 'impact' || hasBase(s)).length : 0, s.kpis.length] }] }; });
+      const stage = sims.some((s) => s.stage === 'collecting') ? 'live' : sims.some((s) => s.stage !== 'draft') ? 'onboarding' : 'planning';
+      return { id: o.id, name: o.name, short: o.name, industry: o.industry, stage, href: '#org-' + o.id, signed: o.signed, agreement: o.signed ? 'Signed' : 'Not signed', renewal: '–', renewalRisk: '–', contract: null, runCost: null, contact: 'Farah Idris · farah@client.example', projects };
+    });
+  }
+  const coById = (id) => companies().find((c) => c.id === id);
+  const coSolutions = (c) => c.projects.flatMap((p) => p.solutions);
+  const coProjs = (c) => coSolutions(c).filter((s) => s.proj).map((s) => s.proj);
+  const coTotals = (c, days) => mergeTotals(coProjs(c).map((p) => totals(p, days)));
+  const coStatus = (c) => worstOf(coSolutions(c).map((s) => s.status));
+  function coNeeds(c) {
+    const names = [c.name, c.short].concat(c.projects.map((p) => p.name), coSolutions(c).map((s) => s.name));
+    const list = (demo() ? demoAtt() : needsYou()).filter((x) => names.some((n) => (x[2] + ' ' + x[3]).includes(n)));
+    const ids = coSolutions(c).map((s) => s.id);
+    const waiting = (demo() ? state.approvals.filter((a) => a.org === c.id) : state.myApprovals.filter((a) => ids.includes(a.simId) || ids.includes(a.projId))).filter((a) => a.status === 'waiting').length;
+    if (waiting && !list.some((x) => /approval/.test(x[2]))) list.push(['warn', 'shield', `${waiting} item${waiting === 1 ? '' : 's'} waiting for approval`, c.short, '#approvals', 'Review']);
+    return list;
+  }
+  const chgPct = (v, pv) => v === null || pv === null || pv === undefined || !pv ? null : 100 * (v - pv) / Math.abs(pv);
+  const chgHtml = (c, better = 'up') => c === null ? '<span class="muted">–</span>' : Math.abs(c) < 0.5 ? '<span class="mono muted">0%</span>' : `<span class="mono" style="color:var(--${Math.abs(c) < 1 ? 'muted' : (better === 'up' ? c >= 0 : c <= 0) ? 'ok-ink' : 'fault-ink'})">${c >= 0 ? '+' : '−'}${nf(Math.abs(c), 0)}%</span>`;
+  function rememberClient(c) {
+    const key = demo() ? 'example' : state.ws;
+    state.recent = state.recent || {};
+    const r = (state.recent[key] || []).filter((x) => x.id !== c.id);
+    r.unshift({ id: c.id, name: c.short, href: c.href.slice(1) });
+    state.recent[key] = r.slice(0, 3);
+  }
+  function routeClient(route) {
+    const [pg, arg] = route.split(/-(.+)/);
+    if (pg === 'sim' || pg === 'connect') { const s = simById(arg); return s ? s.orgId : null; }
+    if (pg === 'solution') return M.solutions[arg] ? M.solutions[arg].org : null;
+    return null;
+  }
+  const recentClients = () => { const key = demo() ? 'example' : state.ws; return ((state.recent || {})[key] || []).filter((x) => coById(x.id)); };
+
+  function clientCard(c, days) {
+    const t = coTotals(c, days), hm = mByKey('hours'), hv = hm.calc(t), st = coStatus(c), needs = coNeeds(c).length;
+    const wk = weeksOf(aWindow(84)), ps = coProjs(c);
+    const spark = ps.length ? sparkline(wk.map((w) => { const tt = mergeTotals(ps.map((p) => totals(p, w))); return hv !== null ? hm.calc(tt) : (tt.n ? tt.vol : null); })) : '';
+    const fig = hv !== null ? `<div class="stat"><span class="label">Hours saved ${q('estimated')}</span><span class="value ${st === 'stale' || st === 'failing' ? 'stale-val' : ''}" style="font-size:1.5rem">${nf(hv)}<small>h</small></span></div>`
+      : t.n ? `<div class="stat"><span class="label">Work handled</span><span class="value" style="font-size:1.5rem">${nf(t.vol)}</span><span class="hint">Hours saved needs a baseline</span></div>`
+      : `<div class="stat"><span class="label">Hours saved</span><span class="value" style="font-size:1.5rem">${dash()}</span><span class="hint">${c.projects.length ? 'No figures yet' : 'No projects yet'}</span></div>`;
+    return `<a class="card proj" href="${c.href}">
+      <div class="top"><div style="display:flex;gap:10px;align-items:center;min-width:0"><span class="avatar" style="border-radius:10px">${initials(c.short)}</span><div style="min-width:0"><h3>${esc(c.short)}</h3><div class="org">${esc(c.industry)} · ${c.projects.length} project${c.projects.length === 1 ? '' : 's'}</div></div></div>${needs ? `<span class="pill warn"><span class="dot"></span>${needs} need${needs === 1 ? 's' : ''} you</span>` : statusPill(st)}</div>
       <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px">${fig}${spark}</div>
-      <div><div class="xs muted" style="display:flex;justify-content:space-between;margin-bottom:6px"><span>KPIs live</span><span class="mono">${k.approved} of ${k.total || '–'}</span></div><div class="bar-track"><div class="bar-fill" style="width:${k.total ? 100 * k.approved / k.total : 0}%"></div></div></div></a>`;
+      <div class="list">${c.projects.slice(0, 3).map((p) => `<div class="row" style="grid-template-columns:minmax(0,1fr) auto;padding:7px 0"><span class="small ink" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.name)}</span><span class="xs" style="display:flex;gap:4px">${p.solutions.map((s) => `<span class="dot" title="${esc(s.name)}: ${STATUS[s.status][1]}" style="color:var(--${STATUS[s.status][0] === 'idle' ? 'faint' : STATUS[s.status][0] === 'info' ? 'primary' : STATUS[s.status][0]})"></span>`).join('')}</span></div>`).join('')}${c.projects.length > 3 ? `<div class="xs muted" style="padding-top:6px">and ${c.projects.length - 3} more</div>` : ''}</div>
+    </a>`;
   }
 
-  // ------------------------------------------------------------------ ORGANISATIONS
+  function clientGrid(days) {
+    const all = companies(), ex = demo();
+    const list = all.map((c) => ({ c, n: coNeeds(c).length, st: STATUS_ORDER.indexOf(coStatus(c)) })).sort((a, b) => (Math.sign(b.n) - Math.sign(a.n)) || (a.st - b.st)).map((x) => x.c);
+    const add = ex ? `<a class="card proj" href="#connect" style="border-style:dashed;place-content:center;justify-items:center;text-align:center;min-height:200px;box-shadow:none"><span class="ico info" style="width:44px;height:44px;border-radius:12px;display:grid;place-items:center">${icon('plus')}</span><b class="ink">Connect another solution</b><span class="small muted">About a day of developer time</span></a>`
+      : `<a class="card proj" href="#new-organisation" style="border-style:dashed;place-content:center;justify-items:center;text-align:center;min-height:200px;box-shadow:none"><span class="ico info" style="width:44px;height:44px;border-radius:12px;display:grid;place-items:center">${icon('plus')}</span><b class="ink">Add a client</b><span class="small muted">Or simulate one in Demo studio</span></a>`;
+    return `<section class="grid" style="gap:12px"><div class="card-head" style="margin:0"><div><h2>Clients</h2><p class="sub">${all.length} client${all.length === 1 ? '' : 's'} · ${all.reduce((a, c) => a + c.projects.length, 0)} projects · those needing you first</p></div><a class="btn sm ghost" href="#organisations">All clients${icon('chev', 'sm')}</a></div>
+      <div class="grid g3">${list.map((c) => clientCard(c, days)).join('')}${add}</div></section>`;
+  }
+
+  // ---------- the client list
   pages.organisations = () => {
-    if (!demo()) return `${head({ title: 'Organisations', lead: 'The clients whose solutions you measure.', actions: `${state.orgs.length ? rangeSeg() : ''}<a class="btn primary" href="#new-organisation">${icon('plus', 'sm')}Add organisation</a>` })}
-      ${state.orgs.length ? `<section class="card">${myOrgTable()}</section>` : `<section class="card"><div class="empty">${emptyArt}<h3>No organisations yet</h3><p>Start with the client. You record their data agreement here, because nothing is collected until it is signed.</p><div class="head-actions" style="justify-content:center"><a class="btn primary" href="#new-organisation">${icon('plus', 'sm')}Add organisation</a><button type="button" class="btn" data-act="studio">Simulate one</button></div></div></section>`}`;
-    const days = windowDays(state.range);
-    return `${head({ title: 'Organisations', lead: 'Every client, their projects and how their solutions are doing.', actions: `${rangeSeg()}<a class="btn primary" href="#new-organisation">${icon('plus', 'sm')}Add organisation</a>` })}
-    <section class="card"><div class="table-wrap"><table><thead><tr><th>Organisation</th><th>Stage</th><th>Data</th><th>KPIs live</th><th>Hours saved, ${rangeLabel().toLowerCase()}</th>${has('Commercial') ? '<th>Monthly fee</th>' : ''}<th>Renewal</th></tr></thead><tbody>
-    ${M.orgs.map((o) => { const sols = o.projects.flatMap((p) => p.solutions), worst = ['failing', 'stale', 'not_connected', 'fresh'].find((st) => sols.some((s) => solStatus(s) === st)), k = sols.reduce((a, s) => [a[0] + M.solutions[s].kpis.approved, a[1] + M.solutions[s].kpis.total], [0, 0]), rolled = sols.filter((s) => ROLLED.includes(s)), hs = rolled.length ? rolled.reduce((a, s) => a + impactSum(s, days).mid, 0) : null;
-      return `<tr class="link" data-go="organisation-${o.id}" tabindex="0"><td><div style="display:flex;gap:10px;align-items:center"><span class="avatar" style="border-radius:10px">${initials(o.short)}</span><div><span class="name">${esc(o.name)}</span><span class="sub">${esc(o.projects[0].name)}</span></div></div></td><td><span class="pill ${o.stage === 'live' ? 'info' : 'idle'}">${cap(o.stage)}</span></td><td>${statusPill(worst)}</td><td class="mono">${k[0]} of ${k[1] || '–'}</td><td>${hs !== null ? `<span class="mono ink">${nf(hs)} h</span> ${q('estimated')}` : dash(o.stage === 'planning' ? 'Not connected' : 'Needs a baseline')}</td>${has('Commercial') ? `<td class="mono">${money(o.contract.amount, o.contract.currency)}</td>` : ''}<td class="mono">${o.renewal}</td></tr>`; }).join('')}
+    const all = companies();
+    const lead = 'Every client, how their solutions are doing, and what each needs from you.';
+    if (!all.length) return `${head({ title: 'Clients', lead, actions: `<a class="btn primary" href="#new-organisation">${icon('plus', 'sm')}Add client</a>` })}<section class="card"><div class="empty">${emptyArt}<h3>No clients yet</h3><p>Start with the client. You record their data agreement here, because nothing is collected until it is signed.</p><div class="head-actions" style="justify-content:center"><a class="btn primary" href="#new-organisation">${icon('plus', 'sm')}Add client</a><button type="button" class="btn" data-act="studio">Try a demo workspace</button></div></div></section>`;
+    const f = state.cf = state.cf || { show: 'all', sort: 'needs', q: '' };
+    const days = aWindow(state.range), prevDays = windowDays(state.range, M.addDays(days[0], -1)), hm = mByKey('hours'), vm = mByKey('value');
+    let rows = all.map((c) => { const t = coTotals(c, days), tp = coTotals(c, prevDays); return { c, t, h: hm.calc(t), hc: comparable(t, tp) ? chgPct(hm.calc(t), hm.calc(tp)) : null, v: vm.calc(t), needs: coNeeds(c).length, st: coStatus(c) }; });
+    const counts = { live: rows.filter((r) => r.c.stage === 'live').length, needs: rows.filter((r) => r.needs).length };
+    const totH = mergeTotals(rows.map((r) => r.t));
+    if (f.show === 'needs') rows = rows.filter((r) => r.needs);
+    else if (f.show !== 'all') rows = rows.filter((r) => (f.show === 'early' ? ['pilot', 'onboarding', 'planning'] : [f.show]).includes(r.c.stage));
+    if (f.q) rows = rows.filter((r) => (r.c.name + ' ' + r.c.industry + ' ' + r.c.projects.map((p) => p.name).join(' ')).toLowerCase().includes(f.q.toLowerCase()));
+    const sorters = { needs: (a, b) => (b.needs - a.needs) || (STATUS_ORDER.indexOf(a.st) - STATUS_ORDER.indexOf(b.st)) || ((b.h || 0) - (a.h || 0)), hours: (a, b) => (b.h === null ? -1 : b.h) - (a.h === null ? -1 : a.h), change: (a, b) => (b.hc === null ? -1e9 : b.hc) - (a.hc === null ? -1e9 : a.hc), name: (a, b) => a.c.short.localeCompare(b.c.short) };
+    rows.sort(sorters[f.sort]);
+    const wk = weeksOf(aWindow(84));
+    return `${head({ title: 'Clients', lead, actions: `${rangeSeg()}${demo() ? '' : `<a class="btn primary" href="#new-organisation">${icon('plus', 'sm')}Add client</a>`}` })}
+    <section class="grid g4 stats">
+      <div class="card stat"><span class="label">Clients</span><span class="value">${all.length}</span><span class="hint">${counts.live} live · ${all.length - counts.live} getting started</span></div>
+      <div class="card stat"><span class="label">Need you</span><span class="value" style="color:var(--${counts.needs ? 'warn-ink' : 'ink'})">${counts.needs}</span><span class="hint">Clients with something to fix or decide</span></div>
+      <div class="card stat"><span class="label">Hours saved ${q('estimated')}</span><span class="value">${hm.calc(totH) === null ? '–' : nf(hm.calc(totH))}<small>${hm.calc(totH) === null ? '' : 'h'}</small></span><span class="hint">${rangeLabel()}, all clients</span></div>
+      <div class="card stat"><span class="label">Value of time freed ${q('estimated')}</span><span class="value">${fmtM(vm, vm.calc(totH)) || '–'}</span><span class="hint">At RM45 an hour</span></div>
+    </section>
+    <section class="card" style="padding:14px 18px"><div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+      <div class="seg" role="group" aria-label="Show">${[['all', 'All'], ['needs', `Need you (${counts.needs})`], ['live', 'Live'], ['early', 'Getting started']].map(([k, l]) => `<button type="button" data-cfshow="${k}" aria-pressed="${f.show === k}">${l}</button>`).join('')}</div>
+      <div class="field" style="flex:1;min-width:180px"><input id="cf-q" placeholder="Search clients or projects" aria-label="Search clients" value="${esc(f.q)}" autocomplete="off"></div>
+      <div class="field"><select id="cf-sort" aria-label="Sort">${[['needs', 'Needs you first'], ['hours', 'Most hours saved'], ['change', 'Biggest improvement'], ['name', 'A to Z']].map(([k, l]) => `<option value="${k}" ${f.sort === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+    </div></section>
+    <section class="card"><div class="table-wrap"><table class="client-table"><thead><tr><th>Client</th><th>Projects</th><th class="num">Hours saved</th><th class="num">Change</th><th>12 weeks</th><th>Next report</th>${has('Commercial') ? '<th class="num">Fee</th>' : ''}<th>Renewal</th></tr></thead><tbody>
+    ${rows.length ? rows.map((r) => { const c = r.c, ps = coProjs(c); return `<tr class="link" data-go="${c.href.slice(1)}" tabindex="0">
+      <td><div style="display:flex;gap:10px;align-items:center"><span class="avatar" style="border-radius:10px">${initials(c.short)}</span><div><span class="name">${esc(c.name)}</span><span class="sub">${esc(c.industry)} · ${cap(c.stage)}</span></div></div>${r.needs ? `<span class="pill warn" style="margin-top:6px"><span class="dot"></span>${r.needs} need${r.needs === 1 ? 's' : ''} you</span>` : ''}</td>
+      <td>${c.projects.length ? c.projects.map((p) => `<div class="small" style="display:flex;gap:6px;align-items:center;white-space:nowrap">${p.solutions.map((s) => `<span class="dot" title="${esc(s.name)}: ${STATUS[s.status][1]}" style="color:var(--${STATUS[s.status][0] === 'idle' ? 'faint' : STATUS[s.status][0] === 'info' ? 'primary' : STATUS[s.status][0]})"></span>`).join('')}${esc(p.name)}</div>`).join('') : '<span class="muted">None yet</span>'}</td>
+      <td class="num">${r.h === null ? `<span class="dash">–</span>` : `<span class="ink">${nf(r.h)} h</span><div class="sub">${fmtM(mByKey('value'), r.v)}</div>`}</td>
+      <td class="num">${chgHtml(r.hc)}</td>
+      <td>${ps.length ? sparkline(wk.map((w) => hm.calc(mergeTotals(ps.map((p) => totals(p, w))))), 90, 26) : ''}</td>
+      <td>${c.projects.length ? (() => { const rep = c.projects.find((p) => p.report[0] === 'warn') || c.projects[0]; return `<span class="pill ${rep.report[0]}">${esc(rep.report[1])}</span>`; })() : '<span class="muted">–</span>'}</td>
+      ${has('Commercial') ? `<td class="num">${c.contract ? money(c.contract.amount, c.contract.currency) : '–'}</td>` : ''}
+      <td class="mono">${esc(c.renewal)}</td></tr>`; }).join('') : `<tr><td colspan="8"><div class="empty" style="padding:16px"><p>No clients match. <button type="button" class="btn sm ghost" data-act="cf-reset">Show all</button></p></div></td></tr>`}
     </tbody></table></div></section>`;
   };
+  pages.organisations.after = () => {
+    const qi = $('#cf-q'); if (qi) qi.addEventListener('input', (e) => { state.cf.q = e.target.value; clearTimeout(state.cfT); state.cfT = setTimeout(() => { render(); const el = $('#cf-q'); if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); } }, 250); });
+    const so = $('#cf-sort'); if (so) so.addEventListener('change', (e) => { state.cf.sort = e.target.value; render(); });
+  };
+
+  // ---------- the client page: one template for every workspace
+  function contohNarrative(client, canNarr) {
+    const sep = contohMonth('2026-09'), aug = contohMonth('2026-08');
+    if (client && !state.narrativeApproved) return `<section class="card"><div class="empty" style="padding:20px"><h3>Summary not shared yet</h3><p>The September summary is still a draft. The client sees it once it’s approved.</p></div></section>`;
+    return `<section class="card ai-card"><div class="card-head"><span class="eyebrow"><img src="${SPARK}" alt="">September 2026 in brief</span>${state.narrativeApproved ? '<span class="pill ok"><span class="dot"></span>Approved</span>' : '<span class="pill warn"><span class="dot"></span>Draft</span>'}</div>
+      <div class="narrative">
+        <p>The document workflow finished <b class="mono">${nf(sep.docs)}</b> documents in September, up from <span class="mono">${nf(aug.docs)}</span> in August <span class="cite">Documents processed</span>. Against the timed baseline, that freed an estimated <b class="mono">${nf(sep.imp.mid)} hours</b> of preparation time, likely between <span class="mono">${nf(sep.imp.low)}</span> and <span class="mono">${nf(sep.imp.high)}</span> <span class="cite">Hours saved</span>.</p>
+        <p>Fewer documents came back for correction: <span class="mono">${nf(sep.rate, 1)}%</span>, from <span class="mono">${nf(aug.rate, 1)}%</span> in August and <span class="mono">7.4%</span> before go-live. Invoices took <span class="mono">${nf(sep.ct, 1)} days</span> by month end, from <span class="mono">4.5</span> before.</p>
+        <p class="small muted">21 and 22 September are missing and aren’t counted. These figures compare with the baseline. They don’t prove what caused the change.</p>
+      </div>
+      <div class="wfoot" style="margin-top:14px">${aiMark('Drafted by AI from the calculated figures. Every number checked.')}${state.narrativeApproved || client ? '' : gate(canNarr, 'Approve summary', state.role === 'nurul' ? 'You edited this, so someone else approves.' : 'Needs approval rights', 'data-act="approve-narrative"', 'btn primary sm')}</div>
+    </section>`;
+  }
+  function companyPage(c) {
+    rememberClient(c);
+    if (state.coFor !== c.id) { state.coFor = c.id; state.coTab = 'overview'; }
+    const client = state.audience === 'client', tab = state.coTab || 'overview';
+    const days = aWindow(state.range), prevDays = windowDays(state.range, M.addDays(days[0], -1));
+    const T = coTotals(c, days), P = coTotals(c, prevDays), cmp = comparable(T, P);
+    const needs = client ? [] : coNeeds(c);
+    const tabs = [['overview', 'Overview'], ['projects', `Projects (${c.projects.length})`], ['reports', 'Reports']].concat(client ? [] : [['activity', 'Activity']]);
+    const stat = (key, alt) => { let m = mByKey(key), v = m.calc(T); if (v === null && alt) { m = mByKey(alt); v = m.calc(T); } const pv = cmp ? m.calc(P) : null, rg = m.range ? m.range(T) : null; return `<div class="card stat"><span class="label">${esc(m.name)} ${q(m.quality)}</span><span class="value">${fmtM(m, v) || '–'}</span><span class="hint">${v === null ? 'Not shared by these solutions yet' : `${rg ? `Likely ${fmtM(m, rg[0])} to ${fmtM(m, rg[1])} · ` : ''}${cmp ? chgHtml(chgPct(v, pv), m.better) + ' vs before' : 'Too few days before to compare'}`}</span></div>`; };
+    let body = '';
+    if (tab === 'overview') {
+      const canNarr = has('Approve') && state.role !== 'nurul';
+      const wk = weeksOf(aWindow(84));
+      body = `
+      ${needs.length ? `<section class="card"><div class="card-head"><h2>Needs you for ${esc(c.short)}</h2><span class="pill warn">${needs.length}</span></div><div class="list">${needs.map(([sev, ic, t, m, h, a]) => `<div class="row"><span class="ico ${sev}">${icon(ic, 'sm')}</span><div><div class="what">${esc(t)}</div><div class="meta">${esc(m)}</div></div><a class="btn sm" href="${h}">${a}</a></div>`).join('')}</div></section>` : ''}
+      ${coProjs(c).length ? `<section class="grid g4 stats">${stat('hours', 'volume')}${stat('value', 'straight')}${stat('volume')}${stat('sla', 'quality')}</section>
+      <section class="card"><div class="card-head"><div><h2>${mByKey('hours').calc(T) !== null ? 'Hours saved' : 'Work handled'} by project</h2><p class="sub">By week, last 12 weeks · each project on its own line</p></div><details class="more"><summary>How totals are counted</summary><div class="small" style="max-width:52ch">${c.id === 'contoh-logistik' ? 'Only Document workflow’s hours count: Invoice triage touches the same work, so adding it would count hours twice. ' : ''}Hours and work handled add up across projects. Rates are worked out from the combined totals, never averaged. People are never added across days.</div></details></div>
+        <div class="chart" id="ch-co"></div><div class="legend" id="lg-co"></div></section>` : `<section class="card"><div class="empty">${emptyArt}<h3>${c.projects.length ? 'No figures yet' : 'No projects yet'}</h3><p>${c.projects.length ? 'Figures appear here once a solution is collecting.' : `Create the project you agreed with ${esc(c.short)}. You’ll connect its solution next.`}</p>${c.example ? '' : c.projects.length ? `<a class="btn primary" href="${c.projects[0].solutions[0].href}">Open ${esc(c.projects[0].name)}</a>` : `<button type="button" class="btn primary" data-act="proj-for" data-org="${c.id}">${icon('plus', 'sm')}Create project</button>`}</div></section>`}
+      ${c.id === 'contoh-logistik' ? contohNarrative(client, canNarr) : ''}
+      ${c.projects.length ? `<section class="card"><div class="card-head"><h2>Projects</h2>${c.example ? '' : `<button type="button" class="btn sm" data-act="proj-for" data-org="${c.id}">${icon('plus', 'sm')}New project</button>`}</div><div class="table-wrap"><table><thead><tr><th>Project</th><th>Solutions</th><th class="num">Hours saved</th><th class="num">Work handled</th><th class="num">Change</th><th>12 weeks</th><th>Report</th></tr></thead><tbody>
+        ${c.projects.map((p) => { const ps = p.solutions.filter((s) => s.proj).map((s) => s.proj), t = mergeTotals(ps.map((x) => totals(x, days))), tp = mergeTotals(ps.map((x) => totals(x, prevDays))), h = mByKey('hours').calc(t), ch = comparable(t, tp) ? chgPct(h !== null ? h : t.vol, h !== null ? mByKey('hours').calc(tp) : tp.vol) : null, first = p.solutions.find((s) => s.href);
+          return `<tr ${first ? `class="link" data-go="${first.href.slice(1)}" tabindex="0"` : ''}><td><span class="name">${esc(p.name)}</span><span class="sub">${esc(p.kind)}</span></td><td>${p.solutions.map((s) => `<div style="display:flex;gap:6px;align-items:center;white-space:nowrap" class="small">${statusPill(s.status)} ${esc(s.name)}</div>`).join('')}</td><td class="num">${h === null ? '<span class="dash">–</span>' : nf(h) + ' h'}</td><td class="num">${t.n ? nf(t.vol) : '<span class="dash">–</span>'}</td><td class="num">${chgHtml(ch)}</td><td>${ps.length ? sparkline(wk.map((w) => { const tt = mergeTotals(ps.map((x) => totals(x, w))); return h !== null ? mByKey('hours').calc(tt) : (tt.n ? tt.vol : null); }), 90, 26) : ''}</td><td><span class="pill ${p.report[0]}">${esc(p.report[1])}</span></td></tr>`; }).join('')}
+      </tbody></table></div></section>` : ''}
+      ${client ? '' : `<section class="grid g2">
+        <div class="card"><div class="card-head"><h2>Contract</h2><span class="pill idle">${icon('lock', 'sm')}REKA only</span></div>
+          ${!c.contract ? '<p class="small muted">No contract recorded yet.</p>' : has('Commercial') ? `<div class="grid g2"><div class="stat"><span class="label">Monthly fee</span><span class="value" style="font-size:1.375rem">${money(c.contract.amount, c.contract.currency)}</span></div><div class="stat"><span class="label">Running cost, September</span><span class="value" style="font-size:1.375rem">${c.runCost ? money(c.runCost.amount, c.runCost.currency) : '–'}</span><span class="hint">From AX Frame</span></div><div class="stat"><span class="label">Renewal</span><span class="value" style="font-size:1.125rem">${esc(c.renewal)}</span><span class="hint">Risk: ${esc(c.renewalRisk)}</span></div></div>` : `<div class="callout info">${icon('lock')}<span>Only people with the commercial right see fees. Switch to Aisyah Rahman from your profile menu to try it.</span></div>`}</div>
+        <div class="card"><div class="card-head"><h2>People and agreement</h2><span class="pill idle">${icon('lock', 'sm')}REKA only</span></div>${kv([['Client contact', esc(c.contact)], ['REKA owner', 'Daniel Lim'], ['Data agreement', c.signed ? `<span class="pill ok">${icon('check', 'sm')}${esc(c.agreement)}</span>` : '<span class="pill warn">Not signed: nothing is collected</span>'], ['Notes', c.id === 'contoh-logistik' ? 'Finance director asked for a split by document type from October.' : 'None yet']], 120)}</div>
+      </section>`}`;
+    } else if (tab === 'projects') {
+      body = `<div class="grid" style="gap:16px">${c.projects.map((p) => `<section class="card">
+        <div class="card-head"><div><p class="xs muted">${esc(p.kind)} · ${esc(p.cadence)} report</p><h2>${esc(p.name)}</h2></div><span class="pill ${p.report[0]}">${esc(p.report[1])}</span></div>
+        <p class="ink" style="max-width:70ch">“${esc(p.objective)}”</p>
+        <div class="list" style="margin-top:12px">${p.solutions.map((s) => { const t = s.proj ? totals(s.proj, days) : null; const mini = (k) => { const m = mByKey(k), v = t ? m.calc(t) : null; return `<div class="stat"><span class="label">${esc(m.name)}</span><span class="value" style="font-size:1.125rem">${fmtM(m, v) || '–'}</span></div>`; };
+          return `<div class="row" style="grid-template-columns:36px minmax(0,1fr) auto;align-items:start"><span class="ico info">${icon('box', 'sm')}</span><div style="display:grid;gap:10px"><div><div class="what">${esc(s.name)}</div><div class="meta">${statusPill(s.status)}<span>KPIs live ${s.kpis[0]} of ${s.kpis[1] || '–'}</span></div></div>${t ? `<div class="grid g3" style="gap:10px">${mini('hours')}${mini('volume')}${mini(mByKey('sla').calc(t) !== null ? 'sla' : 'quality')}</div>` : ''}</div>${s.href ? `<a class="btn sm" href="${s.href}">${s.status === 'not_connected' ? 'Connect' : 'Open'}</a>` : ''}</div>`; }).join('')}</div>
+      </section>`).join('')}
+      ${c.example ? '' : `<button type="button" class="card proj" data-act="proj-for" data-org="${c.id}" style="border-style:dashed;place-content:center;justify-items:center;text-align:center;min-height:120px;box-shadow:none;cursor:pointer"><span class="ico info" style="width:40px;height:40px;border-radius:12px;display:grid;place-items:center">${icon('plus')}</span><b class="ink">New project for ${esc(c.short)}</b></button>`}</div>`;
+    } else if (tab === 'reports') {
+      body = `<section class="card"><div class="table-wrap"><table><thead><tr><th>Project</th><th>Cadence</th><th>Status</th><th></th></tr></thead><tbody>${c.projects.length ? c.projects.map((p) => `<tr><td><span class="name">${esc(p.name)}</span></td><td>${esc(p.cadence)}</td><td><span class="pill ${p.report[0]}">${esc(p.report[1])}</span></td><td>${p.report[2] ? `<a class="btn sm" href="${p.report[2]}">Open</a>` : ''}</td></tr>`).join('') : '<tr><td colspan="4" class="muted">No projects yet.</td></tr>'}</tbody></table></div></section>`;
+    } else {
+      const names = [c.name, c.short].concat(c.projects.map((p) => p.name), coSolutions(c).map((s) => s.name));
+      const list = auditList().filter(([, , what]) => names.some((n) => what.includes(n)));
+      body = `<section class="card">${list.length ? `<div class="list">${list.slice(0, 20).map(([t, w, what]) => `<div class="row"><span class="avatar">${w === 'Collector' ? icon('live', 'sm') : initials(w.split(' · ')[0])}</span><div class="small"><b class="ink">${esc(w.split(' · ')[0])}</b> ${esc(what)}</div><span class="xs muted mono">${esc(t.replace(' 2026,', ''))}</span></div>`).join('')}</div>` : '<p class="small muted">Nothing recorded for this client yet.</p>'}</section>`;
+    }
+    return `${head({ crumbs: crumbs(['Clients', '#organisations'], [c.short]), title: orgTitle(c.name),
+      meta: `<span>${esc(c.industry)}</span><span class="pill ${c.stage === 'live' ? 'info' : 'idle'}">${cap(c.stage)}</span>${statusPill(coStatus(c))}${c.renewal !== '–' ? `<span>Renews ${esc(c.renewal)}</span>` : ''}`,
+      actions: `<button type="button" class="btn sm" data-act="ask-client" data-name="${esc(c.short)}"><img src="${SPARK}" alt="" style="width:16px">Ask about ${esc(c.short)}</button>${coProjs(c).length ? `<div class="seg" role="group" aria-label="View as"><button type="button" data-aud="staff" aria-pressed="${!client}">Team view</button><button type="button" data-aud="client" aria-pressed="${client}">Client view</button></div>${rangeSeg()}` : ''}` })}
+    ${client ? `<div class="callout info">${icon('client-view')}<span><b>You’re seeing what ${esc(c.short)} sees.</b> Fees, notes, activity and anything not yet approved are hidden.</span></div>` : ''}
+    <div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button type="button" role="tab" data-cotab="${k}" aria-selected="${tab === k}">${l}</button>`).join('')}</div>
+    ${body}`;
+  }
+  function companyAfter(c) {
+    const el = $('#ch-co'); if (!el || !c) return;
+    const wk = weeksOf(aWindow(84)), hm = mByKey('hours'), useH = hm.calc(coTotals(c, aWindow(84))) !== null;
+    const projs = c.projects.map((p) => ({ name: p.name, ps: p.solutions.filter((s) => s.proj).map((s) => s.proj) })).filter((x) => x.ps.length);
+    const val = (ps, w) => { const t = mergeTotals(ps.map((x) => totals(x, w))); return useH ? hm.calc(t) : (t.n ? t.vol : null); };
+    const colors = ['var(--s1)', 'var(--s2)', 'var(--s3)'];
+    let series = projs.slice(0, 3).map((p, i) => ({ name: p.name, vals: wk.map((w) => val(p.ps, w)), color: colors[i] }));
+    if (projs.length > 3) series.push({ name: 'Other projects', vals: wk.map((w) => val(projs.slice(3).flatMap((p) => p.ps), w)), color: 'var(--baseline)', dashed: true });
+    drawLines(el, wk.map((w) => dayShort(w[0])), series, { label: 'By project', height: 220, fmt: (v) => useH ? nf(v) + ' h' : nf(v), tipLabel: (i) => 'Week of ' + day(wk[i][0]) });
+    $('#lg-co').innerHTML = series.map((s) => `<span><i style="background:${s.color}"></i>${esc(s.name)}</span>`).join('');
+  }
+  pages.org = (id) => companyPage(coById(id));
+  pages.org.after = (id) => companyAfter(coById(id));
+  pages.organisation = (id) => companyPage(coById(id));
+  pages.organisation.after = (id) => companyAfter(coById(id));
 
   pages['new-organisation'] = () => `
-    ${head({ crumbs: crumbs(['Organisations', '#organisations'], ['Add organisation']), title: 'Add an organisation', lead: 'The client whose solution you’ll measure.' })}
+    ${head({ crumbs: crumbs(['Clients', '#organisations'], ['Add organisation']), title: 'Add a client', lead: 'The client whose solution you’ll measure.' })}
     <form id="f-org" class="card narrow grid" style="gap:24px" novalidate>
       <div class="form-grid">
-        <div class="field full"><label for="o-name">Organisation name</label><input id="o-name" placeholder="e.g. Teladan Properties" value="${esc(state.draftOrg || (state.orgs.length ? '' : 'Teladan Properties'))}" required><span class="help" id="o-name-help">As it appears on their contract.</span></div>
+        <div class="field full"><label for="o-name">Client name</label><input id="o-name" placeholder="e.g. Teladan Properties" value="${esc(state.draftOrg || (state.orgs.length ? '' : 'Teladan Properties'))}" required><span class="help" id="o-name-help">As it appears on their contract.</span></div>
         <div class="field"><label for="o-ind">Industry</label><select id="o-ind">${['Property and real estate', 'Food and beverage', 'Logistics', 'Manufacturing', 'Healthcare', 'Engineering and construction', 'Retail', 'Other'].map((x) => `<option>${x}</option>`).join('')}</select></div>
         <div class="field"><label for="o-tz">Time zone</label><select id="o-tz"><option>Asia/Kuala_Lumpur (MYT)</option><option>Asia/Singapore (SGT)</option></select><span class="help">Their reports use this.</span></div>
         <div class="field"><label for="o-contact">Main contact</label><input id="o-contact" value="Farah Idris"></div>
@@ -766,30 +908,30 @@
         <p class="small muted">Outcomes only collects totals, and only after the client agrees in writing.</p>
         <label class="check"><input type="checkbox" id="o-signed" checked><span><b class="ink">The client has signed the data agreement</b><br><span class="small muted">Totals only · kept in Singapore · for the contract plus 24 months</span></span></label>
       </div>
-      <div class="wfoot"><a class="btn ghost" href="#organisations">Cancel</a><button type="submit" class="btn primary lg">Add organisation</button></div>
+      <div class="wfoot"><a class="btn ghost" href="#organisations">Cancel</a><button type="submit" class="btn primary lg">Add client</button></div>
     </form>`;
   pages['new-organisation'].after = () => {
     $('#o-name').addEventListener('input', (e) => { state.draftOrg = e.target.value; });
     $('#f-org').addEventListener('submit', (e) => {
       e.preventDefault();
       const name = $('#o-name').value.trim();
-      if (!name) { $('#o-name').setAttribute('aria-invalid', 'true'); const h = $('#o-name-help'); h.textContent = 'Add the organisation’s name to continue.'; h.style.color = 'var(--fault-ink)'; $('#o-name').focus(); return; }
+      if (!name) { $('#o-name').setAttribute('aria-invalid', 'true'); const h = $('#o-name-help'); h.textContent = 'Add the client’s name to continue.'; h.style.color = 'var(--fault-ink)'; $('#o-name').focus(); return; }
       state.mode = 'new';
       const o = newOrg(name, $('#o-ind').value, $('#o-signed').checked);
       state.draftOrg = null;
-      log(`Added organisation ${name}`);
+      log(`Added client ${name}`);
       go('org-' + o.id); toast(`${name} added.`);
     });
   };
 
   pages['new-project'] = () => {
-    if (!state.orgs.length) return `${head({ title: 'Create a project' })}<section class="card"><div class="empty">${emptyArt}<h3>Add an organisation first</h3><p>A project belongs to a client.</p><a class="btn primary" href="#new-organisation">Add organisation</a></div></section>`;
+    if (!state.orgs.length) return `${head({ title: 'Create a project' })}<section class="card"><div class="empty">${emptyArt}<h3>Add a client first</h3><p>A project belongs to a client.</p><a class="btn primary" href="#new-organisation">Add client</a></div></section>`;
     const K = KINDS[state.newKind], orgId = state.newProjOrg || state.orgs[state.orgs.length - 1].id;
     return `
-    ${head({ crumbs: crumbs(['Organisations', '#organisations'], ['New project']), title: 'Create a project', lead: 'What you agreed to deliver for the client. Its solution is measured against it.' })}
+    ${head({ crumbs: crumbs(['Clients', '#organisations'], ['New project']), title: 'Create a project', lead: 'What you agreed to deliver for the client. Its solution is measured against it.' })}
     <form id="f-proj" class="card narrow grid" style="gap:24px" novalidate>
       <div class="form-grid">
-        <div class="field"><label for="p-org">Organisation</label><select id="p-org">${state.orgs.map((o) => `<option value="${o.id}" ${o.id === orgId ? 'selected' : ''}>${esc(o.name)}</option>`).join('')}</select></div>
+        <div class="field"><label for="p-org">Client</label><select id="p-org">${state.orgs.map((o) => `<option value="${o.id}" ${o.id === orgId ? 'selected' : ''}>${esc(o.name)}</option>`).join('')}</select></div>
         <div class="field"><label for="p-name">Project name</label><input id="p-name" value="${esc(state.draftProj || (state.sims.length ? '' : 'Lease abstraction'))}" placeholder="e.g. Lease abstraction" required><span class="help" id="p-name-help">Use the name the client uses.</span></div>
       </div>
       <div class="grid" style="gap:10px"><span class="ink" style="font-weight:500">What kind of work does it take on?</span><p class="small muted" style="margin-top:-6px">We use this to suggest KPIs that fit. You can change any of them.</p>
@@ -816,73 +958,6 @@
       log(`Created project ${name} for ${org.name}`);
       go('org-' + org.id); toast('Project created.');
     });
-  };
-
-  // ---------- your organisation page
-  pages.org = (id) => {
-    const o = state.orgs.find((x) => x.id === id);
-    const sims = simsOf(o), coll = sims.filter((s) => s.stage === 'collecting'), days = simWindow(state.range);
-    const withBase = coll.filter(hasBase);
-    const tot = withBase.reduce((a, s) => { const r = simSum(s, days); return { mid: a.mid + r.mid, low: a.low + r.low, high: a.high + r.high }; }, { mid: 0, low: 0, high: 0 });
-    return `
-    ${head({ crumbs: crumbs(['Organisations', '#organisations'], [o.name]), title: orgTitle(o.name),
-      meta: `<span>${esc(o.industry)}</span>${o.signed ? `<span class="pill ok">${icon('check', 'sm')}Data agreement signed</span>` : '<span class="pill warn">Data agreement not signed</span>'}`,
-      actions: `${coll.length ? rangeSeg() : ''}<button type="button" class="btn ${sims.length ? '' : 'primary'}" data-act="proj-for" data-org="${o.id}">${icon('plus', 'sm')}New project</button>` })}
-    ${!o.signed ? `<div class="callout warn">${icon('alerts')}<span><b>Nothing will be collected yet.</b> Record the signed data agreement first.</span></div>` : ''}
-    ${withBase.length ? `<section class="card"><p class="xs muted">Across ${withBase.length} project${withBase.length === 1 ? '' : 's'}</p><div class="stat" style="margin-top:6px"><span class="label">Hours saved, ${rangeLabel().toLowerCase()} ${q('estimated')}</span><span class="value">${nf(tot.mid)}<small>h</small></span><span class="hint">Likely ${nf(tot.low)} to ${nf(tot.high)} · each project counted once</span></div></section>` : ''}
-    ${!sims.length ? `<section class="card"><div class="empty">${emptyArt}<h3>No projects yet</h3><p>Create the project you agreed with ${esc(o.name)}. You’ll connect its solution next.</p><button type="button" class="btn primary" data-act="proj-for" data-org="${o.id}">${icon('plus', 'sm')}Create project</button></div></section>` : sims.map((s) => `
-    <section class="card">
-      <div class="card-head"><div><p class="xs muted">Project</p><h2>${esc(s.project.name)}</h2></div><span class="head-actions"><span class="pill idle">${kindOf(s).label}</span>${statusPill(simStatus(s))}</span></div>
-      <p class="ink" style="max-width:70ch">“${esc(s.project.objective)}”</p>
-      <div class="meta-line"><span>Go-live ${esc(s.project.live)}</span><span>${esc(s.project.cadence)} report</span><span>Owner: Daniel Lim</span></div>
-      <div style="margin-top:16px;border-top:1px solid var(--line);padding-top:16px">
-      ${s.stage === 'draft' ? `<div class="row" style="border:0;padding:0"><span class="ico info">${icon('connect-ai', 'sm')}</span><div><div class="what">Next: connect the solution</div><div class="meta">Check its data, pick KPIs and record the baseline. About 10 minutes once the developer has added the link.</div></div><a class="btn primary sm" href="#connect-${s.id}">Connect</a></div>`
-      : `<div class="row" style="border:0;padding:0"><span class="ico info">${icon('box', 'sm')}</span><div><div class="what">${esc(s.name)}</div><div class="meta">${s.kpis.length} KPIs${s.stage === 'collecting' ? ` · ${nf(simSum(s, days).vol)} ${kindOf(s).nouns} ${rangeLabel().toLowerCase()}` : ''}</div></div><a class="btn sm" href="#sim-${s.id}">Open</a></div>`}
-      </div>
-    </section>`).join('')}`;
-  };
-
-  // ---------- example organisation page
-  pages.organisation = (id) => {
-    const o = orgById(id), days = windowDays(state.range), sols = o.projects.flatMap((p) => p.solutions), isContoh = o.id === 'contoh-logistik';
-    const rolled = sols.filter((s) => ROLLED.includes(s));
-    const tot = rolled.length ? rolled.map((s) => impactSum(s, days)).reduce((a, b) => ({ mid: a.mid + b.mid, low: a.low + b.low, high: a.high + b.high }), { mid: 0, low: 0, high: 0 }) : null;
-    const client = state.audience === 'client';
-    const sep = isContoh ? contohMonth('2026-09') : null, aug = isContoh ? contohMonth('2026-08') : null;
-    const cards = sols.flatMap((s) => kpiCards(s, days).map((c) => Object.assign({ sol: s }, c))).filter((c) => !(client && c.quality === 'unavailable'));
-    const canNarr = has('Approve') && state.role !== 'nurul';
-    const narrative = !isContoh ? '' : (client && !state.narrativeApproved) ? `<section class="card"><div class="empty" style="padding:20px"><h3>Summary not shared yet</h3><p>The September summary is still a draft. The client sees it once it’s approved.</p></div></section>` : `
-      <section class="card ai-card"><div class="card-head"><span class="eyebrow"><img src="${SPARK}" alt="">September 2026 in brief</span>${state.narrativeApproved ? '<span class="pill ok"><span class="dot"></span>Approved</span>' : '<span class="pill warn"><span class="dot"></span>Draft</span>'}</div>
-        <div class="narrative">
-          <p>The document workflow finished <b class="mono">${nf(sep.docs)}</b> documents in September, up from <span class="mono">${nf(aug.docs)}</span> in August <span class="cite">Documents processed</span>. Against the timed baseline, that freed an estimated <b class="mono">${nf(sep.imp.mid)} hours</b> of preparation time, likely between <span class="mono">${nf(sep.imp.low)}</span> and <span class="mono">${nf(sep.imp.high)}</span> <span class="cite">Hours saved</span>.</p>
-          <p>Fewer documents came back for correction: <span class="mono">${nf(sep.rate, 1)}%</span>, from <span class="mono">${nf(aug.rate, 1)}%</span> in August and <span class="mono">7.4%</span> before go-live. Invoices took <span class="mono">${nf(sep.ct, 1)} days</span> by month end, from <span class="mono">4.5</span> before.</p>
-          <p class="small muted">21 and 22 September are missing and aren’t counted. These figures compare with the baseline. They don’t prove what caused the change.</p>
-        </div>
-        <div class="wfoot" style="margin-top:14px">${aiMark('Drafted by AI from the calculated figures. Every number checked.')}${state.narrativeApproved || client ? '' : gate(canNarr, 'Approve summary', state.role === 'nurul' ? 'You edited this, so someone else approves.' : 'Needs approval rights', 'data-act="approve-narrative"', 'btn primary sm')}</div>
-      </section>`;
-    return `
-    ${head({ crumbs: crumbs(['Organisations', '#organisations'], [o.short]), title: orgTitle(o.name),
-      meta: `<span>${esc(o.projects[0].name)}</span><span class="pill ${o.stage === 'live' ? 'info' : 'idle'}">${cap(o.stage)}</span>${o.renewal !== '–' ? `<span>Renews ${o.renewal}</span>` : ''}`,
-      actions: o.stage === 'planning' ? '' : `<div class="seg" role="group" aria-label="View as"><button type="button" data-aud="staff" aria-pressed="${!client}">Team view</button><button type="button" data-aud="client" aria-pressed="${client}">Client view</button></div>${rangeSeg()}` })}
-    ${client ? `<div class="callout info">${icon('client-view')}<span><b>You’re seeing what ${esc(o.short)} sees.</b> Fees, internal notes and anything not yet approved are hidden.</span></div>` : ''}
-    ${o.stage === 'planning' ? `<section class="card"><div class="empty">${emptyArt}<h3>Lease reader isn’t connected yet</h3><p>In your own workspace, connecting a solution takes eight guided steps.</p><button type="button" class="btn primary" data-act="switch-mode">Try it in my workspace</button></div></section>` : `
-    <section class="grid g-main">
-      <div class="card"><p class="xs muted">The outcome they want</p><h2 style="max-width:56ch;margin:4px 0 16px">${esc(o.projects[0].objective)}</h2>
-        ${tot ? `<div class="stat"><span class="label">Hours saved, ${rangeLabel().toLowerCase()} ${q('estimated')}</span><span class="value">${nf(tot.mid)}<small>h</small></span><span class="hint">Likely ${nf(tot.low)} to ${nf(tot.high)}</span></div>${isContoh ? '<div class="chart" id="ch-org" style="margin-top:12px"></div>' : ''}` : `<div class="stat"><span class="label">Hours saved</span><span class="value">${dash()}</span><span class="hint">Needs a baseline before it can be shown.</span></div>`}
-      </div>
-      <div class="card"><h3>How the totals are counted</h3><div style="margin-top:8px">${kv(isContoh ? [['Hours saved', 'Only Document workflow. Invoice triage touches the same work, so adding it would count hours twice.'], ['Documents', 'Added across solutions.'], ['People using it', 'Each person counted once.'], ['Rates', 'Worked out from the totals, never an average of averages.']] : [['Hours saved', rolled.length ? 'One solution, added up by day.' : 'Nothing yet: no approved baseline.']], 110)}</div></div>
-    </section>
-    ${narrative}
-    ${sols.map((sid) => { const cs = cards.filter((c) => c.sol === sid); return cs.length ? `<section class="grid" style="gap:12px"><div class="card-head" style="margin:0"><h2>${esc(M.solutions[sid].name)}</h2><span class="head-actions">${statusPill(solStatus(sid))}<a class="btn sm" href="#solution-${sid}">Open${icon('chev', 'sm')}</a></span></div><div class="grid ${gridFor(cs.length)}">${cs.map(kpiCardHtml).join('')}</div></section>` : ''; }).join('')}`}
-    ${client ? '' : `<section class="grid g2">
-      <div class="card"><div class="card-head"><h2>Contract</h2><span class="pill idle">${icon('lock', 'sm')}REKA only</span></div>
-        ${has('Commercial') ? `<div class="grid g2"><div class="stat"><span class="label">Monthly fee</span><span class="value" style="font-size:1.375rem">${money(o.contract.amount, o.contract.currency)}</span></div><div class="stat"><span class="label">Running cost, September</span><span class="value" style="font-size:1.375rem">${o.runCost ? money(o.runCost.amount, o.runCost.currency) : '–'}</span><span class="hint">From AX Frame</span></div><div class="stat"><span class="label">Renewal</span><span class="value" style="font-size:1.125rem">${o.renewal}</span><span class="hint">Risk: ${o.renewalRisk}</span></div></div>` : `<div class="callout info">${icon('lock')}<span>Only people with the commercial right see fees. Switch to Aisyah Rahman from your profile menu to try it.</span></div>`}</div>
-      <div class="card"><div class="card-head"><h2>Notes</h2><span class="pill idle">${icon('lock', 'sm')}REKA only</span></div><p class="small">${isContoh ? 'Finance director asked for a split by document type from October. The new “reason” detail in the data makes that possible.' : 'No notes yet.'}</p></div>
-    </section>`}`;
-  };
-  pages.organisation.after = (id) => {
-    if (id !== 'contoh-logistik' || !$('#ch-org')) return;
-    drawChart($('#ch-org'), bucket(impactDaily('doc-workflow', windowDays(state.range)), state.range > 30), { id: 'org', kind: 'band', label: 'Hours saved, Contoh Logistik', height: 200, tip: bandTip });
   };
 
   // ------------------------------------------------------------------ example KPI cards
@@ -989,7 +1064,7 @@
       </tbody></table></div></section>`;
     }
     return `
-    ${head({ crumbs: crumbs(['Organisations', '#organisations'], [o.short, '#organisation-' + o.id], [s.name]), title: esc(s.name), meta: `${statusPill(st)}<span>${esc(o.projects[0].name)}</span><span>Live since ${day(s.live)}</span>`, actions: rangeSeg() })}
+    ${head({ crumbs: crumbs(['Clients', '#organisations'], [o.short, '#organisation-' + o.id], [o.projects.find((x) => x.solutions.includes(s.id)).name], [s.name]), title: esc(s.name), meta: `${statusPill(st)}<span>${esc(o.projects[0].name)}</span><span>Live since ${day(s.live)}</span>`, actions: rangeSeg() })}
     ${banner}
     <div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button type="button" role="tab" data-tab="${k}" aria-selected="${state.solTab === k}">${l}</button>`).join('')}</div>
     ${body}
@@ -1038,7 +1113,7 @@
         ${!s.reportScheduled ? `<section class="card"><div class="row" style="border:0;padding:0"><span class="ico info">${icon('reports', 'sm')}</span><div><div class="what">Schedule the client report</div><div class="meta">${esc(s.project.cadence)} · drafted for you, sent only after you check it</div></div><button type="button" class="btn primary sm" data-act="schedule-report" data-sim="${s.id}">Schedule report</button></div></section>`
         : `<section class="card"><div class="row" style="border:0;padding:0"><span class="ico ${rs.st === 'ready' ? 'warn' : 'ok'}">${icon('reports', 'sm')}</span><div><div class="what">${rs.st === 'ready' ? `${monthName(rs.ym)} report is ready to review` : rs.st === 'approved' ? `${monthName(rs.ym)} report approved` : `${esc(s.project.cadence)} report scheduled`}</div><div class="meta">${rs.st === 'waiting' ? `First draft on ${nextMonthStart()}, once a full month of figures is in. Move the date forward in Demo studio to see it.` : 'Drafted from the figures above'}</div></div>${rs.st !== 'waiting' ? `<a class="btn sm ${rs.st === 'ready' ? 'primary' : ''}" href="#report-${s.id}">Open report</a>` : ''}</div></section>`}`;
     }
-    return `${head({ crumbs: crumbs([o.name, '#org-' + o.id], [s.name]), title: esc(s.name), meta: `${statusPill(st)}<span>${esc(s.project.name)}</span><span>${K.label}</span>`, actions: s.stage === 'collecting' ? rangeSeg() : '' })}
+    return `${head({ crumbs: crumbs(['Clients', '#organisations'], [o.name, '#org-' + o.id], [s.project.name], [s.name]), title: esc(s.name), meta: `${statusPill(st)}<span>${esc(s.project.name)}</span><span>${K.label}</span>`, actions: s.stage === 'collecting' ? rangeSeg() : '' })}
       ${strip}${body}`;
   };
   pages.sim.after = (id) => {
@@ -1073,7 +1148,7 @@
     if (id) state.focusSim = id;
     let s = wizSim();
     if (!s || s.stage !== 'draft') { s = state.sims.find((x) => x.stage === 'draft'); if (s) { state.focusSim = s.id; state.wiz = freshWizard(); } }
-    if (!s) return `${head({ title: 'Connect a solution' })}<section class="card"><div class="empty">${emptyArt}<h3>${state.orgs.length ? 'Create a project first' : 'Add the organisation and project first'}</h3><p>A solution is measured against a project’s outcome, so we need both before connecting.</p><a class="btn primary" href="${state.orgs.length ? '#new-project' : '#new-organisation'}">${state.orgs.length ? 'Create project' : 'Add organisation'}</a></div></section>`;
+    if (!s) return `${head({ title: 'Connect a solution' })}<section class="card"><div class="empty">${emptyArt}<h3>${state.orgs.length ? 'Create a project first' : 'Add the client and project first'}</h3><p>A solution is measured against a project’s outcome, so we need both before connecting.</p><a class="btn primary" href="${state.orgs.length ? '#new-project' : '#new-organisation'}">${state.orgs.length ? 'Create project' : 'Add organisation'}</a></div></section>`;
     const w = state.wiz, o = orgOf(s), K = kindOf(s), solName = w.solName || s.name;
     if (!w.baseline) w.baseline = { method: 'sample', mid: K.base.mid, low: K.base.low, high: K.base.high, n: 20, period: `${day(M.addDays(today(), 5))} to ${day(M.addDays(today(), 9))}`, note: '' };
     const nav = `<ol class="wsteps">${WSTEPS.map((l, i) => `<li class="${i + 1 < w.step ? 'done' : i + 1 === w.step ? 'now' : ''}" ${i + 1 === w.step ? 'aria-current="step"' : ''}><b>${i + 1 < w.step ? '✓' : i + 1}</b><span>${l}</span></li>`).join('')}</ol>`;
@@ -1124,7 +1199,7 @@
         <div class="field"><label for="w-appr">Who approves</label><select id="w-appr"><option>Aisyah Rahman · Admin</option></select><span class="help">You can’t approve what you set up yourself.</span></div>
         ${foot('Send for approval')}`;
     }
-    return `${head({ crumbs: crumbs([o.name, '#org-' + o.id], ['Connect a solution']), title: 'Connect a solution', lead: `${esc(s.project.name)} · step ${w.step} of ${WSTEPS.length}` })}
+    return `${head({ crumbs: crumbs(['Clients', '#organisations'], [o.name, '#org-' + o.id], [s.project.name], ['Connect a solution']), title: 'Connect a solution', lead: `${esc(s.project.name)} · step ${w.step} of ${WSTEPS.length}` })}
       <div class="wizard">${nav}<div class="card wpanel" id="wpanel">${panel}</div></div>`;
   };
   pages.connect.after = () => {
@@ -1179,7 +1254,7 @@
       <section class="card" aria-labelledby="ap-h">
         <div class="meta-line" style="margin:0 0 8px">${sp(sel)}<span class="pill idle">${sel.type}</span></div><h2 id="ap-h">${esc(sel.title)}</h2>
         <p class="ink" style="margin-top:6px">${esc(sel.summary)}</p>
-        <div style="margin-top:12px">${kv([['Organisation', esc(orgName(sel))], ['Proposed by', who(sel.proposer) + (sel.editedBy ? `, edited by ${M.staff[sel.editedBy].name}` : '')]].concat((sel.fields || []).map(([k, v]) => [k, esc(v)])).concat([['Evidence', esc(sel.evidence)], ['Changes', esc(sel.affects)]]), 140)}</div>
+        <div style="margin-top:12px">${kv([['Client', esc(orgName(sel))], ['Proposed by', who(sel.proposer) + (sel.editedBy ? `, edited by ${M.staff[sel.editedBy].name}` : '')]].concat((sel.fields || []).map(([k, v]) => [k, esc(v)])).concat([['Evidence', esc(sel.evidence)], ['Changes', esc(sel.affects)]]), 140)}</div>
         ${sel.diff ? `<div class="table-wrap" style="margin-top:12px"><table><thead><tr><th></th><th>Before</th><th>After</th></tr></thead><tbody>${sel.diff.map(([k, b, a]) => `<tr><td class="muted">${k}</td><td><s class="muted">${esc(b)}</s></td><td class="ink" style="font-weight:500">${esc(a)}</td></tr>`).join('')}</tbody></table></div>` : ''}
         ${sel.report ? `<a class="btn sm" href="#report" style="margin-top:12px">${icon('reports', 'sm')}Open the draft report</a>` : ''}
         ${sel.blocker ? `<div class="callout warn" style="margin-top:12px">${icon('target')}<span>${esc(sel.blocker)}</span></div>` : ''}
@@ -1215,12 +1290,12 @@
     if (!demo()) {
       const live = state.sims.filter((s) => s.stage === 'collecting');
       if (!state.sims.length) return `${head({ title: 'Reports', lead })}<section class="card"><div class="empty">${emptyArt}<h3>No reports yet</h3><p>Once a solution is collecting data, you can schedule its report here.</p></div></section>`;
-      return `${head({ title: 'Reports', lead })}<section class="card"><div class="table-wrap"><table><thead><tr><th>Report</th><th>Organisation</th><th>Period</th><th>Status</th><th></th></tr></thead><tbody>
+      return `${head({ title: 'Reports', lead })}<section class="card"><div class="table-wrap"><table><thead><tr><th>Report</th><th>Client</th><th>Period</th><th>Status</th><th></th></tr></thead><tbody>
         ${state.sims.map((s) => { const r = simReportState(s); return `<tr><td><span class="name">${esc(s.project.name)}</span><span class="sub">${esc(s.project.cadence)}</span></td><td>${esc(orgOf(s).name)}</td><td class="mono">${r.st === 'ready' || r.st === 'approved' ? monthName(r.ym) : '–'}</td><td>${({ none: s.stage === 'collecting' ? '<span class="pill idle">Not scheduled</span>' : '<span class="pill idle">Waiting for data</span>', waiting: `<span class="pill info">First draft ${nextMonthStart()}</span>`, ready: '<span class="pill warn"><span class="dot"></span>Ready to review</span>', approved: '<span class="pill ok"><span class="dot"></span>Approved</span>' })[r.st]}</td><td>${r.st === 'none' && s.stage === 'collecting' ? `<button type="button" class="btn sm" data-act="schedule-report" data-sim="${s.id}">Schedule</button>` : r.st === 'ready' || r.st === 'approved' ? `<a class="btn sm" href="#report-${s.id}">Open</a>` : ''}</td></tr>`; }).join('')}
       </tbody></table></div></section>${live.some((s) => simReportState(s).st === 'waiting') ? `<div class="demo-bar"><span class="tag">MOCK CONTROLS</span><span>Reports draft on the 1st of each month.</span><button type="button" class="btn sm" data-act="to-month-end">Jump to ${nextMonthStart()}</button></div>` : ''}`;
     }
     return `${head({ title: 'Reports', lead })}
-    <section class="card"><div class="table-wrap"><table><thead><tr><th>Report</th><th>Organisation</th><th>Period</th><th>Status</th><th></th></tr></thead><tbody>
+    <section class="card"><div class="table-wrap"><table><thead><tr><th>Report</th><th>Client</th><th>Period</th><th>Status</th><th></th></tr></thead><tbody>
       <tr class="link" data-go="report" tabindex="0"><td><span class="name">Accounts payable automation</span><span class="sub">Monthly</span></td><td>Contoh Logistik</td><td class="mono">Sep 2026</td><td>${state.reportApproved ? '<span class="pill ok"><span class="dot"></span>Approved</span>' : '<span class="pill warn"><span class="dot"></span>Ready to review</span>'}</td><td><a class="btn sm" href="#report">Open</a></td></tr>
       <tr><td><span class="name">Production planning assistant</span><span class="sub">Monthly</span></td><td>Acme Plastics</td><td class="mono">Sep 2026</td><td><span class="pill ok"><span class="dot"></span>Sent 3 Oct</span></td><td></td></tr>
       <tr><td><span class="name">Quotation drafting</span><span class="sub">Quarterly</span></td><td>Bina Jaya</td><td class="mono">Q3 2026</td><td><span class="pill ok"><span class="dot"></span>Sent 7 Oct</span></td><td></td></tr>
@@ -1330,12 +1405,20 @@
   }
 
   // ------------------------------------------------------------------ ANALYTICS: standard views over any measure
+  // scope is 'all', 'c:<client id>' or a project id
+  function anSel(a, ps) {
+    if (a.proj === 'all') return ps;
+    if (a.proj.startsWith('c:')) { const c = coById(a.proj.slice(2)), ids = c ? coSolutions(c).map((x) => x.id) : []; return ps.filter((p) => ids.includes(p.id)); }
+    return ps.filter((p) => p.id === a.proj);
+  }
   pages.analytics = () => {
     const ps = projects();
     if (!ps.length) return `${head({ title: 'Analytics', lead: 'Trends, comparisons and patterns for any measure, across one project or all of them.' })}<section class="card"><div class="empty">${emptyArt}<h3>Nothing to analyse yet</h3><p>Analytics appears once a solution is collecting figures. Connect one, or simulate a few in Demo studio.</p><div class="head-actions" style="justify-content:center"><button type="button" class="btn primary" data-act="studio">Open Demo studio</button><button type="button" class="btn" data-act="switch-mode">Example workspace</button></div></div></section>`;
     const a = state.an = state.an || { measure: 'hours', proj: 'all', range: 90 };
-    if (a.proj !== 'all' && !ps.some((p) => p.id === a.proj)) a.proj = 'all';
-    const sel = a.proj === 'all' ? ps : ps.filter((p) => p.id === a.proj);
+    a.by = a.by || 'client';
+    if (!anSel(a, ps).length) a.proj = 'all';
+    const sel = anSel(a, ps), cos = companies().map((c) => ({ c, list: ps.filter((p) => coSolutions(c).some((x) => x.id === p.id)) })).filter((x) => x.list.length);
+    const scopeName = a.proj === 'all' ? 'all clients' : a.proj.startsWith('c:') ? coById(a.proj.slice(2)).short : `${sel[0].org} · ${sel[0].sol}`;
     const visible = MEASURES.filter((m) => !m.reka || has('Commercial'));
     if (!visible.some((m) => m.key === a.measure)) a.measure = 'hours';
     const m = mByKey(a.measure);
@@ -1344,7 +1427,9 @@
     const v = m.calc(cur), pv = m.calc(prv), rg = m.range ? m.range(cur) : null;
     const okCmp = comparable(cur, prv);
     const chg = okCmp && v !== null && pv ? 100 * (v - pv) / Math.abs(pv) : null;
-    const rows = ps.map((p) => { const t = totals(p, days), tp = totals(p, prevDays); return { p, v: m.calc(t), pv: comparable(t, tp) ? m.calc(tp) : null }; }).sort((x, y) => (y.v === null ? -1e12 : y.v) - (x.v === null ? -1e12 : x.v));
+    const groups = a.by === 'client' ? cos.map(({ c, list }) => ({ id: 'c:' + c.id, name: c.short, sub: `${c.projects.length} project${c.projects.length === 1 ? '' : 's'} · ${list.length} solution${list.length === 1 ? '' : 's'} collecting`, list }))
+      : ps.map((p) => ({ id: p.id, name: p.sol, sub: `${p.org} · ${p.name} · ${STATUS[p.stat()][1].toLowerCase()}`, list: [p] }));
+    const rows = groups.map((g) => { const t = mergeTotals(g.list.map((p) => totals(p, days))), tp = mergeTotals(g.list.map((p) => totals(p, prevDays))); return { g, v: m.calc(t), pv: comparable(t, tp) ? m.calc(tp) : null }; }).sort((x, y) => (y.v === null ? -1e12 : y.v) - (x.v === null ? -1e12 : x.v));
     const maxV = Math.max(...rows.map((r) => r.v || 0), 1);
     const wd = [1, 2, 3, 4, 5, 6, 0].map((w) => { const dd = days.filter((d) => M.weekday(d) === w); const ts = sel.map((p) => totals(p, dd)); const t = mergeTotals(ts); const val = m.calc(t); const nd = Math.max(...ts.map((x) => x.n), 0); return [DAYS[w].slice(0, 3), val === null ? null : m.sum ? (nd ? val / nd : null) : val]; });
     const wdMax = Math.max(...wd.map(([, x]) => x || 0), 1);
@@ -1353,7 +1438,7 @@
     return `${head({ title: 'Analytics', lead: 'Trends, comparisons and patterns for any measure, across one project or all of them.', actions: `<button type="button" class="btn sm" data-act="an-ask"><img src="${SPARK}" alt="" style="width:16px">Ask about this</button><button type="button" class="btn sm" data-act="export">Export CSV</button>` })}
     <section class="card" style="padding:14px 18px"><div class="form-grid an-controls">
       <div class="field"><label for="an-m">Measure</label><select id="an-m">${DOMAINS.map((dm) => { const xs = visible.filter((x) => x.domain === dm); return xs.length ? `<optgroup label="${dm}">${xs.map((x) => `<option value="${x.key}" ${x.key === a.measure ? 'selected' : ''}>${x.name}</option>`).join('')}</optgroup>` : ''; }).join('')}</select></div>
-      <div class="field"><label for="an-p">Projects</label><select id="an-p"><option value="all">All projects (${ps.length})</option>${ps.map((p) => `<option value="${p.id}" ${p.id === a.proj ? 'selected' : ''}>${esc(p.org)} · ${esc(p.name)}</option>`).join('')}</select></div>
+      <div class="field"><label for="an-p">Show</label><select id="an-p"><option value="all">All clients (${ps.length} solution${ps.length === 1 ? '' : 's'})</option>${cos.map(({ c, list }) => `<optgroup label="${esc(c.short)}"><option value="c:${c.id}" ${a.proj === 'c:' + c.id ? 'selected' : ''}>All of ${esc(c.short)}</option>${list.map((p) => `<option value="${p.id}" ${p.id === a.proj ? 'selected' : ''}>${esc(p.name)} · ${esc(p.sol)}</option>`).join('')}</optgroup>`).join('')}</select></div>
       <div class="field"><span class="lab">Period</span><div class="seg">${[[30, '30 days'], [90, '90 days'], [365, '12 months']].map(([d, l]) => `<button type="button" data-anrange="${d}" aria-pressed="${a.range === d}">${l}</button>`).join('')}</div></div>
     </div></section>
     <section class="grid g4 stats">
@@ -1362,13 +1447,13 @@
       <div class="card stat"><span class="label">Change</span><span class="value" style="color:var(--${good === null ? 'ink' : good ? 'ok-ink' : 'fault-ink'})">${pctTxt(chg)}</span><span class="hint">${chg === null ? (okCmp ? 'Needs two periods of figures' : 'Too few days of data before to compare fairly') : (good ? 'Better' : 'Worse') + (m.better === 'up' ? ', higher is better' : ', lower is better')}</span></div>
       <div class="card stat"><span class="label">Days with data</span><span class="value">${cur.expected ? nf(100 * cur.n / cur.expected, 0) + '%' : '–'}</span><span class="hint">${cur.missing} missing day${cur.missing === 1 ? '' : 's'}, never counted as zero</span></div>
     </section>
-    <section class="card"><div class="card-head"><div><h2>${esc(m.name)} over time</h2><p class="sub">${a.range > 30 ? 'By week' : 'By day'} · ${a.proj === 'all' ? 'all projects' : esc(sel[0].name)} · against the period before</p></div></div>
+    <section class="card"><div class="card-head"><div><h2>${esc(m.name)} over time</h2><p class="sub">${a.range > 30 ? 'By week' : 'By day'} · ${esc(scopeName)} · against the period before</p></div></div>
       <div class="chart" id="ch-an"></div>
       <div class="legend"><span><i style="background:var(--s1)"></i>This period</span><span><i style="background:var(--baseline)"></i>The period before, dashed</span></div></section>
     <section class="grid g-main">
-      <div class="card"><div class="card-head"><div><h2>By project</h2><p class="sub">${esc(RANGES[a.range])} · ${m.sum ? 'added up across projects' : 'each from its own totals, never averaged across projects'}</p></div></div>
-        <div class="table-wrap"><table><thead><tr><th>Project</th><th class="num">${esc(m.name)}</th><th class="num">Change</th><th>12 weeks</th></tr></thead><tbody>
-        ${rows.map((r) => { const c = r.v !== null && r.pv ? 100 * (r.v - r.pv) / Math.abs(r.pv) : null, gd = c === null ? null : (m.better === 'up' ? c >= 0 : c <= 0); return `<tr class="link" data-anpick="${r.p.id}" tabindex="0"><td><span class="name">${esc(r.p.name)}</span><span class="sub">${esc(r.p.org)} · ${STATUS[r.p.stat()][1].toLowerCase()}</span>${m.sum && r.v !== null ? `<div class="bar-track" style="margin-top:6px;height:6px"><div class="bar-fill" style="width:${100 * r.v / maxV}%"></div></div>` : ''}</td><td class="num">${fmtM(m, r.v) || '<span class="dash">–</span> <span class="needs">not shared</span>'}</td><td class="num" style="color:var(--${gd === null ? 'muted' : gd ? 'ok-ink' : 'fault-ink'})">${pctTxt(c)}</td><td>${sparkline(weeksOf(aWindow(84)).map((w) => m.calc(totals(r.p, w))), 90, 26)}</td></tr>`; }).join('')}
+      <div class="card"><div class="card-head"><div><h2>By ${a.by === 'client' ? 'client' : 'solution'}</h2><p class="sub">${esc(RANGES[a.range])} · ${m.sum ? 'added up within each row' : 'each from its own totals, never averaged'}</p></div><div class="seg" role="group" aria-label="Compare by"><button type="button" data-anby="client" aria-pressed="${a.by === 'client'}">Clients</button><button type="button" data-anby="project" aria-pressed="${a.by !== 'client'}">Solutions</button></div></div>
+        <div class="table-wrap"><table><thead><tr><th>${a.by === 'client' ? 'Client' : 'Solution'}</th><th class="num">${esc(m.name)}</th><th class="num">Change</th><th>12 weeks</th></tr></thead><tbody>
+        ${rows.map((r) => { const c = r.v !== null && r.pv ? 100 * (r.v - r.pv) / Math.abs(r.pv) : null, gd = c === null ? null : (m.better === 'up' ? c >= 0 : c <= 0); return `<tr class="link ${a.proj === r.g.id ? 'sel' : ''}" data-anpick="${r.g.id}" tabindex="0"><td><span class="name">${esc(r.g.name)}</span><span class="sub">${esc(r.g.sub)}</span>${m.sum && r.v !== null ? `<div class="bar-track" style="margin-top:6px;height:6px"><div class="bar-fill" style="width:${100 * r.v / maxV}%"></div></div>` : ''}</td><td class="num">${fmtM(m, r.v) || '<span class="dash">–</span> <span class="needs">not shared</span>'}</td><td class="num" style="color:var(--${gd === null ? 'muted' : gd ? 'ok-ink' : 'fault-ink'})">${pctTxt(c)}</td><td>${sparkline(weeksOf(aWindow(84)).map((w) => m.calc(mergeTotals(r.g.list.map((p) => totals(p, w))))), 90, 26)}</td></tr>`; }).join('')}
         </tbody></table></div></div>
       <div class="card"><div class="card-head"><div><h2>By weekday</h2><p class="sub">${m.sum ? 'Average a day' : 'From that weekday’s totals'}</p></div></div>
         <div class="impact">${wd.map(([l, x]) => `<div class="ib-row" style="grid-template-columns:40px minmax(0,1fr)"><span class="lab">${l}</span><div class="ib-bar" style="align-items:center;gap:8px;height:22px"><div class="ib-seg measured" style="width:${x === null ? 0 : Math.max(1, 72 * x / wdMax)}%"></div><span class="mono xs ink">${fmtM(m, x) || '–'}</span></div></div>`).join('')}</div>
@@ -1377,7 +1462,7 @@
   };
   pages.analytics.after = () => {
     const el = $('#ch-an'); if (!el) return;
-    const a = state.an, ps = projects(), sel = a.proj === 'all' ? ps : ps.filter((p) => p.id === a.proj), m = mByKey(a.measure);
+    const a = state.an, ps = projects(), sel = anSel(a, ps), m = mByKey(a.measure);
     const days = aWindow(a.range), prevDays = windowDays(a.range, M.addDays(days[0], -1));
     const chunk = (ds) => a.range > 30 ? weeksOf(ds) : ds.map((d) => [d]);
     const cb = chunk(days), pb = chunk(prevDays);
@@ -1414,9 +1499,19 @@
     const missing = scope.reduce((a, p) => a + T(p, per.days).missing, 0);
     const src = `<p class="xs muted">Worked out from ${scope.length} project${scope.length === 1 ? '' : 's'}, ${esc(per.label)}${missing ? `. ${missing} missing day${missing === 1 ? '' : 's'} not counted` : ''}.${m.quality === 'estimated' ? ' Estimates come from agreed baselines.' : ''}</p>`;
     const pc = (x, y) => y ? (x - y) / Math.abs(y) * 100 : 0;
+    const co = companies().find((c) => [c.name, c.short].some((x) => ql.includes(x.toLowerCase())));
     if (/attention|needs? (me|you)|problem|wrong|issue|alert|broken|stuck/.test(ql)) {
-      const list = demo() ? demoAtt() : needsYou();
+      const list = co ? coNeeds(co) : demo() ? demoAtt() : needsYou();
       return { html: list.length ? `<p>${list.length} thing${list.length === 1 ? '' : 's'} need you, worst first:</p><ul>${list.slice(0, 6).map(([, , t, mm, h]) => `<li><a href="${h}">${esc(t)}</a> <span class="muted">· ${esc(mm)}</span></li>`).join('')}</ul>` : '<p>Nothing needs you. Every solution sent its figures on time.</p>' };
+    }
+    if (co && /doing|going|summar|overview|status|update|how.?s|how is/.test(ql) && !/calculat|formula|worked out/.test(ql)) {
+      const cps = coProjs(co), hm = mByKey('hours'), ct = coTotals(co, per.days), cp = coTotals(co, per.prev), h = hm.calc(ct), rg = hm.range(ct), needs = coNeeds(co);
+      const ch = comparable(ct, cp) && h !== null ? chgPct(h, hm.calc(cp)) : null;
+      if (!cps.length) return { html: `<p><b>${esc(co.short)}</b> has ${co.projects.length ? `${co.projects.length} project${co.projects.length === 1 ? '' : 's'}, but none is collecting figures yet` : 'no projects yet'}. I can only answer once a solution is sending data.</p>${needs.length ? `<p>What needs you:</p><ul>${needs.map(([, , t, , hr]) => `<li><a href="${hr}">${esc(t)}</a></li>`).join('')}</ul>` : ''}` };
+      return { html: `<p><b>${esc(co.short)}</b>, ${esc(per.label)}: ${h !== null ? `an estimated <span class="mono" style="font-size:1.1em">${nf(h)} hours</span> saved ${q('estimated')}, likely ${nf(rg[0])} to ${nf(rg[1])}${ch !== null ? `, ${ch >= 0 ? 'up' : 'down'} ${nf(Math.abs(ch), 0)}% on ${esc(per.prevLabel)}` : ''}` : 'no hours saved yet, because no project has an approved baseline'}. <span class="mono">${nf(ct.vol)}</span> items handled across ${cps.length} solution${cps.length === 1 ? '' : 's'}.</p>
+        <ul>${co.projects.map((pr) => { const ss = pr.solutions.filter((x) => x.proj), t = mergeTotals(ss.map((x) => totals(x.proj, per.days))), hv = hm.calc(t); return `<li>${esc(pr.name)}: ${ss.length ? ss.map((x) => citeOf(x.proj)).join(', ') + ` <span class="mono">${hv !== null ? nf(hv) + ' h' : nf(t.vol) + ' handled'}</span>` : '<span class="muted">not collecting yet</span>'} · ${esc(STATUS[worstOf(pr.solutions.map((x) => x.status))][1].toLowerCase())}</li>`; }).join('')}</ul>
+        ${needs.length ? `<p>${needs.length} thing${needs.length === 1 ? '' : 's'} need${needs.length === 1 ? 's' : ''} you here:</p><ul>${needs.map(([, , t, , hr]) => `<li><a href="${hr}">${esc(t)}</a></li>`).join('')}</ul>` : '<p>Nothing needs you for this client.</p>'}
+        <p class="xs muted">Worked out from ${cps.length} project${cps.length === 1 ? '' : 's'} for this client, ${esc(per.label)}${ct.missing ? `. ${ct.missing} missing day${ct.missing === 1 ? '' : 's'} not counted` : ''}. Hours add up across projects without counting the same work twice.</p>` };
     }
     if (/how (is|are|do|does)|calculat|formula|worked out|what does .* mean|definition/.test(ql)) {
       return { html: `<p><b>${esc(m.name)}</b> ${q(m.quality)}</p><p>${esc(m.how)}</p>${m.key === 'hours' ? '<p>Minutes by hand come from the baseline the client agreed. Machine time is never counted as a person’s time. The likely range uses the fastest and slowest times in the baseline.</p>' : ''}<p class="xs muted">Every project uses the same definition, so they can be compared.</p>` };
@@ -1464,7 +1559,8 @@
   }
   function askSuggestions() {
     const p = projects()[0];
-    return [`How many hours did we save in ${monthName(lastFullMonth())}?`, 'What needs my attention?', p ? `Why did ${p.sol} change this week?` : null, 'Which project improved most this month?', 'Compare all projects', 'Show the trend of work handled', 'How is hours saved worked out?'].filter(Boolean);
+    const c = companies().find((x) => coProjs(x).length);
+    return [`How many hours did we save in ${monthName(lastFullMonth())}?`, 'What needs my attention?', c ? `How is ${c.short} doing this month?` : null, p ? `Why did ${p.sol} change this week?` : null, 'Which project improved most this month?', 'Compare all projects', 'Show the trend of work handled', 'How is hours saved worked out?'].filter(Boolean);
   }
   pages.ask = () => {
     const chat = state.chat = state.chat || [];
@@ -1587,8 +1683,8 @@
   const tsim = () => simById(T.simId);
   const TOUR = [
     { t: 'Meet Outcomes', d: 'REKA builds AI solutions for clients. Outcomes shows each client what their solution changed. Let’s take a new client from nothing to their first report.', go() { setWs('sandbox'); resetWorkspace(true); go('home'); } },
-    { t: 'Add the client', d: 'Everything starts with the organisation and its signed data agreement. Nothing is collected until it’s signed.', mark: '#f-org', go() { state.draftOrg = 'Harapan Foods'; go('new-organisation'); } },
-    { t: 'Client added', d: 'Harapan Foods is in. Next, the project REKA agreed with them.', go() { if (!T.orgId) { const o = newOrg('Harapan Foods', 'Food and beverage'); T.orgId = o.id; log('Added organisation Harapan Foods'); } go('org-' + T.orgId); } },
+    { t: 'Add the client', d: 'Everything starts with the client and their signed data agreement. Nothing is collected until it’s signed.', mark: '#f-org', go() { state.draftOrg = 'Harapan Foods'; go('new-organisation'); } },
+    { t: 'Client added', d: 'Harapan Foods is in. Next, the project REKA agreed with them.', go() { if (!T.orgId) { const o = newOrg('Harapan Foods', 'Food and beverage'); T.orgId = o.id; log('Added client Harapan Foods'); } go('org-' + T.orgId); } },
     { t: 'Create the project', d: 'Pick the kind of work: it steers which KPIs AI suggests. The outcome is written in the client’s own words.', mark: '#f-proj', go() { state.newKind = 'documents'; state.draftProj = 'Supplier invoices'; state.newProjOrg = T.orgId; go('new-project'); } },
     { t: 'Project created', d: 'The project is waiting for its solution to be connected.', go() { if (!T.simId) { const s = newSim(state.orgs.find((o) => o.id === T.orgId), { kind: 'documents', project: 'Supplier invoices', sol: 'Invoice reader', vol: 220, history: 14 }); T.simId = s.id; state.focusSim = s.id; state.wiz = freshWizard(); log('Created project Supplier invoices for Harapan Foods'); } go('org-' + T.orgId); } },
     { t: 'Brief the developer', d: 'The solution needs a small, read-only link. Outcomes writes the brief for the developer, or for Claude Code.', mark: '#wpanel', go() { wizTo(3); } },
@@ -1644,10 +1740,10 @@
   // ------------------------------------------------------------------ search palette
   function openPalette() {
     const el = $('#palette'); if (!el) return;
-    const items = [['Home', '#home'], ['Organisations', '#organisations'], ['Approvals', '#approvals'], ['Reports', '#reports'], ['Settings', '#settings'], ['Connect a solution', '#connect'], ['Add organisation', '#new-organisation']]
+    const items = [['Home', '#home'], ['Clients', '#organisations'], ['Approvals', '#approvals'], ['Reports', '#reports'], ['Settings', '#settings'], ['Connect a solution', '#connect'], ['Add organisation', '#new-organisation']]
       .concat(demo() ? M.orgs.map((o) => [o.name, '#organisation-' + o.id]).concat(Object.values(M.solutions).filter((s) => s.status !== 'not_connected').map((s) => [`${s.name} · ${orgById(s.org).short}`, '#solution-' + s.id])) : state.orgs.map((o) => [o.name, '#org-' + o.id]).concat(state.sims.map((s) => [`${s.name} · ${orgOf(s).name}`, '#sim-' + s.id])));
     el.hidden = false;
-    el.innerHTML = `<div class="scrim" data-act="close-palette"></div><div class="card" role="dialog" aria-label="Search" style="position:fixed;z-index:60;top:12vh;left:50%;transform:translateX(-50%);width:min(560px,calc(100vw - 32px));padding:10px;box-shadow:var(--shadow-lg)"><div class="field"><input id="pal-q" placeholder="Search organisations, solutions, pages" aria-label="Search" autocomplete="off"></div><div id="pal-list" style="max-height:50vh;overflow:auto;margin-top:6px;display:grid;gap:2px"></div></div>`;
+    el.innerHTML = `<div class="scrim" data-act="close-palette"></div><div class="card" role="dialog" aria-label="Search" style="position:fixed;z-index:60;top:12vh;left:50%;transform:translateX(-50%);width:min(560px,calc(100vw - 32px));padding:10px;box-shadow:var(--shadow-lg)"><div class="field"><input id="pal-q" placeholder="Search clients, projects, solutions" aria-label="Search" autocomplete="off"></div><div id="pal-list" style="max-height:50vh;overflow:auto;margin-top:6px;display:grid;gap:2px"></div></div>`;
     const draw = (qv) => { $('#pal-list').innerHTML = items.filter(([l]) => l.toLowerCase().includes(qv.toLowerCase())).slice(0, 10).map(([l, h]) => `<a href="${h}" style="padding:10px 12px;border-radius:10px;color:var(--ink);text-decoration:none;display:block">${esc(l)}</a>`).join('') || '<p class="small muted" style="padding:10px">Nothing matches.</p>'; };
     draw(''); const inp = $('#pal-q'); inp.focus();
     inp.addEventListener('input', () => draw(inp.value));
@@ -1662,7 +1758,7 @@
     return [h, null, h];
   }
   let last = '';
-  const TITLES = { analytics: 'Analytics', ask: 'Ask', signin: 'Sign in', welcome: 'Welcome', home: 'Home', organisations: 'Organisations', 'new-organisation': 'Add organisation', 'new-project': 'New project', connect: 'Connect a solution', approvals: 'Approvals', reports: 'Reports', report: 'Report', settings: 'Settings', guide: 'Help' };
+  const TITLES = { analytics: 'Analytics', ask: 'Ask', signin: 'Sign in', welcome: 'Welcome', home: 'Home', organisations: 'Clients', 'new-organisation': 'Add client', 'new-project': 'New project', connect: 'Connect a solution', approvals: 'Approvals', reports: 'Reports', report: 'Report', settings: 'Settings', guide: 'Help' };
   function render() {
     let [page, arg, raw] = parse();
     if (!state.signedIn) { page = 'signin'; raw = 'signin'; } else if (!state.mode) { page = 'welcome'; raw = 'welcome'; } else if (page === 'signin' || page === 'welcome') { page = 'home'; raw = 'home'; }
@@ -1675,6 +1771,7 @@
     if (state.playing && /^(new-|connect)/.test(page)) { clearInterval(state.playing); state.playing = null; }
     const root = $('#root');
     const scroll = window.scrollY;
+    if (state.mode && routeClient(raw)) { const c = coById(routeClient(raw)); if (c) rememberClient(c); }
     root.innerHTML = (page === 'signin' || page === 'welcome') ? pages[page]() : appShell(raw, pages[page](arg));
     const name = page === 'org' ? state.orgs.find((o) => o.id === arg).name : page === 'sim' ? simById(arg).name : page === 'organisation' ? orgById(arg).short : page === 'solution' ? M.solutions[arg].name : TITLES[page];
     document.title = `${name || 'Outcomes'} · Outcomes`;
@@ -1733,9 +1830,11 @@
     },
     'cm-approve': (d) => { const pj = projById(d.proj), cm = pj.custom().find((x) => x.id === d.cm); cm.status = 'live'; const a = pj.approvals().find((x) => x.cmId === cm.id); if (a) a.status = 'approved'; log(`Approved the measure \u201c${cm.name}\u201d`, 'Aisyah Rahman'); render(); toast('Aisyah approved the measure.'); },
     'ask-clear': () => { state.chat = []; render(); },
-    'an-ask': () => { const m = mByKey(state.an.measure); askSubmit(`Which project improved most on ${m.name.toLowerCase()} this month?`); },
+    'an-ask': () => { const m = mByKey(state.an.measure), c = state.an.proj.startsWith('c:') ? coById(state.an.proj.slice(2)) : null; askSubmit(c ? `How is ${c.short} doing this month?` : `Which project improved most on ${m.name.toLowerCase()} this month?`); },
     export: () => toast('Exports download in the real product. The mock can\u2019t save files.'),
     'tour-start': () => { tourGo(0); },
+    'ask-client': (d) => askSubmit(`How is ${d.name} doing this month?`),
+    'cf-reset': () => { state.cf = { show: 'all', sort: state.cf.sort, q: '' }; render(); },
     'tour-next': () => { if (state.tour >= TOUR.length - 1) { state.tour = null; render(); toast('Demo finished. Demo studio is yours.'); return; } tourGo(state.tour + 1); },
     'tour-back': () => tourGo(state.tour - 1),
     'tour-end': () => { state.tour = null; render(); },
@@ -1744,17 +1843,20 @@
     if (e.target.id === 'scrim') { $('#sidebar').classList.remove('open'); e.target.hidden = true; return; }
     if (!e.target.closest('.rel')) closePops();
     if (e.target.closest('#pal-list a')) { closePalette(); return; }
-    const t = e.target.closest('button, [data-go], [data-act]');
+    const t = e.target.closest('button, [data-go], [data-act], [data-anpick]');
     if (!t) return;
     const d = t.dataset;
     if (d.range) { state.range = +d.range; render(); return; }
     if (d.anrange) { state.an.range = +d.anrange; render(); return; }
-    if (d.anpick) { state.an.proj = d.anpick; render(); return; }
+    if (d.anpick) { state.an.proj = state.an.proj === d.anpick ? 'all' : d.anpick; render(); return; }
+    if (d.anby) { state.an.by = d.anby; render(); return; }
     if (d.anProj && t.tagName === 'A') { state.an = Object.assign(state.an || { measure: 'hours', range: 90 }, { proj: d.anProj }); return; }
     if (d.askq) { askSubmit(d.askq); return; }
     if (d.bop) { state.bld.op = d.bop; if ((d.bop === 'ratio' || d.bop === 'per') && !state.bld.b) state.bld.b = 'handled'; render(); return; }
     if (d.baud) { state.bld.aud = d.baud; render(); return; }
     if (d.aud) { state.audience = d.aud; render(); return; }
+    if (d.cfshow) { state.cf.show = d.cfshow; render(); return; }
+    if (d.cotab) { state.coTab = d.cotab; render(); return; }
     if (d.tab) { state.solTab = d.tab; render(); return; }
     if (d.demo) { state.demoState = d.demo; render(); return; }
     if (d.go) { location.hash = '#' + d.go; return; }
@@ -1787,9 +1889,10 @@
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') { closePops(); closePalette(); if (state.studio) { readSf(); state.studio = false; render(); } const sb = $('#sidebar'); if (sb) { sb.classList.remove('open'); $('#scrim').hidden = true; } }
     if (e.key === 'Enter' && e.target.matches('tr[data-go]')) location.hash = '#' + e.target.dataset.go;
+    if (e.key === 'Enter' && e.target.matches('tr[data-anpick]')) e.target.click();
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k' && state.mode) { e.preventDefault(); openPalette(); }
   });
   window.addEventListener('hashchange', () => { closePalette(); render(); });
-  let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { const [p, a] = parse(); if (['home', 'organisation', 'solution', 'sim'].includes(p) && pages[p].after && state.mode) pages[p].after(a); }, 150); });
+  let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { const [p, a] = parse(); if (['home', 'org', 'organisation', 'solution', 'sim', 'analytics'].includes(p) && pages[p].after && state.mode) pages[p].after(a); }, 150); });
   render();
 })();
