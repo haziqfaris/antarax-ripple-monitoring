@@ -29,7 +29,7 @@
   const SAMPLE_CLIENTS = [['Harapan Foods', 'Food and beverage', 'documents', 'Supplier invoices', 'Invoice reader'], ['Sinar Clinics', 'Healthcare', 'triage', 'Patient enquiries', 'Enquiry assistant'], ['Teguh Builders', 'Engineering and construction', 'quotes', 'Same-day quotations', 'Quote drafter'], ['Mutiara Freight', 'Logistics', 'planning', 'Driver rostering', 'Roster planner'], ['Cahaya Retail', 'Retail', 'triage', 'Customer service inbox', 'Inbox triage'], ['Delima Insurance', 'Insurance', 'documents', 'Claims intake', 'Claims reader'], ['Seri Hotels', 'Hospitality', 'planning', 'Housekeeping schedules', 'Shift planner'], ['Bistari Learning', 'Education', 'quotes', 'Training proposals', 'Proposal drafter']];
 
   // ------------------------------------------------------------------ state
-  const freshWizard = () => ({ step: 1, method: 'link', devReady: false, solName: '', url: 'https://lease.teladan.example/internal/measure/v1', tests: [], tested: false, proposals: null, keep: { volume: true, quality: true, impact: true }, baseline: null });
+  const freshWizard = () => ({ step: 1, method: 'link', product: 'Yara', sheetFile: null, devReady: false, solName: '', url: 'https://lease.teladan.example/internal/measure/v1', tests: [], tested: false, proposals: null, keep: { volume: true, quality: true, impact: true }, baseline: null });
   const START_DAY = '2026-10-14'; // last whole day collected; "today" is the day after
   const state = {
     signedIn: false, mode: null, role: 'daniel',
@@ -1491,7 +1491,15 @@
   };
 
   // ------------------------------------------------------------------ CONNECT WIZARD
-  const WSTEPS = ['Solution', 'How it shares data', 'Developer setup', 'Connect and test', 'Check the data', 'Choose KPIs', 'Baseline', 'Review and send'];
+  const WSTEPS = ['Solution', 'Connect', 'What to measure', 'Baseline and send'];
+  const WMETHODS = {
+    link: { ic: 'lock', door: 'Measurement link', sub: 'Read-only, signed', t: 'Measurement link', d: 'The solution serves a small read-only link that Outcomes calls each night. Best for anything REKA builds.', effort: 'About a day of developer work', tag: 'Recommended' },
+    axle: { ic: 'box', door: 'AXLE Link', sub: 'Built into the product', t: 'An AntaraX product', d: 'Yara, Janka and the other products already share daily totals through AXLE.', effort: 'Minutes. Nothing to build', tag: '' },
+    sheet: { ic: 'sheet', door: 'Weekly spreadsheet', sub: 'Uploaded by a person', t: 'Spreadsheet upload', d: 'For a system that can’t serve a link. Someone uploads a CSV of daily totals each week.', effort: 'Ten minutes a week', tag: '' },
+  };
+  const wizTests = (w, o) => w.method === 'axle' ? [`Found ${w.product} in AXLE`, `The ${w.product} workspace belongs to ${o.name}`, 'Read what it shares: 6 figures, daily', 'Read one day of figures']
+    : w.method === 'sheet' ? [`Read ${w.sheetFile || 'the file'}`, 'Columns match the template', 'Seven days, none missing', 'No personal data in it']
+    : ['Found the link', 'Secure connection', 'Signed request accepted', 'Read what it shares: 6 figures, daily', 'Health check: healthy', 'Read one day of figures'];
   const foundFor = (K) => [
     [`${cap(K.nouns)} handled`, `${K.nouns}.processed`, 'Count, every day', 'ok'],
     [`Time to process a ${K.noun}`, `${K.nouns}.processing_duration`, 'Average seconds, every day', 'ok'],
@@ -1508,88 +1516,110 @@
 - Don't change the app's own data model or API.
 - Daily totals for finished days in the organisation's time zone: ${K.nouns} handled, processing time (with sum and count), ${K.nouns} ${K.qual.label}, people reviewing (each counted once). A missing day is left out, never sent as zero.
 - No document text, names or personal data. Dimension values are short codes, like invoice.
-- Check every call is signed with the key in AX_MEASURE_KEY (ax_msr_…). Outcomes shows it once, when the solution is connected.
+- Check every call is signed with the key in AX_MEASURE_KEY (ax_msr_…). The developer link shows it once.
 - Before you finish, run the contract test: AX_MEASURE_KEY=… node contract-test/cli.mjs --base <url>
 - If there's no baseline, say so. Don't guess one.`; };
+  const sheetTemplate = (K) => `date,${K.nouns.replace(/\s+/g, '_')}_handled,seconds_per_${K.noun.replace(/\s+/g, '_')},${K.nouns.replace(/\s+/g, '_')}_${K.qual.label.replace(/\s+/g, '_')},people_reviewing\n${M.addDays(today(), -1)},0,0,0,0`;
+  // The connection, drawn: the solution, the door it shares through, and Outcomes. It moves as the connection does:
+  // waiting (the door breathes), testing (requests travel to the solution), live (figures flow to Outcomes nightly).
+  function connMap(w, s, o) {
+    const m = WMETHODS[w.method], solName = w.solName || s.name, n = w.tests.length, done = w.tests.filter((t) => t[1] === 'ok').length;
+    const st = w.tested ? 'live' : n ? 'test' : w.step >= 2 ? 'wait' : 'idle';
+    const word = st === 'live' ? 'Connected' : st === 'test' ? `Checking, ${done} of ${n}` : st === 'wait' ? ({ link: 'Waiting for the developer', axle: 'Ready to test', sheet: 'Waiting for a file' })[w.method] : 'Not set up yet';
+    const doorOk = st === 'live' || (st === 'test' && done >= Math.ceil(n / 2));
+    const wire = (lab) => `<div class="cwire" aria-hidden="true"><span class="track"></span><i></i><i></i><i></i>${lab ? `<span class="clab">${lab}</span>` : ''}</div>`;
+    return `<div class="cmap" data-st="${st}" role="img" aria-label="${esc(`${solName}, through ${m.door}, to Outcomes: ${word}`)}">
+      <div class="cnode ${st === 'live' ? 'ok' : ''}"><span class="cic">${icon('box')}</span><b>${esc(solName)}</b><span>${esc(o.name)}’s system</span></div>
+      ${wire(st === 'live' ? '6 figures, daily' : '')}
+      <div class="cnode door ${doorOk ? 'ok' : ''}"><span class="cic">${icon(m.ic)}</span><b>${m.door}</b><span>${m.sub}</span><span class="cword">${word}</span></div>
+      ${wire(st === 'live' ? (w.method === 'sheet' ? 'Each week' : 'Each night, 06:00') : '')}
+      <div class="cnode ${st === 'live' ? 'ok' : ''}"><span class="cic"><img src="assets/antarax-mark.svg" alt=""></span><b>Outcomes</b><span>Reads totals, changes nothing</span></div>
+    </div>`;
+  }
+  const foundChips = (K) => `<div class="found">${foundFor(K).map(([n, , , st], i) => `<span class="fchip ${st}" style="--i:${i}">${icon(st === 'ok' ? 'check' : st === 'warn' ? 'alerts' : 'lock', 'sm')}${esc(n)}</span>`).join('')}</div>`;
+  const foundList = (K) => `<div class="list">${foundFor(K).map(([n, k, kind, st, note]) => `<div class="row"><span class="ico ${st}">${icon(st === 'ok' ? 'check' : st === 'warn' ? 'alerts' : 'lock', 'sm')}</span><div><div class="what">${esc(n)}</div><div class="meta"><span>${kind}</span><span class="mono">${k}</span></div>${note ? `<div class="small" style="margin-top:4px;color:var(--${st}-ink)">${esc(note)}</div>` : ''}</div><span class="pill ${st}">${st === 'ok' ? 'Ready' : st === 'warn' ? 'Note' : 'Held back'}</span></div>`).join('')}</div>`;
 
   pages.connect = (id) => {
     if (id) state.focusSim = id;
     let s = wizSim();
     if (!s || s.stage !== 'draft') { s = state.sims.find((x) => x.stage === 'draft'); if (s) { state.focusSim = s.id; state.wiz = freshWizard(); } }
     if (!s) return `${head({ title: 'Connect a solution' })}<section class="card"><div class="empty">${emptyArt}<h3>${state.orgs.length ? 'Create a project first' : 'Add the organisation and project first'}</h3><p>A solution is measured against a project’s outcome, so we need both before connecting.</p><a class="btn primary" href="${state.orgs.length ? '#new-project' : '#new-organisation'}">${state.orgs.length ? 'Create project' : 'New organisation'}</a></div></section>`;
-    const w = state.wiz, o = orgOf(s), K = kindOf(s), solName = w.solName || s.name;
+    const w = state.wiz, o = orgOf(s), K = kindOf(s), solName = w.solName || s.name, m = WMETHODS[w.method];
     if (!w.baseline) w.baseline = { method: 'sample', mid: K.base.mid, low: K.base.low, high: K.base.high, n: 20, period: `${day(M.addDays(today(), 5))} to ${day(M.addDays(today(), 9))}`, note: '' };
-    const nav = `<ol class="wsteps">${WSTEPS.map((l, i) => `<li class="${i + 1 < w.step ? 'done' : i + 1 === w.step ? 'now' : ''}" ${i + 1 === w.step ? 'aria-current="step"' : ''}><b>${i + 1 < w.step ? '✓' : i + 1}</b><span>${l}</span></li>`).join('')}</ol>`;
+    const nav = `<ol class="wsteps">${WSTEPS.map((l, i) => `<li class="${i + 1 < w.step ? 'done' : i + 1 === w.step ? 'now' : ''}" ${i + 1 === w.step ? 'aria-current="step"' : ''}><b>${i + 1 < w.step ? icon('check', 'sm') : i + 1}</b><span>${l}</span></li>`).join('')}</ol>`;
     const foot = (label, disabled) => `<div class="wfoot">${w.step > 1 ? `<button type="button" class="btn ghost" data-act="w-back">${icon('back', 'sm')}Back</button>` : `<a class="btn ghost" href="#organisation-${o.id}">Cancel</a>`}<button type="button" class="btn primary lg" data-act="w-next" ${disabled ? 'disabled' : ''}>${label}</button></div>`;
-    const props = kpiProposals(s);
+    const props = kpiProposals(s), testing = w.tests.length && !w.tested;
+    // Content animates in only when it changes (a new step, the test finishing, the suggestions arriving), never on each tick.
+    const shown = `${w.step}:${w.tested}:${!!w.proposals}:${w.method}`, enter = w.shown !== shown; w.shown = shown;
+    const lastOk = w.tests.filter((t) => t[1] === 'ok').length - 1;
+    const cstep = (n, title, body, done) => `<div class="cstep${done ? ' done' : ''}"><span class="n">${done ? icon('check', 'sm') : n}</span><div><h3>${title}</h3>${body}</div></div>`;
     let panel = '';
-    if (w.step === 1) panel = `<div><h2>Which solution are you connecting?</h2><p class="small muted" style="margin-top:4px">For ${esc(o.name)} · ${esc(s.project.name)}</p></div>
-        <div class="form-grid"><div class="field full"><label for="w-sol">Solution name</label><input id="w-sol" value="${esc(solName)}"><span class="help">What your team calls it.</span></div>
-        <div class="field"><label for="w-env">Environment</label><select id="w-env"><option>Production</option><option>Staging, for testing</option></select><span class="help">Only production feeds organisation reports.</span></div>
-        <div class="field"><label for="w-ver">Version</label><input id="w-ver" value="1.0.0"></div></div>${foot('Continue')}`;
-    if (w.step === 2) panel = `<div><h2>How will it share its figures?</h2><p class="small muted" style="margin-top:4px">Outcomes only reads daily totals. It never changes anything in the solution.</p></div>
-        <div class="choice-grid">${[['link', 'link', 'Measurement link', 'The solution serves a small read-only link that we call each night. Best for anything REKA builds.', 'Recommended'], ['axle', 'box', 'An AntaraX product', 'Yara, Janka and others already share totals with AXLE. Nothing to build.', ''], ['sheet', 'sheet', 'Spreadsheet upload', 'For systems that can’t serve a link. Someone uploads a CSV each week.', '']].map(([k, ic, t, d, tag]) => `<button type="button" class="choice" data-method="${k}" aria-pressed="${w.method === k}"><span class="ic">${icon(ic)}</span><span><b>${t}</b><span class="d">${d}</span></span>${tag ? `<span class="pill info tag">${tag}</span>` : '<span class="radio"></span>'}</button>`).join('')}</div>
-        ${w.method !== 'link' ? `<div class="callout info">${icon('insight')}<span>This mock follows the measurement link path. The other two work the same way from step 4.</span></div>` : ''}${foot('Continue')}`;
-    if (w.step === 3) panel = `<div><h2>Ask the developer to add the link</h2><p class="small muted" style="margin-top:4px">About a day of work. Send them this brief. It works with Claude Code or Codex too.</p></div>
-        <div class="grid" style="gap:8px"><div class="card-head" style="margin:0"><span class="small muted">Brief for the developer</span><button type="button" class="btn sm" data-act="copy-prompt">${icon('copy', 'sm')}Copy brief</button></div><div class="code-block" id="dev-prompt">${esc(devPrompt(s))}</div></div>
-        <div class="grid g2"><div class="callout info">${icon('documents')}<span><b>Integration pack</b><br>The contract, examples and a test the developer runs before handing over.</span></div><div class="callout info">${icon('lock')}<span><b>Read-only key</b><br>We’ll make one for ${esc(solName)} in the next step.</span></div></div>
-        <label class="check"><input type="checkbox" id="w-ready" ${w.devReady ? 'checked' : ''}><span><b class="ink">The developer has added the link and the test passes</b><br><span class="small muted">You can leave and come back. Your progress is saved.</span></span></label>
-        ${foot('Continue', !w.devReady)}`;
-    if (w.step === 4) panel = `<div><h2>Connect and test</h2><p class="small muted" style="margin-top:4px">We check the link answers, then read one day of figures. Nothing is saved until every check passes.</p></div>
-        <div class="field"><label for="w-url">Link address</label><input id="w-url" class="mono" value="${esc(w.url)}"><span class="help">From the developer. Must start with https.</span></div>
-        <div class="callout ok" style="align-items:center">${icon('lock')}<span>A measurement key for ${esc(solName)} is ready in the REKA vault. The developer sets it on the solution as <span class="inline-code">AX_MEASURE_KEY</span>. You never see the secret.</span></div>
-        ${w.tests.length ? `<div class="checks" aria-live="polite">${w.tests.map(([t, ok]) => `<div><span class="tick ${ok}">${ok === 'ok' ? '✓' : '…'}</span><span>${esc(t)}</span></div>`).join('')}</div>` : ''}
-        ${w.tested ? `<div class="callout ok">${icon('check')}<span><b>Connected.</b> The link answered and shares 6 figures.</span></div>` : ''}
-        ${foot(w.tested ? 'Check the data' : 'Test connection', w.tests.length && !w.tested)}`;
-    if (w.step === 5) panel = `<div><h2>What ${esc(solName)} shares</h2><p class="small muted" style="margin-top:4px">We checked every figure: 4 ready, 1 with a note, 1 held back.</p></div>
-        <div class="list">${foundFor(K).map(([n, k, kind, st, note]) => `<div class="row"><span class="ico ${st}">${icon(st === 'ok' ? 'check' : st === 'warn' ? 'alerts' : 'lock', 'sm')}</span><div><div class="what">${esc(n)}</div><div class="meta"><span>${kind}</span><span class="mono">${k}</span></div>${note ? `<div class="small" style="margin-top:4px;color:var(--${st}-ink)">${esc(note)}</div>` : ''}</div><span class="pill ${st}">${st === 'ok' ? 'Ready' : st === 'warn' ? 'Note' : 'Held back'}</span></div>`).join('')}</div>
-        ${foot('Suggest KPIs')}`;
-    if (w.step === 6) panel = !w.proposals ? `<div class="thinking" style="padding:8px 0"><img src="${SPARK}" alt=""><span>Reading 4 figures and suggesting KPIs for ${esc(s.project.name)}…</span></div><div class="grid" style="gap:10px"><div class="skel" style="height:72px"></div><div class="skel" style="height:72px"></div><div class="skel" style="height:72px"></div></div>` : `
+    if (w.step === 1) panel = `<div><h2>Which solution, and how does it share its figures?</h2><p class="small muted" style="margin-top:4px">For ${esc(o.name)} · ${esc(s.project.name)}. Outcomes only reads daily totals. It never changes anything in the solution.</p></div>
+        <div class="field"><label for="w-sol">Solution name</label><input id="w-sol" value="${esc(solName)}"><span class="help">What your team calls it.</span></div>
+        <div class="choice-grid methods">${Object.entries(WMETHODS).map(([k, x]) => `<button type="button" class="choice method" data-method="${k}" aria-pressed="${w.method === k}"><span class="ic">${icon(x.ic)}</span><b>${x.t}</b><span class="d">${x.d}</span><span class="effort">${icon('clock', 'sm')}${x.effort}</span>${x.tag ? `<span class="pill info tag">${x.tag}</span>` : ''}</button>`).join('')}</div>
+        <details class="more"><summary>Environment and version</summary><div class="form-grid" style="margin-top:10px"><div class="field"><label for="w-env">Environment</label><select id="w-env"><option>Production</option><option>Staging, for testing</option></select><span class="help">Only production feeds organisation reports.</span></div><div class="field"><label for="w-ver">Version</label><input id="w-ver" value="1.0.0"></div></div></details>
+        ${foot('Continue')}`;
+    if (w.step === 2) {
+      const result = w.tested ? `<div class="callout ok">${icon('check')}<span><b>Connected.</b> ${esc(solName)} shares 6 figures: 4 ready, 1 with a note, 1 held back because it could identify people.</span></div>${foundChips(K)}<details class="more"><summary>Each figure, explained</summary><div style="margin-top:10px">${foundList(K)}</div></details>` : '';
+      const checks = w.tests.length ? `<div class="checks" aria-live="polite">${w.tests.map(([t, ok], i) => `<div${i === lastOk && !w.tested ? ' class="just"' : ''}><span class="tick ${ok}">${ok === 'ok' ? '✓' : '…'}</span><span>${esc(t)}</span></div>`).join('')}</div>` : '';
+      let steps = '';
+      if (w.method === 'link') steps = cstep(1, 'Send the developer the brief', `<p class="small muted">About a day of work. They get the integration pack and their own read-only key. It works with Claude Code or Codex.</p><div class="head-actions" style="justify-content:flex-start;margin-top:10px"><button type="button" class="btn sm" data-act="copy-prompt">${icon('copy', 'sm')}Copy brief</button><button type="button" class="btn sm" data-act="copy-devlink">${icon('link', 'sm')}Copy developer link</button></div><details class="more"><summary>Show the brief</summary><div class="code-block" id="dev-prompt" style="margin-top:8px">${esc(devPrompt(s))}</div></details>`, w.tested)
+          + cstep(2, 'Paste the address and test', `<p class="small muted">When their contract test passes. If they use the developer link, they paste it there and the test runs by itself.</p><div class="field" style="margin-top:10px"><label for="w-url" class="sr-only">Link address</label><input id="w-url" class="mono" value="${esc(w.url)}" ${testing ? 'disabled' : ''}></div>`, w.tested);
+      if (w.method === 'axle') steps = cstep(1, 'Pick the product', `<div class="field" style="margin-top:10px"><label for="w-prod">AntaraX product</label><select id="w-prod">${['Yara', 'Janka'].map((p) => `<option ${w.product === p ? 'selected' : ''}>${p}</option>`).join('')}</select><span class="help">Outcomes finds ${esc(o.name)}’s workspace in it through AXLE. Nothing to build.</span></div>`, w.tested)
+          + cstep(2, 'Test', '<p class="small muted">Outcomes asks AXLE for the product’s daily totals for this organisation, and reads one day.</p>', w.tested);
+      if (w.method === 'sheet') steps = cstep(1, 'Share the template', `<p class="small muted">One row a day, one column a figure. Totals only: no names.</p><details class="more"><summary>Show the columns</summary><div class="code-block" id="w-tpl" style="margin-top:8px">${esc(sheetTemplate(K))}</div></details><div class="head-actions" style="justify-content:flex-start;margin-top:10px"><button type="button" class="btn sm" data-act="copy-tpl">${icon('copy', 'sm')}Copy the columns</button></div>`, !!w.sheetFile)
+          + cstep(2, 'Upload a week of figures', `<div class="head-actions" style="justify-content:flex-start;margin-top:10px"><button type="button" class="btn sm" data-act="w-pickfile">${icon('upload', 'sm')}${w.sheetFile ? 'Choose another file' : 'Choose a CSV file'}</button><button type="button" class="btn sm ghost" data-act="w-examplefile">Use the example file</button><input type="file" id="w-file" accept=".csv,text/csv" hidden></div>${w.sheetFile ? `<p class="small" style="margin-top:8px">${icon('sheet', 'sm')} <b class="ink">${esc(w.sheetFile)}</b></p>` : ''}`, w.tested);
+      panel = `<div><h2>Connect ${esc(solName)}</h2><p class="small muted" style="margin-top:4px">${w.method === 'sheet' ? 'Outcomes reads the file, checks it and keeps the daily totals.' : 'Outcomes checks the connection, then reads one day of figures. Nothing is saved until every check passes.'}</p></div>
+        ${steps}${checks}${result}
+        ${foot(w.tested ? 'Choose what to measure' : testing ? 'Testing…' : 'Test connection', testing || (w.method === 'sheet' && !w.sheetFile && !w.tested))}`;
+    }
+    if (w.step === 3) panel = !w.proposals ? `<div class="thinking" style="padding:8px 0"><img src="${SPARK}" alt=""><span>Reading 4 figures and suggesting KPIs for ${esc(s.project.name)}…</span></div><div class="grid" style="gap:10px"><div class="skel" style="height:72px"></div><div class="skel" style="height:72px"></div><div class="skel" style="height:72px"></div></div>` : `
         <div class="card-head" style="margin:0"><div><h2>Choose what to measure</h2><p class="small muted" style="margin-top:4px">Suggested from what ${esc(solName)} shares and what the project is for.</p></div>${aiMark()}</div>
-        ${props.map((p) => `<div class="pick ${w.keep[p.id] ? 'on' : 'off'}"><div class="top"><div><h3>${esc(p.name)}</h3><div class="meta-line" style="margin-top:6px"><span class="pill idle">${p.kind}</span>${q(p.quality)}</div></div><button type="button" class="switch" role="switch" aria-checked="${!!w.keep[p.id]}" aria-label="Measure ${esc(p.name)}" data-keep="${p.id}"></button></div><p class="why">${esc(p.why)}</p><details class="more"><summary>How it’s worked out</summary><div class="small">${esc(p.formula)}</div></details>${p.needsBaseline && w.keep[p.id] ? `<div class="callout warn" style="padding:10px 12px">${icon('target', 'sm')}<span>Needs a baseline. You’ll set it next.</span></div>` : ''}</div>`).join('')}
+        ${props.map((p, i) => `<div class="pick ${w.keep[p.id] ? 'on' : 'off'}" style="--i:${i}"><div class="top"><div><h3>${esc(p.name)}</h3><div class="meta-line" style="margin-top:6px"><span class="pill idle">${p.kind}</span>${q(p.quality)}</div></div><button type="button" class="switch" role="switch" aria-checked="${!!w.keep[p.id]}" aria-label="Measure ${esc(p.name)}" data-keep="${p.id}"></button></div><p class="why">${esc(p.why)}</p><details class="more"><summary>How it’s worked out</summary><div class="small">${esc(p.formula)}</div></details>${p.needsBaseline && w.keep[p.id] ? `<div class="callout warn" style="padding:10px 12px">${icon('target', 'sm')}<span>Needs a baseline. You’ll set it next.</span></div>` : ''}</div>`).join('')}
         <div class="callout ai">${icon('insight')}<span style="flex:1"><b>Accuracy</b> would be worth measuring, but the solution doesn’t count reviewer corrections yet.</span><button type="button" class="btn sm" data-act="add-gap">Ask the developer</button></div>
+        <details class="more"><summary>What ${esc(solName)} shares</summary><div style="margin-top:10px">${foundList(K)}</div></details>
         ${foot(`Continue with ${Object.values(w.keep).filter(Boolean).length} KPIs`, !Object.values(w.keep).some(Boolean))}`;
-    if (w.step === 7) {
-      const b = w.baseline;
-      panel = `<div><h2>How long does a ${K.noun} take by hand?</h2><p class="small muted" style="margin-top:4px">Hours saved compares today with before. Agree this with ${esc(o.name)}: it appears in every report.</p></div>
-        ${w.keep.impact ? `<div class="grid g2" style="gap:10px">${[['sample', 'clock', 'Time a sample', `Someone times 20 or more ${K.nouns} by hand. Most trusted.`], ['history', 'documents', 'Use past records', 'From the organisation’s own system, if it logged the time.'], ['estimate', 'people', 'The organisation’s estimate', 'Quickest. Reports label it as an estimate.'], ['none', 'target', 'Not available yet', 'Hours saved shows “needs a baseline” until you add one.']].map(([k, ic, t, d]) => `<button type="button" class="choice" style="grid-template-columns:44px minmax(0,1fr)" data-bmethod="${k}" aria-pressed="${b.method === k}"><span class="ic">${icon(ic)}</span><span><b>${t}</b><span class="d">${d}</span></span></button>`).join('')}</div>
+    if (w.step === 4) {
+      const kept = props.filter((p) => w.keep[p.id]), b = w.baseline;
+      panel = `${w.keep.impact ? `<div><h2>How long does a ${K.noun} take by hand?</h2><p class="small muted" style="margin-top:4px">Hours saved compares today with before. Agree this with ${esc(o.name)}: it appears in every report.</p></div>
+        <div class="grid g2" style="gap:10px">${[['sample', 'clock', 'Time a sample', `Someone times 20 or more ${K.nouns} by hand. Most trusted.`], ['history', 'documents', 'Use past records', 'From the organisation’s own system, if it logged the time.'], ['estimate', 'people', 'The organisation’s estimate', 'Quickest. Reports label it as an estimate.'], ['none', 'target', 'Not available yet', 'Hours saved shows “needs a baseline” until you add one.']].map(([k, ic, t, d]) => `<button type="button" class="choice" style="grid-template-columns:44px minmax(0,1fr)" data-bmethod="${k}" aria-pressed="${b.method === k}"><span class="ic">${icon(ic)}</span><span><b>${t}</b><span class="d">${d}</span></span></button>`).join('')}</div>
         ${b.method !== 'none' ? `<div class="form-grid">
           <div class="field"><label for="b-mid">Typical minutes per ${K.noun}</label><input id="b-mid" type="number" inputmode="decimal" value="${b.mid}"></div>
           <div class="field"><label for="b-low">Fastest and slowest</label><div class="with-btn"><input id="b-low" type="number" aria-label="Fastest, minutes" value="${b.low}"><input id="b-high" type="number" aria-label="Slowest, minutes" value="${b.high}"></div><span class="help">Reports show hours saved as a range from these.</span></div>
           ${b.method === 'sample' ? `<div class="field"><label for="b-n">${cap(K.nouns)} timed</label><input id="b-n" type="number" value="${b.n}"></div><div class="field"><label for="b-period">When</label><input id="b-period" value="${esc(b.period)}"><span class="help">Before go-live, so it reflects the old way.</span></div>` : ''}
-          <div class="field full"><label for="b-note">Evidence</label><input id="b-note" placeholder="e.g. Timing sheet signed by Farah Idris" value="${esc(b.note)}"></div></div>` : ''}` : `<div class="callout info">${icon('check')}<span>None of the KPIs you chose need a baseline.</span></div>`}
-        ${foot('Review')}`;
-    }
-    if (w.step === 8) {
-      const kept = props.filter((p) => w.keep[p.id]), b = w.baseline;
-      panel = `<div><h2>Review and send for approval</h2><p class="small muted" style="margin-top:4px">Someone other than you approves the KPIs and baseline. Collection starts once they do.</p></div>
-        ${kv([['Solution', `${esc(solName)} · ${esc(o.name)}`], ['Shares by', 'Measurement link, read-only key'], ['Collects', 'Every night at 06:00 MYT · health every 15 minutes'], ['KPIs', kept.map((p) => esc(p.name)).join('<br>')], ['Baseline', w.keep.impact ? (b.method === 'none' ? 'Not available yet' : `${b.mid} min per ${K.noun}, ${b.low} to ${b.high} · ${({ sample: `timed sample of ${b.n} ${K.nouns}`, history: 'past records', estimate: 'organisation estimate' })[b.method]}`) : '–'], ['Held back', `${cap(K.nouns)} by customer name`]], 120)}
-        <div class="field"><label for="w-appr">Who approves</label><select id="w-appr"><option>Aisyah Rahman · Admin</option></select><span class="help">You can’t approve what you set up yourself.</span></div>
+          <div class="field full"><label for="b-note">Evidence</label><input id="b-note" placeholder="e.g. Timing sheet signed by Farah Idris" value="${esc(b.note)}"></div></div>` : ''}` : `<div><h2>Send for approval</h2></div><div class="callout info">${icon('check')}<span>None of the KPIs you chose need a baseline.</span></div>`}
+        <section class="review"><h3>What you’re sending</h3>${kv([['Solution', `${esc(solName)} · ${esc(o.name)}`], ['Shares by', esc(m.t)], ['Collects', w.method === 'sheet' ? 'When the weekly file is uploaded' : 'Every night at 06:00 MYT · health every 15 minutes'], ['KPIs', kept.map((p) => esc(p.name)).join('<br>')], ['Baseline', w.keep.impact ? (b.method === 'none' ? 'Not available yet' : `${b.mid} min per ${K.noun}, ${b.low} to ${b.high} · ${({ sample: `timed sample of ${b.n} ${K.nouns}`, history: 'past records', estimate: 'organisation estimate' })[b.method]}`) : '–'], ['Held back', `${cap(K.nouns)} by customer name`]], 120)}
+        <div class="field" style="margin-top:12px"><label for="w-appr">Who approves</label><select id="w-appr"><option>Aisyah Rahman · Admin</option></select><span class="help">You can’t approve what you set up yourself. Collection starts once they do.</span></div></section>
         ${foot('Send for approval')}`;
     }
     return `${head({ crumbs: crumbs(['Organisations', '#organisations'], [o.name, '#organisation-' + o.id], [s.project.name], ['Connect a solution']), title: 'Connect a solution', lead: `${esc(s.project.name)} · step ${w.step} of ${WSTEPS.length}` })}
-      <div class="wizard">${nav}<div class="card wpanel" id="wpanel">${panel}</div></div>`;
+      <div class="wizard">${nav}<div class="card wpanel${enter ? ' enter' : ''}" id="wpanel">${connMap(w, s, o)}${panel}</div></div>`;
   };
   pages.connect.after = () => {
     const w = state.wiz;
-    const r = $('#w-ready'); if (r) r.addEventListener('change', () => { w.devReady = r.checked; render(); });
     const map = { 'b-mid': 'mid', 'b-low': 'low', 'b-high': 'high', 'b-n': 'n', 'b-period': 'period', 'b-note': 'note' };
     Object.keys(map).forEach((id) => { const el = $('#' + id); if (el) el.addEventListener('input', () => { w.baseline[map[id]] = el.type === 'number' ? +el.value : el.value; }); });
     const sol = $('#w-sol'); if (sol) sol.addEventListener('input', () => { w.solName = sol.value; });
     const url = $('#w-url'); if (url) url.addEventListener('input', () => { w.url = url.value; });
-    if (w.step === 6 && !w.proposals) setTimeout(() => { w.proposals = true; if (/^#connect/.test(location.hash)) render(); }, reduceMotion ? 0 : 1500);
+    const prod = $('#w-prod'); if (prod) prod.addEventListener('change', () => { w.product = prod.value; render(); });
+    const f = $('#w-file'); if (f) f.addEventListener('change', () => { const x = f.files && f.files[0]; if (!x) return; if (!/\.csv$/i.test(x.name)) { toast('Choose a CSV file, saved from the template.'); return; } w.sheetFile = x.name; render(); });
+    if (w.step === 3 && !w.proposals) setTimeout(() => { w.proposals = true; if (/^#connect/.test(location.hash)) render(); }, reduceMotion ? 0 : 1500);
   };
   function runTests() {
-    const w = state.wiz;
-    const lines = ['Found the link', 'Secure connection', 'Signed request accepted', 'Read what it shares: 6 figures, daily', 'Health check: healthy', 'Read one day of figures'];
+    const w = state.wiz, s = wizSim(), lines = wizTests(w, orgOf(s));
     w.tests = lines.map((t) => [t, 'wait']); render();
-    lines.forEach((t, i) => setTimeout(() => { w.tests[i] = [t, 'ok']; if (i === lines.length - 1) w.tested = true; if (/^#connect/.test(location.hash)) render(); }, reduceMotion ? 0 : 320 * (i + 1)));
+    lines.forEach((t, i) => setTimeout(() => { w.tests[i] = [t, 'ok']; if (i === lines.length - 1) w.tested = true; if (/^#connect/.test(location.hash)) render(); }, reduceMotion ? 0 : 450 * (i + 1)));
   }
   function wizardNext() {
     const w = state.wiz;
-    if (w.step === 4 && !w.tested) { if (!/^https:\/\//.test(w.url)) { toast('The address must start with https.'); return; } runTests(); return; }
-    if (w.step === 7 && w.keep.impact && w.baseline.method !== 'none' && !(w.baseline.low <= w.baseline.mid && w.baseline.mid <= w.baseline.high && w.baseline.mid > 0)) { toast('Check the minutes: fastest ≤ typical ≤ slowest.'); return; }
-    if (w.step === 8) { finishWizard(); return; }
+    if (w.step === 2 && !w.tested) {
+      if (w.tests.length) return;
+      if (w.method === 'link' && !/^https:\/\//.test(w.url)) { toast('The address must start with https.'); const u = $('#w-url'); if (u) { u.setAttribute('aria-invalid', 'true'); u.focus(); } return; }
+      if (w.method === 'sheet' && !w.sheetFile) { toast('Choose the CSV file first.'); return; }
+      runTests(); return;
+    }
+    if (w.step === 4 && w.keep.impact && w.baseline.method !== 'none' && !(w.baseline.low <= w.baseline.mid && w.baseline.mid <= w.baseline.high && w.baseline.mid > 0)) { toast('Check the minutes: fastest ≤ typical ≤ slowest.'); return; }
+    if (w.step === 4) { finishWizard(); return; }
     w.step++; render(); window.scrollTo(0, 0);
   }
   function finishWizard() {
@@ -2784,12 +2814,12 @@
     { t: 'Organisation added', d: 'Harapan Foods is in. Next, the project REKA agreed with them.', go() { if (!T.orgId) { const o = newOrg('Harapan Foods', 'Food and beverage'); T.orgId = o.id; log('Added organisation Harapan Foods'); } go('organisation-' + T.orgId); } },
     { t: 'Create the project', d: 'Pick the kind of work: it steers which KPIs AI suggests. The outcome is written in the organisation’s own words.', mark: '#f-proj', go() { state.newKind = 'documents'; state.draftProj = 'Supplier invoices'; state.newProjOrg = T.orgId; go('new-project'); } },
     { t: 'Project created', d: 'The project is waiting for its solution to be connected.', go() { if (!T.simId) { const s = newSim(state.orgs.find((o) => o.id === T.orgId), { kind: 'documents', project: 'Supplier invoices', sol: 'Invoice reader', vol: 220, history: 14 }); T.simId = s.id; state.focusSim = s.id; state.wiz = freshWizard(); log('Created project Supplier invoices for Harapan Foods'); } go('organisation-' + T.orgId); } },
-    { t: 'Brief the developer', d: 'The solution needs a small, read-only link. Outcomes writes the brief for the developer, or for Claude Code.', mark: '#wpanel', go() { wizTo(3); } },
-    { t: 'Test the connection', d: 'Outcomes calls the link, checks the request is signed and reads one day of figures.', mark: '#wpanel', go() { wizTo(4); if (!state.wiz.tested) setTimeout(runTests, 300); } },
-    { t: 'Check what it shares', d: 'Each figure is checked and explained in plain words. Anything that could identify people is held back.', mark: '#wpanel', go() { wizTo(5); } },
-    { t: 'AI suggests the KPIs', d: 'AI reads the figures and the project, and suggests what to measure and why. People keep or drop each one.', mark: '#wpanel', go() { wizTo(6); } },
-    { t: 'Agree the baseline', d: 'Hours saved needs how long the work took by hand. Here, a timed sample of 30 invoices.', mark: '#wpanel', go() { wizTo(7); Object.assign(state.wiz.baseline, { method: 'sample', mid: 16, low: 12, high: 21, n: 30 }); render(); } },
-    { t: 'Send for approval', d: 'Someone other than the person who set it up approves every KPI and the baseline.', go() { if (tsim().stage === 'draft') { wizTo(8); finishWizard(); } else go('sim-' + T.simId); } },
+    { t: 'Brief the developer', d: 'The map shows what is being connected. The solution needs a small, read-only link: Outcomes writes the brief, and a developer link gives them their own key.', mark: '#wpanel', go() { wizTo(2); } },
+    { t: 'Test the connection', d: 'Outcomes calls the link, checks the request is signed and reads one day of figures. Watch the map: each check lights up as it passes.', mark: '#wpanel', go() { wizTo(2); if (!state.wiz.tested && !state.wiz.tests.length) setTimeout(runTests, 300); } },
+    { t: 'Check what it shares', d: 'Connected. Each figure is checked and explained in plain words. Anything that could identify people is held back.', mark: '#wpanel', go() { wizTo(2, true); } },
+    { t: 'AI suggests the KPIs', d: 'AI reads the figures and the project, and suggests what to measure and why. People keep or drop each one.', mark: '#wpanel', go() { wizTo(3); } },
+    { t: 'Agree the baseline', d: 'Hours saved needs how long the work took by hand. Here, a timed sample of 30 invoices. Below it, everything being sent for approval.', mark: '#wpanel', go() { wizTo(4); Object.assign(state.wiz.baseline, { method: 'sample', mid: 16, low: 12, high: 21, n: 30 }); render(); } },
+    { t: 'Send for approval', d: 'Someone other than the person who set it up approves every KPI and the baseline.', go() { if (tsim().stage === 'draft') { wizTo(4); finishWizard(); } else go('sim-' + T.simId); } },
     { t: 'Approved', d: 'Aisyah checks and approves. The first collection runs tonight.', go() { if (tsim().stage === 'review') approveSim(tsim()); go('sim-' + T.simId); } },
     { t: 'First figures', d: 'Overnight, Outcomes collects the last two weeks of figures. KPIs appear straight away, with estimates shown as a likely range.', go() { if (tsim().stage !== 'collecting') advance(1); go('sim-' + T.simId); } },
     { t: 'Five weeks later', d: 'Time moves on. Every night the KPIs update. Watch the trend build.', go() { if (!T.aged) { advance(35); T.aged = true; } state.range = 30; go('sim-' + T.simId); } },
@@ -2803,12 +2833,12 @@
     { t: 'Ask the data', d: 'Ask in plain words. Answers come only from the collected figures, show where each number came from, and never claim a cause.', go() { state.chat = []; go('ask'); askSubmit('Which project improved most this month?'); setTimeout(() => askSubmit('Why did Invoice reader change this week?'), reduceMotion ? 10 : 1000); } },
     { t: 'Your turn', d: 'Open Demo studio to create projects, move the date forward or cause problems. Everything updates as you go.', go() { state.studio = true; go('home'); } },
   ];
-  function wizTo(n) {
+  function wizTo(n, tested) {
     const s = tsim(); state.focusSim = s.id;
     const w = state.wiz;
-    if (n >= 3) { w.devReady = n > 3 || w.devReady; }
-    if (n >= 5) { w.tested = true; w.tests = ['Found the link', 'Secure connection', 'Signed request accepted', 'Read what it shares: 6 figures, daily', 'Health check: healthy', 'Read one day of figures'].map((t) => [t, 'ok']); }
-    if (n >= 7) w.proposals = true;
+    w.method = 'link';
+    if (n >= 3 || tested) { w.tested = true; w.tests = wizTests(w, orgOf(s)).map((t) => [t, 'ok']); }
+    if (n >= 4) w.proposals = true;
     w.step = n; w.solName = 'Invoice reader';
     go('connect-' + s.id);
   }
@@ -2925,6 +2955,10 @@
     'nav-all': () => { const mode = axMode(parse()[2]); const groups = navModel()[mode].map((g) => g[0]); const m = state.navClosed[mode]; const allOpen = groups.every((g) => !m[g]); groups.forEach((g) => { m[g] = allOpen; }); render(); },
     'w-next': wizardNext,
     'w-back': () => { state.wiz.step--; render(); },
+    'copy-devlink': () => { const s = wizSim(), u = `https://outcomes.reka.example/connect/dev/${s ? s.id : ''}`; const done = () => toast('Copied. The developer sees the brief, their key once, and the test result as soon as the link answers.'); try { navigator.clipboard.writeText(u).then(done, done); } catch (err) { done(); } },
+    'copy-tpl': () => { const el = $('#w-tpl'); const done = () => toast('Columns copied. Paste them into the first row of the sheet.'); try { navigator.clipboard.writeText(el ? el.textContent : '').then(done, done); } catch (err) { done(); } },
+    'w-pickfile': () => { const f = $('#w-file'); if (f) f.click(); },
+    'w-examplefile': () => { state.wiz.sheetFile = 'example-week.csv'; render(); },
     'copy-prompt': () => {
       const fallback = () => { const r = document.createRange(); r.selectNodeContents($('#dev-prompt')); getSelection().removeAllRanges(); getSelection().addRange(r); toast('Selected. Press Ctrl C to copy.'); };
       try { navigator.clipboard.writeText($('#dev-prompt').textContent).then(() => toast('Copied. Send it to the developer.'), fallback); } catch (err) { fallback(); }
@@ -3028,7 +3062,7 @@
     if (d.go) { location.hash = '#' + d.go; return; }
     if (d.sel) { state.approvalSel = d.sel; render(); if (window.innerWidth < 1024) $('#ap-h').scrollIntoView(); return; }
     if (d.kind) { state.newKind = d.kind; render(); return; }
-    if (d.method) { state.wiz.method = d.method; render(); return; }
+    if (d.method) { const sol = $('#w-sol'); if (sol) state.wiz.solName = sol.value; state.wiz.method = d.method; state.wiz.tests = []; state.wiz.tested = false; render(); return; }
     if (d.keep) { state.wiz.keep[d.keep] = !state.wiz.keep[d.keep]; render(); return; }
     if (d.bmethod) { state.wiz.baseline.method = d.bmethod; render(); return; }
     if (d.sfkind) { readSf(); state.sf.kind = d.sfkind; state.sf.vol = KINDS[d.sfkind].vol; state.sf.base = KINDS[d.sfkind].base.mid; render(); return; }

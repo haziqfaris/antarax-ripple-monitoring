@@ -13,7 +13,7 @@
 | Q1 | Do they look for work by **client** first, or by project or solution? | Home, Clients, sidebar | Most go to a client before a project without being told, and say the grouping matches how they think |
 | Q2 | Can they find **which client needs them most**, and why, in under a minute? | Clients list (Need you filter), Home client cards | 4 of 5 name Bina Jaya's quote drafter (not answering) and say what to do |
 | Q3 | Do they understand **measured vs estimated**, the likely range, and why some hours aren't counted? | Contoh Logistik client page, "How totals are counted" | 4 of 5 explain in their own words that hours saved is an estimate from the baseline, and why Invoice triage's hours are not added |
-| Q4 | Can they **connect a first project** without documentation? | Fresh workspace: welcome, checklist, the 8-step connect wizard | 4 of 5 finish; no step needs the moderator; they can say what the developer must do |
+| Q4 | Can they **connect a first project** without documentation? | Fresh workspace: welcome, checklist, the 4-step connect flow and its connection map | 4 of 5 finish; no step needs the moderator; they can say what the developer must do |
 | Q5 | Do the **approval rules** make sense, or feel like an obstacle? | Approvals; switching person in the profile menu | They can say why they cannot approve their own change, and do not call it a bug |
 | Q6 | Is **client view** trusted enough to show a client? | Client page, Team view / Client view | They say what is hidden from the client and would share that screen |
 | Q7 | Do **Ask** and **Analytics** answer questions they actually get asked? | Ask, Analytics by client | They try a question of their own and judge the answer usable, with its source |

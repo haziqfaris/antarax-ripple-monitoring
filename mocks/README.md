@@ -21,7 +21,7 @@ Switch in the staff menu (your initials, top right) or Platform → Demo.
 Sign in, skip through welcome, and choose **Watch the guided demo**. It opens the demo workspace and plays 23 steps:
 
 1. A new organisation is added, with a project.
-2. The solution is connected: developer brief, live test, figure checks, AI-suggested KPIs, baseline.
+2. The solution is connected in four steps, under a map of the connection that animates as it is tested: how it shares (measurement link, AntaraX product or spreadsheet, each with its own short path), the developer brief and live test, AI-suggested KPIs, then the baseline and what is sent.
 3. The KPIs are approved, and the first figures arrive.
 4. Five weeks pass, the data stops, then recovers.
 5. The monthly report is drafted.
