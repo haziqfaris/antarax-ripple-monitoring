@@ -45,5 +45,10 @@ window.ICONS = {
 "logout": "<path d=\"M15 4h4v16h-4 M10 8l-4 4 4 4 M6 12h10\"/>",
 "target": "<path d=\"M12 21a9 9 0 1 0 0-18a9 9 0 0 0 0 18z M12 16a4 4 0 1 0 0-8a4 4 0 0 0 0 8z M12 12h.01\"/>",
 "flask": "<path d=\"M9 3h6 M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3 M7.5 15h9\"/>",
-"calendar": "<path d=\"M4 6h16v15H4z M4 10h16 M8 3v5 M16 3v5\"/>"
+"calendar": "<path d=\"M4 6h16v15H4z M4 10h16 M8 3v5 M16 3v5\"/>",
+"mic": "<path d=\"M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z M5 11a7 7 0 0 0 14 0 M12 18v3 M8 21h8\"/>",
+"camera": "<path d=\"M4 8h3l2-3h6l2 3h3v11H4z M12 17a3.5 3.5 0 1 0 0-7a3.5 3.5 0 0 0 0 7z\"/>",
+"image": "<path d=\"M3 5h18v14H3z M3 16l5-5 4 4 3-3 6 6 M15.5 9.5h.01\"/>",
+"upload": "<path d=\"M12 15V4 M7 9l5-5 5 5 M4 15v5h16v-5\"/>",
+"stop": "<path d=\"M7 7h10v10H7z\"/>"
 };

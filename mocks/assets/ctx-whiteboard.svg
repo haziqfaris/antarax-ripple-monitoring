@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" role="img" aria-label="Example photo: a whiteboard after a call">
+  <rect width="640" height="400" fill="#d9d6cf"/>
+  <rect x="28" y="24" width="584" height="340" rx="6" fill="#fbfbf8" stroke="#9a968c" stroke-width="6"/>
+  <rect x="200" y="364" width="240" height="10" rx="3" fill="#9a968c"/>
+  <g fill="none" stroke="#1f3a8a" stroke-width="3.5" stroke-linecap="round" font-family="'Comic Sans MS','Segoe Print','Bradley Hand',cursive">
+    <text x="62" y="84" font-size="34" fill="#1f3a8a" stroke="none">MONDAY CHANGEOVERS</text>
+    <path d="M62 96 C180 92 300 100 420 94"/>
+    <text x="70" y="148" font-size="24" fill="#1f3a8a" stroke="none">Line 2 waits for moulds</text>
+    <text x="70" y="190" font-size="24" fill="#1f3a8a" stroke="none">Plan ready Fri, not Sun</text>
+    <path d="M370 182 l20 0 m-8 -8 l8 8 -8 8"/>
+    <text x="400" y="190" font-size="24" fill="#16794a" stroke="none">good</text>
+    <text x="70" y="240" font-size="24" fill="#b42318" stroke="none">Overtime on Mon?</text>
+    <path d="M58 212 C120 204 270 210 300 230 C320 262 140 262 66 252 C50 246 50 220 58 212"/>
+    <text x="70" y="300" font-size="22" fill="#1f3a8a" stroke="none">Ask: can we see changeovers per week?</text>
+  </g>
+  <text x="600" y="352" font-family="sans-serif" font-size="13" fill="#6b6860" text-anchor="end">Example image</text>
+</svg>

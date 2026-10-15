@@ -1,6 +1,6 @@
 # Performance Intelligence: product requirements
 
-**Version 0.7, draft, 15 Oct 2026.** 0.2 added first use and onboarding (§8.12, §12.3) and the light AntaraX look (§12.1). 0.3 records the owner's decision to keep that look (D13), and adds the measure library (§10.6), your own measures (§8.13), Ask (§8.14, §11.4), standard analytics (§8.15) and the demo studio (§8.16). 0.4 records two more owner decisions: RM45 an hour for value of time freed (D15), and demo workspaces with Demo studio as a product feature in the MVP (D17, §8.16). 0.5 organises the console by client: one client list, one client page template, and client → project → solution throughout (§8.6, §12.2, §12.4); it also renames organisation to client on screen and in this document. 0.6 puts the console on the AXLE standard v1.0 (`haziqfaris/AntaraX-Dashboard-kit`), because it is an internal REKA tool: AXLE · Outcomes, dark bars around a light page, the standard menu with an Outcomes-only box, an R8 mode for the machinery, and "organisation" on screen as the standard requires (§12.1, §12.2, D13, D18). It also adds exploring other measures for a live project (§8.17). 0.7 adds client context (§8.18): what organisations tell the account team, recorded by BD and account managers, kept REKA only, and read by AI as quoted words when suggesting measures and answering Ask. Working name throughout. Owner: Muhammad Haziq Faris (Founder). Status: for review at the next design workshop.
+**Version 0.7, draft, 15 Oct 2026.** 0.2 added first use and onboarding (§8.12, §12.3) and the light AntaraX look (§12.1). 0.3 records the owner's decision to keep that look (D13), and adds the measure library (§10.6), your own measures (§8.13), Ask (§8.14, §11.4), standard analytics (§8.15) and the demo studio (§8.16). 0.4 records two more owner decisions: RM45 an hour for value of time freed (D15), and demo workspaces with Demo studio as a product feature in the MVP (D17, §8.16). 0.5 organises the console by client: one client list, one client page template, and client → project → solution throughout (§8.6, §12.2, §12.4); it also renames organisation to client on screen and in this document. 0.6 puts the console on the AXLE standard v1.0 (`haziqfaris/AntaraX-Dashboard-kit`), because it is an internal REKA tool: AXLE · Outcomes, dark bars around a light page, the standard menu with an Outcomes-only box, an R8 mode for the machinery, and "organisation" on screen as the standard requires (§12.1, §12.2, D13, D18). It also adds exploring other measures for a live project (§8.17). 0.7 adds client context (§8.18): what organisations tell the account team and what they give them (notes, documents, photos, voice notes and links), recorded by BD and account managers, kept REKA only, and read by AI as quoted words when suggesting measures and answering Ask. Working name throughout. Owner: Muhammad Haziq Faris (Founder). Status: for review at the next design workshop.
 
 | | |
 |---|---|
@@ -510,13 +510,15 @@ Open in the mock:
 
 ### 8.18 Client context
 
-BD and account managers hear things the figures never show: "late payments cost us penalties", "the board looks at the satisfaction survey", "we want to win more bids, not just quote faster". Today that stays in someone's notebook. Client context is where they write it down, per organisation, so the next person sees it and AI can use it to suggest measures that answer the organisation's actual questions.
+BD and account managers hear things the figures never show: "late payments cost us penalties", "the board looks at the satisfaction survey", "we want to win more bids, not just quote faster". Today that stays in someone's notebook. Client context is where they keep it, per organisation, so the next person sees it and AI can use it to suggest measures that answer the organisation's actual questions.
+
+It has to fit how BD and account managers actually work: a quick note after a call, the slides from a quarterly review, a photo of the whiteboard, a voice note recorded in the car park after a site visit, a link to the email thread. Each entry is a short summary in the organisation's words plus whatever came with it. AI reads the attachments (text from documents, text in photos, voice transcribed), a person checks what was read, and from then on AI uses that text the same way as the summary.
 
 It is client data (it is about one organisation) but never the organisation's to see: REKA only, like notes and fees.
 
 | Id | Requirement | Priority |
 |---|---|---|
-| FR-CTX-1 | Anyone from the Support rung up can add an entry for an organisation: what they said, in their words; the kind (feedback, goal, concern, request, meeting note); where it came from (meeting, call, email, quarterly review, site visit, survey); when; who said it by role; optionally which project or solution it is about; and optional tags from Explore's focus list (money, time, quality, risk, customer experience, adoption) | MVP |
+| FR-CTX-1 | Anyone from the Support rung up can add an entry for an organisation: what they said, in a sentence or two of their words; the kind (feedback, goal, concern, request, meeting note, their material); where it came from (meeting, call, email, quarterly review, site visit, survey, chat message, a document they shared); when; who said it by role; optionally which project or solution it is about; and optional tags from Explore's focus list (money, time, quality, risk, customer experience, adoption) | MVP |
 | FR-CTX-2 | Entries record the speaker's **role, never their name**. Before saving, an entry is checked for email addresses, phone numbers, identity card numbers and long account-like numbers; one that has them is refused with "record the person's role instead" | MVP |
 | FR-CTX-3 | Client context is **REKA only**. It never appears in the organisation view, a report, an export or anything sent to the organisation, and the organisation view hides its tab | MVP |
 | FR-CTX-4 | It is found in two places: **Client context** in the Outcomes-only menu (every organisation, filtered by the scope picker), and a **Client context** tab on each organisation's Results page. The account's Notes tab points to it: notes are for the team, context is for what the organisation said | MVP |
@@ -527,9 +529,16 @@ It is client data (it is about one organisation) but never the organisation's to
 | FR-CTX-9 | **Ask** answers "What has <organisation> told us?" with the entries quoted, newest first, with role, source and date, and a link to the full list. Ask's "What else could we measure" answers say when context ranked them | MVP |
 | FR-CTX-10 | AI reads context as **quoted data, never instructions** (§11.3). A number someone said stays their words: it becomes a figure only through a baseline or an organisation figure, with evidence and a second person's approval (§10, FR-EXP-9) | MVP |
 | FR-CTX-11 | Entries can be filtered by kind and searched. Archiving an entry stops every AI use at once and can be undone; adding, switching AI use and archiving are in the audit trail | MVP |
-| FR-CTX-12 | From a meeting transcript or an email thread, AI drafts entries (what was said, kind, tags) for a person to check and save. Nothing is saved without a person | P2 |
+| FR-CTX-12 | **Attachments.** An entry can carry documents (PDF, Word, slides, spreadsheets, CSV, text, saved emails), photos (taken with the phone's camera or uploaded), voice notes (recorded in the browser, or audio uploaded from the phone) and links. They are picked, dropped onto the form, or captured on the spot. Up to 25 MB each and 10 to an entry; a voice note up to 30 minutes. Anything else is refused with the reason | MVP |
+| FR-CTX-13 | **Reading attachments.** AI reads each attachment: the text of a document, the text in a photo, a voice note transcribed (English, Malay, and the two mixed). Each attachment shows what was read and its state (reading, read, transcribed, nothing to read), and the person checks it before saving. AI and Ask use only the read text, never the raw file. Links are stored as links: Outcomes does not open them | MVP |
+| FR-CTX-14 | **Draft from attachments.** AI drafts the entry's summary, kind and tags from what was read, for the person to change and save. Nothing is saved without a person | MVP |
+| FR-CTX-15 | **Personal details in attachments.** In what is read, email addresses, phone numbers, identity card numbers and long account-like numbers are hidden before anyone or AI reads it, and the count is shown ("2 personal details hidden"). Names of people found in transcripts are replaced by their role where it is known, otherwise hidden. Photos are for documents, whiteboards and screens: faces are blurred before the photo is stored | MVP |
+| FR-CTX-16 | **Storing attachments.** Files are kept encrypted in Singapore with their entry, REKA only, scanned for malware before anyone opens them, and served only through short-lived signed links. They never appear in a report or export. A voice recording is deleted 90 days after its transcript is checked; the transcript stays with the entry (§16) | MVP |
+| FR-CTX-17 | **Quoting attachments.** When Explore or Ask quotes context, it quotes the summary, or the sentence of an attachment that matched, and names the attachment ("Plant manager, 15 Oct · call-notes.txt") | MVP |
+| FR-CTX-18 | Capture from elsewhere: share a photo, file or voice memo from the phone to Outcomes, or forward an email to a per-organisation address, to start an entry that a person finishes | P2 |
 
 Open in the mock:
+- The mock reads plain text files (.txt, .md, .csv, .eml) in the browser and hides personal details in them. Documents, photos and audio are attached, shown and played, but marked "Not read in the mock": reading them needs the product's AI. The example entries carry invented attachments with their read text, labelled Example. Recording a voice note needs microphone permission; where the browser refuses it, the mock says to record on the phone and upload the file.
 - Context changes the order of suggestions by word and tag matches over the catalog. The product passes the entries to the model in a delimited block, as in §11.3, and keeps the same rule: rank and quote, never invent.
 - Who may read client context beyond the account team (for example, only the organisation's REKA owner and their manager) is not decided; the mock shows it to all staff.
 
@@ -869,7 +878,7 @@ A new workspace must lead a person from sign-in to a measured project without re
 | Organisation account | `#organisation-contoh-logistik` (the same address in every workspace) | Managing: opens on readiness and stage; tabs Summary (needs, contract, agreement, a link to results, recent activity), Projects and solutions, Notes, Audit |
 | Solution | `#solution-doc-workflow` | Where the time goes; Measures; **Explore** (§8.17) |
 | Approvals, Reports, Analytics, Ask | `#approvals`, `#reports`, `#analytics`, `#ask` | The Outcomes-only pages |
-| Client context | `#context`, and the Client context tab on `#results-…` | What organisations told the account team, by role; AI use per entry; "Suggest measures from this" opens Explore with the entry; Ask quotes it. Hidden in organisation view |
+| Client context | `#context`, and the Client context tab on `#results-…` | What organisations told and gave the account team, by role: notes, documents, photos, voice notes (recorded or uploaded) and links, with what was read and personal details hidden; AI use per entry; "Suggest measures from this" opens Explore with the entry; Ask quotes it. Hidden in organisation view |
 | Adoption, Demo, Settings, Audit, Staff | `#adoption`, `#demo`, `#settings`, `#audit`, `#staff` | Standard Dashboard pages; switches ask for a reason and raise the state banner; the ladder with "Needs Admin" |
 | R8 | `#r8`, `#incidents`, `#troubleshoot-…`, `#jobs`, `#providers`, `#services`, `#configuration`, `#ops-audit`, `#links` | The machinery: evidence in layers, AXLE's reading kept apart from your conclusion, Level 1 actions with a reason, the operations audit |
 | Client report | `#report` | The reviewed PDF, in the light product look: outcomes, evidence, caveats, next steps |
@@ -979,7 +988,9 @@ Matching what AntaraX products already run (antarax-api 08):
 | Scheduling | `pg_cron` to enqueue; a queue table processed by a worker (Vercel cron or a Cloudflare Worker cron), one job per integration |
 | Secrets | Supabase Vault or the platform's secret manager; the console stores only references |
 | Signing | `@lapisan/core` link kit, vendored as products do |
-| AI | Anthropic API, current Claude model, structured outputs |
+| AI | Anthropic API, current Claude model, structured outputs. Claude reads client-context documents and photos directly |
+| Speech to text | For client-context voice notes (FR-CTX-13): a provider that handles Malaysian English and Malay, processes in the region and keeps no audio. Not chosen (D21) |
+| Files | Supabase Storage (Singapore), private buckets, signed links that expire in minutes, malware scan on upload |
 | PDF | Server-side HTML to PDF from the same widget library |
 | E-mail | Resend, as other products |
 | Backups | R2, as other products |
@@ -1002,6 +1013,7 @@ Before anything ships, a pull request to `antarax-api/registry/registry.json` ad
 | Collector run logs | 90 days | Daily totals |
 | AI prompts and outputs | 90 days, aggregate-only content | Deleted |
 | Client context | For the life of the contract plus 24 months; archived entries 12 months after archiving | Deleted with the organisation |
+| Client context attachments | As their entry. Voice recordings: 90 days after the transcript is checked | The checked transcript stays with the entry |
 | Demo workspaces | 90 days after last use, unless marked to keep | Deleted in full |
 
 All periods are proposals for the owner and legal review (D4 in the brief's list, here D5).
@@ -1082,6 +1094,7 @@ The brief's §16, extended with points this review raised. Each needs the owner.
 | D18 | **Client or organisation** on screen | **Settled by AXLE v1.0** (SPEC §15): "organisation" on screen, "member" for a client's person. This document keeps "client" in prose (§7.1) |
 | D19 | **Where the product-only box sits** (AXLE SPEC §20 question 12) | For Outcomes: first, as client data, with the standard groups after it as "Managing Outcomes" (owner feedback, 15 Oct 2026; §12.2). Record it in the AXLE kit, mocked beside the standard pages, before any other product follows |
 | D20 | **Who reads client context** (§8.18): every staff member, or only the organisation's account team, its REKA owner and their manager? | All staff with the Support rung, as the mock shows, so the delivery team sees what the organisation cares about. Decide before the first pilot's entries are written |
+| D21 | **Speech to text** for client-context voice notes (FR-CTX-13): which provider, given Malay and mixed-language speech, where the audio is processed, and that it keeps nothing | Shortlist two providers that process in Singapore and keep no audio; test both on ten real voice notes recorded by the account team, with their agreement. Until then, voice notes are attached and played but not read |
 
 ## 21 Appendices
 

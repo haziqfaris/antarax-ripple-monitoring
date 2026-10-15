@@ -730,3 +730,27 @@ ol.stepper li.now, ol.stepper li.done { color: var(--ink); }
 .xp-ctxbox { padding: 12px 14px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); }
 .xp-ctxlist { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 4px; font-size: .8125rem; }
 @media (max-width: 640px) { .ctx-ai { margin-left: 0; width: 100%; } }
+.ctx-drop { display: grid; gap: 10px; padding: 14px; border: 1.5px dashed var(--line-strong); border-radius: 12px; background: var(--surface-2); transition: border-color .15s var(--ease), background .15s var(--ease); }
+.ctx-drop.over { border-color: var(--ai); background: var(--ai-tint); }
+.ctx-tools { display: flex; flex-wrap: wrap; gap: 8px; }
+.ctx-tools .btn.rec { border-color: var(--fault); color: var(--fault-ink); }
+.ctx-linkrow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; }
+.ctx-attlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ctx-att.draft { display: grid; gap: 8px; padding: 10px 12px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); }
+.ctx-att-h, .ctx-att > summary { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; min-width: 0; }
+.ctx-att-h .btn { margin-left: auto; }
+.ctx-att .nm { font-size: .875rem; color: var(--ink); font-weight: 500; overflow-wrap: anywhere; }
+.ctx-att-ic { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: var(--ai-tint); color: var(--ai); overflow: hidden; flex: none; }
+.ctx-att-ic img { width: 100%; height: 100%; object-fit: cover; }
+.ctx-att audio { width: 100%; max-width: 420px; height: 36px; }
+.ctx-atts { display: grid; gap: 6px; }
+details.ctx-att { border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; background: var(--surface-2); }
+details.ctx-att > summary { cursor: pointer; list-style: none; }
+details.ctx-att > summary::-webkit-details-marker { display: none; }
+details.ctx-att[open] > div { display: grid; gap: 8px; margin-top: 10px; }
+.ctx-photo { max-width: min(100%, 420px); border-radius: 8px; border: 1px solid var(--line); }
+.ctx-extract { display: grid; gap: 4px; }
+.ctx-extract p { margin: 0; font-size: .8125rem; color: var(--body); max-width: 80ch; white-space: pre-wrap; }
+@media (max-width: 640px) { .ctx-linkrow { grid-template-columns: 1fr; } }
+.ctx-more { margin-left: auto; color: var(--muted); display: inline-flex; transition: transform .15s var(--ease); }
+details.ctx-att[open] .ctx-more { transform: rotate(180deg); }

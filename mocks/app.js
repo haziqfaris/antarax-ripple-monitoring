@@ -1794,10 +1794,12 @@
   }
 
   // ------------------------------------------------------------------ CLIENT CONTEXT
-  // What organisations tell the account team: feedback, goals, concerns, requests. Kept per organisation, REKA only,
-  // never shown to the organisation. AI reads it as quoted data, never as instructions, when suggesting measures.
-  const CTX_KINDS = [['feedback', 'Feedback'], ['goal', 'Goal'], ['concern', 'Concern'], ['request', 'Request'], ['meeting', 'Meeting note']];
-  const CTX_SOURCES = ['Meeting', 'Call', 'Email', 'Quarterly review', 'Site visit', 'Survey'];
+  // What organisations tell the account team: notes, documents, photos, voice notes and links. Kept per organisation,
+  // REKA only, never shown to the organisation. AI reads it as quoted data, never as instructions, when suggesting measures.
+  const CTX_KINDS = [['feedback', 'Feedback'], ['goal', 'Goal'], ['concern', 'Concern'], ['request', 'Request'], ['meeting', 'Meeting note'], ['material', 'Their material']];
+  const CTX_SOURCES = ['Meeting', 'Call', 'Email', 'Quarterly review', 'Site visit', 'Survey', 'Chat message', 'Document they shared'];
+  const CTX_LIMITS = { mb: 25, files: 10, voiceMin: 30 };
+  const CTX_TYPE = { file: ['documents', 'Document'], photo: ['image', 'Photo'], voice: ['mic', 'Voice note'], link: ['link', 'Link'] };
   const CTX_EXAMPLE = [
     ['contoh-logistik', 'doc-workflow', 'concern', 'Quarterly review', '2026-10-02', 'Finance director', 'Late payments to suppliers cost us penalties every month, and two suppliers put us on cash terms. That matters more to us than typing time.', ['money', 'risk'], 'siti'],
     ['contoh-logistik', 'doc-workflow', 'feedback', 'Site visit', '2026-09-18', 'Accounts payable lead', 'The team no longer works late at month end. They now spend the time chasing missing delivery orders.', ['time', 'adoption'], 'siti'],
@@ -1806,62 +1808,150 @@
     ['sampel-medik', 'enquiry-triage', 'concern', 'Survey', '2026-10-05', 'Head of patient services', 'Patients still complain about waiting for a reply on weekends. Our satisfaction survey is the number the board looks at.', ['cx', 'time'], 'siti'],
     ['bina-jaya', 'quote-drafter', 'goal', 'Meeting', '2026-09-24', 'Sales director', 'We lose bids when a quote takes more than two days. We want to win more of the jobs we quote for, not just quote faster.', ['money', 'cx'], 'daniel'],
   ];
+  // Example attachments, invented like the organisations: no file or recording sits behind them.
+  const CTX_EX_ITEMS = {
+    0: [{ type: 'file', name: 'Q3 review, Contoh Logistik.pdf', meta: '14 pages', extract: 'Page 6, supplier payments: two suppliers moved us to cash terms in August after repeated late payments. Late-payment penalties are charged every month. Page 9, priorities for Q4: pay suppliers on time, and hold fewer invoices for missing delivery orders.' }],
+    1: [{ type: 'voice', name: 'Site visit voice note', meta: '1:42', extract: 'Walked the accounts payable floor with the team lead. Month end used to mean late nights; this month nobody stayed late. Most of their time now goes on chasing delivery orders that are missing from the invoice pack.' }],
+    3: [{ type: 'photo', name: 'Whiteboard after the call.jpg', meta: 'Photo', url: 'assets/ctx-whiteboard.svg', extract: 'Monday changeovers. Line 2 waits for moulds. Plan ready Friday, not Sunday. Overtime on Monday? Ask: can we see changeovers per week?' }],
+    4: [{ type: 'file', name: 'Patient survey, September.xlsx', meta: '1 sheet', extract: 'Question 3, how quickly did we reply: most negative comments mention weekends. The board pack uses the overall satisfaction score.' }, { type: 'link', name: 'Board pack summary, on their shared drive', url: 'https://files.example/sampel-medik/board-pack', meta: 'files.example' }],
+    5: [{ type: 'link', name: 'Email thread on bid timings', url: 'https://mail.example/thread/bina-jaya-bids', meta: 'mail.example' }],
+  };
   function ctxAll() {
     state.ctx = state.ctx || {};
     const k = demo() ? 'example' : state.ws;
-    if (!state.ctx[k]) state.ctx[k] = k === 'example' ? CTX_EXAMPLE.map(([org, proj, kind, source, date, from, text, tags, by], i) => ({ id: 'cx' + i, org, proj, kind, source, date, from, text, tags, ai: true, by: M.staff[by].name, at: day(date) + ', 17:30', uses: 0, example: true })) : [];
+    if (!state.ctx[k]) state.ctx[k] = k === 'example' ? CTX_EXAMPLE.map(([org, proj, kind, source, date, from, text, tags, by], i) => ({ id: 'cx' + i, org, proj, kind, source, date, from, text, tags, ai: true, by: M.staff[by].name, at: day(date) + ', 17:30', uses: 0, example: true, items: (CTX_EX_ITEMS[i] || []).map((x, j) => Object.assign({ id: `cx${i}i${j}`, status: 'ready', extract: null }, x)) })) : [];
     return state.ctx[k];
   }
   const ctxFor = (orgId, projId) => ctxAll().filter((e) => e.org === orgId && !e.archived && (!projId || !e.proj || e.proj === projId));
   const orgOfProj = (proj) => companies().find((c) => coSolutions(c).some((x) => x.id === proj.id)) || null;
+  // Everything AI may read from an entry: the summary and what was read from its attachments.
+  const ctxBody = (e) => [e.text].concat((e.items || []).filter((x) => x.extract).map((x) => x.extract)).join(' ');
+  // The words that ranked a suggestion: the summary, or the sentence of an attachment that matched.
+  function ctxQuote(e, re) {
+    if (re.test(e.text.toLowerCase())) return { q: e.text, src: '' };
+    for (const x of e.items || []) if (x.extract && re.test(x.extract.toLowerCase())) return { q: x.extract.split(/(?<=[.!?])\s+/).find((s) => re.test(s.toLowerCase())) || x.extract, src: x.name };
+    return null;
+  }
   // Before saving: no names, emails, phone numbers or identity card numbers. Record the role instead.
   const ctxPersonal = (t) => /[^\s@]+@[^\s@]+\.[a-z]{2,}/i.test(t) || /\b\d{6}-\d{2}-\d{4}\b/.test(t) || /(\+?6?0)[\s-]?1\d[\s-]?\d{3,4}[\s-]?\d{4}\b/.test(t) || /\d{10,}/.test(t);
+  // In what is read from an attachment, the same details are hidden before anyone, or AI, reads it.
+  function ctxRedact(t) {
+    let n = 0; const r = (re, w) => { t = t.replace(re, () => { n++; return `[${w} hidden]`; }); };
+    r(/[^\s@]+@[^\s@]+\.[a-z]{2,}/gi, 'email'); r(/\b\d{6}-\d{2}-\d{4}\b/g, 'identity card number'); r(/(\+?6?0)[\s-]?1\d[\s-]?\d{3,4}[\s-]?\d{4}\b/g, 'phone number'); r(/\d{10,}/g, 'number');
+    return { text: t, n };
+  }
+  const mmss = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  const fsize = (b) => b >= 1048576 ? nf(b / 1048576, 1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB';
+  function ctxAtt(x, draft) {
+    const [ic, label] = CTX_TYPE[x.type] || CTX_TYPE.file, voice = x.type === 'voice', photo = x.type === 'photo';
+    const st = x.status === 'reading' ? `<span class="pill info"><span class="dot"></span>${voice ? 'Transcribing' : 'Reading'}…</span>` : x.extract ? `<span class="pill ok">${icon('check', 'sm')}${voice ? 'Transcribed' : photo ? 'Text read' : 'Read'}</span>` : x.type === 'link' ? '' : '<span class="pill idle">Not read in the mock</span>';
+    const hid = x.hidden ? `<span class="xs muted">${x.hidden} personal detail${x.hidden === 1 ? '' : 's'} hidden</span>` : '';
+    const media = photo && x.url ? `<img class="ctx-photo" src="${x.url}" alt="${esc(x.name)}">` : voice && x.url ? `<audio controls preload="metadata" src="${x.url}"></audio>` : x.type === 'link' ? `<a class="small" href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.url)}</a>` : '';
+    const ex = x.extract ? `<div class="ctx-extract"><span class="xs muted">${voice ? 'Transcript' : photo ? 'Text in the photo' : 'What it says'}</span><p>${esc(x.extract)}</p></div>` : x.type !== 'link' && x.status !== 'reading' ? `<p class="xs muted">In the product, AI ${voice ? 'transcribes it' : photo ? 'reads any text in it' : 'reads it'} and you check the text before saving. This mock reads plain text files only.</p>` : '';
+    const head = `<span class="ctx-att-ic">${photo && x.url ? `<img src="${x.url}" alt="">` : icon(ic, 'sm')}</span><span class="nm">${esc(x.name)}</span><span class="xs muted">${esc([label, x.meta].filter(Boolean).join(' · '))}</span>${st}${hid}`;
+    if (draft) return `<li class="ctx-att draft"><div class="ctx-att-h">${head}<button type="button" class="btn sm ghost" data-act="ctx-att-rm" data-id="${x.id}" aria-label="Remove ${esc(x.name)}">${icon('x', 'sm')}</button></div>${voice && x.url ? media : ''}${x.status === 'reading' ? '' : ex}</li>`;
+    return `<details class="ctx-att"><summary>${head}<span class="ctx-more">${icon('chev-down', 'sm')}</span></summary><div>${media}${ex}</div></details>`;
+  }
   function ctxEntry(e, opts = {}) {
     const c = coById(e.org), sol = e.proj && coSolutions(c || { projects: [] }).find((x) => x.id === e.proj);
-    const kind = (CTX_KINDS.find((k) => k[0] === e.kind) || [, 'Note'])[1];
+    const kind = (CTX_KINDS.find((k) => k[0] === e.kind) || [, 'Note'])[1], items = e.items || [];
     return `<article class="ctx-entry${e.ai ? '' : ' off'}"><div class="ctx-top"><span class="pill ${e.kind === 'concern' ? 'warn' : e.kind === 'goal' ? 'info' : 'idle'}">${kind}</span>${opts.org ? `<a class="small" href="#results-${e.org}">${esc(c ? c.short : e.org)}</a>` : ''}${sol ? `<span class="xs muted">${esc(sol.name)}</span>` : '<span class="xs muted">Whole organisation</span>'}<span class="ctx-ai ${e.ai ? 'on' : ''}"><img src="${SPARK}" alt="">${e.ai ? 'AI uses this' : 'Not for AI'}</span></div>
       <blockquote>${esc(e.text)}</blockquote>
+      ${items.length ? `<div class="ctx-atts">${items.map((x) => ctxAtt(x)).join('')}</div>` : ''}
       <div class="ctx-meta"><span><b class="ink">${esc(e.from)}</b> · ${esc(e.source)} · <span class="mono">${dayShort(e.date)}</span></span><span>Added by ${esc(e.by)}</span>${e.tags.length ? `<span>${e.tags.map((t) => esc((XP_FOCUS.find((f) => f[0] === t) || [, t])[1])).join(', ')}</span>` : ''}${e.uses ? `<span>Used in ${e.uses} suggestion run${e.uses === 1 ? '' : 's'}</span>` : ''}${e.example ? '<span class="pill warn" style="padding:1px 8px">Example</span>' : ''}</div>
       <div class="head-actions">${coSolutions(c || { projects: [] }).some((x) => x.proj) && e.ai ? `<button type="button" class="btn sm" data-act="ctx-explore" data-id="${e.id}"><img src="${SPARK}" alt="" style="width:16px">Suggest measures from this</button>` : ''}${atLeast('Support') ? `<button type="button" class="btn sm ghost" data-act="ctx-ai" data-id="${e.id}">${e.ai ? 'Stop AI using this' : 'Let AI use this'}</button><button type="button" class="btn sm ghost" data-act="ctx-archive" data-id="${e.id}">Archive</button>` : ''}</div></article>`;
   }
   function ctxForm(orgId) {
-    const orgs = companies(), sel = orgId || state.ctxOrg || (orgs[0] && orgs[0].id), c = coById(sel), d = state.ctxDraft || { tags: [] };
+    const orgs = companies(), sel = orgId || state.ctxOrg || (orgs[0] && orgs[0].id), c = coById(sel), d = state.ctxDraft || { tags: [], items: [] }, items = d.items || [];
     if (!atLeast('Support')) return '<p class="needs">Needs Support to add client context</p>';
-    return `<form id="f-ctx" class="card ctx-form" novalidate><div class="card-head"><div><h2>Add what they told you</h2><p class="sub">Feedback, goals and concerns in their words. Record the person’s role, never their name, email or phone.</p></div></div>
+    return `<form id="f-ctx" class="card ctx-form" novalidate><div class="card-head"><div><h2>Add what they told you or gave you</h2><p class="sub">A note, a document, a photo, a voice note or a link. Record the person’s role, never their name, email or phone.</p></div></div>
       <div class="form-grid">
         ${orgId ? `<input type="hidden" id="ctx-org" value="${orgId}">` : `<div class="field"><label for="ctx-org">Organisation</label><select id="ctx-org">${orgs.map((o) => `<option value="${o.id}" ${o.id === sel ? 'selected' : ''}>${esc(o.short)}</option>`).join('')}</select></div>`}
         <div class="field"><label for="ctx-proj">About</label><select id="ctx-proj"><option value="">The whole organisation</option>${c ? coSolutions(c).map((x) => `<option value="${x.id}" ${d.proj === x.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('') : ''}</select></div>
+        <div class="field full"><span class="lab">Attach what they gave you, optional</span>
+          <div class="ctx-drop" id="ctx-drop">
+            <div class="ctx-tools">
+              <button type="button" class="btn sm" data-act="ctx-pick" data-for="ctx-files">${icon('upload', 'sm')}Upload files</button>
+              <button type="button" class="btn sm" data-act="ctx-pick" data-for="ctx-photo">${icon('camera', 'sm')}Take a photo</button>
+              <button type="button" class="btn sm${state.ctxRec ? ' rec' : ''}" data-act="ctx-rec" aria-pressed="${!!state.ctxRec}">${state.ctxRec ? `${icon('stop', 'sm')}Stop recording <span class="mono" id="ctx-rec-t">${mmss(state.ctxRec.secs)}</span>` : `${icon('mic', 'sm')}Record a voice note`}</button>
+              <button type="button" class="btn sm" data-act="ctx-link" aria-expanded="${!!state.ctxLinkOpen}">${icon('link', 'sm')}Add a link</button>
+              <input type="file" id="ctx-files" multiple hidden accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.csv,.txt,.md,.eml,image/*,audio/*">
+              <input type="file" id="ctx-photo" hidden accept="image/*" capture="environment">
+            </div>
+            <p class="xs muted">Or drop files here. Documents, slides, spreadsheets, emails, photos and audio, up to ${CTX_LIMITS.mb} MB each and ${CTX_LIMITS.files} to an entry; voice notes up to ${CTX_LIMITS.voiceMin} minutes. Photos of documents, whiteboards and screens, not of people.</p>
+            ${state.ctxLinkOpen ? `<div class="ctx-linkrow"><input id="ctx-link-url" type="url" placeholder="https://" aria-label="Link"><input id="ctx-link-label" placeholder="What it is, for example: email thread on bid timings" aria-label="What the link is"><button type="button" class="btn sm" data-act="ctx-link-add">Add link</button></div>` : ''}
+            ${items.length ? `<ul class="ctx-attlist">${items.map((x) => ctxAtt(x, true)).join('')}</ul>` : ''}
+          </div></div>
+        <div class="field full"><label for="ctx-text">What they said, in a sentence or two</label><textarea id="ctx-text" placeholder="For example: Late payments cost us penalties every month. That matters more than typing time.">${esc(d.text || '')}</textarea><span class="help" id="ctx-help">Plain words, as close to theirs as you can. Numbers they mention are kept as their words: they become figures only through a baseline and approval.</span>${items.some((x) => x.extract) ? `<div style="margin-top:6px"><button type="button" class="btn sm ghost" data-act="ctx-draft-sum"><img src="${SPARK}" alt="" style="width:16px">Draft it from the attachments</button></div>` : ''}</div>
         <div class="field"><label for="ctx-kind">Kind</label><select id="ctx-kind">${CTX_KINDS.map(([k, l]) => `<option value="${k}" ${d.kind === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
         <div class="field"><label for="ctx-source">Where it came from</label><select id="ctx-source">${CTX_SOURCES.map((x) => `<option ${d.source === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
         <div class="field"><label for="ctx-from">Who said it, by role</label><input id="ctx-from" placeholder="For example: Finance director" value="${esc(d.from || '')}"></div>
         <div class="field"><label for="ctx-date">When</label><input id="ctx-date" type="date" value="${d.date || today()}"></div>
-        <div class="field full"><label for="ctx-text">What they said</label><textarea id="ctx-text" placeholder="For example: Late payments cost us penalties every month. That matters more than typing time.">${esc(d.text || '')}</textarea><span class="help" id="ctx-help">Plain words, as close to theirs as you can. Numbers they mention are kept as their words: they become figures only through a baseline and approval.</span></div>
         <div class="field full"><span class="lab">What it is about, optional</span><div class="chips">${XP_FOCUS.map(([k, l]) => `<button type="button" class="chip" data-ctx-tag="${k}" aria-pressed="${d.tags.includes(k)}">${l}</button>`).join('')}</div></div>
-        <label class="check full"><input type="checkbox" id="ctx-ai" ${d.ai === false ? '' : 'checked'}><span>AI may use this when suggesting measures and answering questions about ${esc(c ? c.short : 'this organisation')}. It is never shown to the organisation.</span></label>
+        <label class="check full"><input type="checkbox" id="ctx-ai" ${d.ai === false ? '' : 'checked'}><span>AI may use this, and what was read from its attachments, when suggesting measures and answering questions about ${esc(c ? c.short : 'this organisation')}. It is never shown to the organisation.</span></label>
       </div><div class="head-actions" style="margin-top:14px"><button type="submit" class="btn primary">Add to client context</button></div></form>`;
   }
   // The client context list, for one organisation or all (Outcomes only → Client context, and the Results page's tab).
   function ctxList(orgId) {
-    const f = state.ctxF || { kind: 'all', q: '' }, list = ctxAll().filter((e) => !e.archived && (!orgId || e.org === orgId) && (f.kind === 'all' || e.kind === f.kind) && (!f.q || (e.text + ' ' + e.from).toLowerCase().includes(f.q.toLowerCase()))).sort((a, b) => b.date.localeCompare(a.date));
-    return `<section class="card" style="padding:14px 18px"><div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center"><div class="seg" role="group" aria-label="Kind">${[['all', 'All']].concat(CTX_KINDS).map(([k, l]) => `<button type="button" data-ctxkind="${k}" aria-pressed="${f.kind === k}">${l}</button>`).join('')}</div><div class="field" style="flex:1;min-width:180px"><input id="ctx-q" placeholder="Search what they said" aria-label="Search client context" value="${esc(f.q)}" autocomplete="off"></div></div></section>
-      ${list.length ? `<section class="grid" style="gap:12px">${list.map((e) => ctxEntry(e, { org: !orgId })).join('')}</section>` : `<section class="card"><div class="empty" style="padding:22px"><h3>${ctxAll().some((e) => !e.archived && (!orgId || e.org === orgId)) ? 'Nothing matches' : 'No client context yet'}</h3><p>After a meeting, a call or a quarterly review, write down what they care about. AI uses it to suggest measures that answer their questions.</p></div></section>`}`;
+    const f = state.ctxF || { kind: 'all', q: '' }, has = (e) => (ctxBody(e) + ' ' + e.from + ' ' + (e.items || []).map((x) => x.name).join(' ')).toLowerCase().includes(f.q.toLowerCase());
+    const list = ctxAll().filter((e) => !e.archived && (!orgId || e.org === orgId) && (f.kind === 'all' || e.kind === f.kind) && (!f.q || has(e))).sort((a, b) => b.date.localeCompare(a.date));
+    return `<section class="card" style="padding:14px 18px"><div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center"><div class="seg" role="group" aria-label="Kind">${[['all', 'All']].concat(CTX_KINDS).map(([k, l]) => `<button type="button" data-ctxkind="${k}" aria-pressed="${f.kind === k}">${l}</button>`).join('')}</div><div class="field" style="flex:1;min-width:180px"><input id="ctx-q" placeholder="Search what they said, and their files" aria-label="Search client context" value="${esc(f.q)}" autocomplete="off"></div></div></section>
+      ${list.length ? `<section class="grid" style="gap:12px">${list.map((e) => ctxEntry(e, { org: !orgId })).join('')}</section>` : `<section class="card"><div class="empty" style="padding:22px"><h3>${ctxAll().some((e) => !e.archived && (!orgId || e.org === orgId)) ? 'Nothing matches' : 'No client context yet'}</h3><p>After a meeting, a call or a quarterly review, add what they said and anything they gave you. AI uses it to suggest measures that answer their questions.</p></div></section>`}`;
   }
   pages.context = () => {
-    const n = ctxAll().filter((e) => !e.archived).length, orgs = new Set(ctxAll().filter((e) => !e.archived).map((e) => e.org)).size;
-    return `${head({ title: 'Client context', kind: 'data', lead: 'What organisations tell the account team, in their words. AI uses it to suggest measures that answer their questions. It never reaches the organisation.', state: `${stateWord()} · ${n} note${n === 1 ? '' : 's'} from ${orgs} organisation${orgs === 1 ? '' : 's'}` })}
-      <div class="callout info">${icon('shield')}<span><b>REKA only.</b> Context is never shown in the organisation view, reports or exports. AI reads it as quoted words, never as instructions, and never turns a number someone said into a figure.</span></div>
+    const live = ctxAll().filter((e) => !e.archived), n = live.length, orgs = new Set(live.map((e) => e.org)).size, files = live.reduce((a, e) => a + (e.items || []).length, 0);
+    return `${head({ title: 'Client context', kind: 'data', lead: 'What organisations tell the account team, in their words, and what they give you: documents, photos, voice notes and links. AI uses it to suggest measures that answer their questions. It never reaches the organisation.', state: `${stateWord()} · ${n} entr${n === 1 ? 'y' : 'ies'} from ${orgs} organisation${orgs === 1 ? '' : 's'} · ${files} attachment${files === 1 ? '' : 's'}` })}
+      <div class="callout info">${icon('shield')}<span><b>REKA only.</b> Context and its attachments are never shown in the organisation view, reports or exports. AI reads them as quoted words, never as instructions, and never turns a number someone said into a figure.</span></div>
       ${ctxForm(state.scope && coById(state.scope) ? state.scope : null)}
       ${ctxList(state.scope && coById(state.scope) ? state.scope : null)}`;
   };
   pages.context.after = () => ctxAfter();
   function ctxAfter() {
-    const qi = $('#ctx-q'); if (qi) qi.addEventListener('input', (e) => { state.ctxF = Object.assign(state.ctxF || { kind: 'all' }, { q: e.target.value }); clearTimeout(state.ctxT); state.ctxT = setTimeout(() => { render(); const el = $('#ctx-q'); if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); } }, 250); });
+    const qi = $('#ctx-q'); if (qi) qi.addEventListener('input', (e) => { state.ctxF = Object.assign(state.ctxF || { kind: 'all' }, { q: e.target.value }); clearTimeout(state.ctxT); state.ctxT = setTimeout(() => { ctxReadDraft(); render(); const el = $('#ctx-q'); if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); } }, 250); });
     ['ctx-text', 'ctx-from'].forEach((id) => { const el = $('#' + id); if (el) el.addEventListener('input', () => el.removeAttribute('aria-invalid')); });
     const so = $('#ctx-org'); if (so && so.tagName === 'SELECT') so.addEventListener('change', (e) => { ctxReadDraft(); state.ctxOrg = e.target.value; state.ctxDraft.proj = ''; render(); });
+    ['ctx-files', 'ctx-photo'].forEach((id) => { const el = $('#' + id); if (el) el.addEventListener('change', () => { ctxReadDraft(); ctxAddFiles(el.files); ctxRerender(); }); });
+    const dz = $('#ctx-drop'); if (dz) {
+      ['dragenter', 'dragover'].forEach((t) => dz.addEventListener(t, (e) => { e.preventDefault(); dz.classList.add('over'); }));
+      dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+      dz.addEventListener('drop', (e) => { e.preventDefault(); dz.classList.remove('over'); ctxReadDraft(); ctxAddFiles(e.dataTransfer.files); ctxRerender(); });
+    }
   }
   function ctxReadDraft() {
+    const d = state.ctxDraft = state.ctxDraft || { tags: [], items: [] }; d.items = d.items || [];
+    if (!$('#f-ctx')) return d;
     const v = (id) => ($('#' + id) || {}).value;
-    state.ctxDraft = Object.assign(state.ctxDraft || { tags: [] }, { proj: v('ctx-proj'), kind: v('ctx-kind'), source: v('ctx-source'), from: v('ctx-from'), date: v('ctx-date'), text: v('ctx-text'), ai: ($('#ctx-ai') || {}).checked !== false });
+    return Object.assign(d, { proj: v('ctx-proj'), kind: v('ctx-kind'), source: v('ctx-source'), from: v('ctx-from'), date: v('ctx-date'), text: v('ctx-text'), ai: ($('#ctx-ai') || {}).checked !== false });
+  }
+  function ctxRerender() { if ($('#f-ctx')) { ctxReadDraft(); render(); } }
+  // Attachments. Plain text is read here; everything else is read by AI in the product (documents, text in photos,
+  // voice transcribed), with personal details hidden, and a person checks the text before the entry is saved.
+  const CTX_OK = /\.(pdf|docx?|pptx?|xlsx?|csv|txt|md|eml|jpe?g|png|heic|webp|gif|m4a|mp3|wav|ogg|webm|aac)$/i, CTX_TEXT = /\.(txt|md|csv|eml)$/i;
+  function ctxAddFiles(files) {
+    const d = ctxReadDraft(), refused = [];
+    [...(files || [])].forEach((f) => {
+      if (d.items.length >= CTX_LIMITS.files) { refused.push(`${f.name} (${CTX_LIMITS.files} to an entry at most)`); return; }
+      if (f.size > CTX_LIMITS.mb * 1048576) { refused.push(`${f.name} (larger than ${CTX_LIMITS.mb} MB)`); return; }
+      if (!CTX_OK.test(f.name) && !/^(image|audio)\//.test(f.type)) { refused.push(`${f.name} (not a document, photo or audio file)`); return; }
+      const type = /^image\//.test(f.type) ? 'photo' : /^audio\//.test(f.type) ? 'voice' : 'file';
+      const x = { id: 'ci' + state.seq++, type, name: f.name, meta: fsize(f.size), url: type === 'file' ? null : URL.createObjectURL(f), status: 'reading', extract: null };
+      d.items.push(x);
+      const done = (text) => { if (text && text.trim()) { const r = ctxRedact(text.replace(/\s+/g, ' ').trim().slice(0, 4000)); x.extract = r.text; x.hidden = r.n; } x.status = 'ready'; ctxRerender(); };
+      if (CTX_TEXT.test(f.name) || /^text\//.test(f.type)) f.text().then(done, () => done(null)); else setTimeout(() => done(null), reduceMotion ? 0 : 900);
+    });
+    if (refused.length) toast(`Not added: ${refused.join('; ')}.`);
+  }
+  async function ctxRecord() {
+    if (state.ctxRec) { state.ctxRec.stop(); return; }
+    let stream;
+    try { if (!navigator.mediaDevices || !window.MediaRecorder) throw new Error('none'); stream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (err) { toast('The microphone isn’t available here. Record on your phone and upload the audio file instead.'); return; }
+    const d = ctxReadDraft(); if (d.items.length >= CTX_LIMITS.files) { stream.getTracks().forEach((tr) => tr.stop()); toast(`${CTX_LIMITS.files} attachments to an entry at most.`); return; }
+    const rec = new MediaRecorder(stream), chunks = [], t0 = Date.now();
+    const st = state.ctxRec = { secs: 0, stop: () => { if (rec.state !== 'inactive') rec.stop(); } };
+    st.timer = setInterval(() => { st.secs = Math.round((Date.now() - t0) / 1000); const el = $('#ctx-rec-t'); if (el) el.textContent = mmss(st.secs); if (st.secs >= CTX_LIMITS.voiceMin * 60) st.stop(); }, 1000);
+    rec.ondataavailable = (ev) => chunks.push(ev.data);
+    rec.onstop = () => { clearInterval(st.timer); stream.getTracks().forEach((tr) => tr.stop()); state.ctxRec = null; d.items.push({ id: 'ci' + state.seq++, type: 'voice', name: `Voice note, ${day(today())}`, meta: mmss(st.secs), url: URL.createObjectURL(new Blob(chunks, { type: rec.mimeType || 'audio/webm' })), status: 'ready', extract: null }); ctxRerender(); };
+    rec.start(); ctxRerender();
   }
   // Context used by Explore: the organisation's entries AI may use, for this solution or the whole organisation.
   function ctxForProj(proj) { const c = orgOfProj(proj); return c ? ctxFor(c.id, proj.id).filter((e) => e.ai) : []; }
@@ -2050,7 +2140,7 @@
   // Chooses and ranks ideas for one brief. Deterministic: same brief and same figures, same answer.
   function xpSuggest(proj, info, brief, xs) {
     const sh = xpShares(proj), qt = (brief.q || '').toLowerCase(), ot = (brief.outcome || '').toLowerCase();
-    const cx = brief.useCtx === false ? [] : ctxForProj(proj), ct = cx.map((e) => e.text).join(' ').toLowerCase(), ctags = [...new Set(cx.flatMap((e) => e.tags))];
+    const cx = brief.useCtx === false ? [] : ctxForProj(proj), ct = cx.map(ctxBody).join(' ').toLowerCase(), ctags = [...new Set(cx.flatMap((e) => e.tags))];
     const ranked = XP_CATALOG.map((it, i) => ({ it, i, s: xpScore(it, brief.kind, qt, ot, brief.focus || [], ct, ctags) })).filter((x) => x.s >= 0).sort((x, y) => y.s - x.s || x.i - y.i);
     const ids = [], already = [], per = { a: 0, b: 0, c: 0 }, LIM = { a: 3, b: 2, c: 2 }, keys = new Set();
     ranked.forEach(({ it, s }) => {
@@ -2125,8 +2215,9 @@
     const parts = [`<div class="top"><h3>${esc(idea.t === 'b' && idea.mcm ? idea.mname : idea.name)}</h3>${q(idea.q)}</div>`];
     if (idea.why) parts.push(`<p class="small ink">${esc(idea.why)}</p>`);
     if (idea.needs) parts.push(`<p class="xp-needs">${esc(idea.needs)}</p>`);
-    const run = xs.runs.find((r) => r.id === xs.cur), cite = run && run.ctx && run.ctx.length && ctxForProj(proj).find((e) => run.ctx.includes(e.id) && idea.it.words.test(e.text.toLowerCase()));
-    if (cite) parts.push(`<blockquote class="xp-ctx"><span class="xs muted">From client context</span>“${esc(cite.text.length > 140 ? cite.text.slice(0, 137).replace(/\s+\S*$/, '') + '…' : cite.text)}”<span class="xs muted">${esc(cite.from)}, ${dayShort(cite.date)}</span></blockquote>`);
+    const run = xs.runs.find((r) => r.id === xs.cur);
+    let cite = null; if (run && run.ctx && run.ctx.length) ctxForProj(proj).some((e) => { const m = run.ctx.includes(e.id) && ctxQuote(e, idea.it.words); if (m) cite = Object.assign({ e }, m); return !!m; });
+    if (cite) parts.push(`<blockquote class="xp-ctx"><span class="xs muted">From client context</span>“${esc(cite.q.length > 140 ? cite.q.slice(0, 137).replace(/\s+\S*$/, '') + '…' : cite.q)}”<span class="xs muted">${esc(cite.e.from)}, ${dayShort(cite.e.date)}${cite.src ? ' · ' + esc(cite.src) : ''}</span></blockquote>`);
     let acts = '';
     if (idea.t === 'a') {
       parts.push(xpPreview(proj, idea.cm, idea.better));
@@ -2450,7 +2541,7 @@
     if (!co) return null;
     const list = ctxFor(co.id).sort((a, b) => b.date.localeCompare(a.date)), link = `<a href="#results-${co.id}" data-act="to-ctx" data-org="${co.id}">client context for ${esc(co.short)}</a>`;
     if (!list.length) return { html: `<p>Nothing recorded from <b>${esc(co.short)}</b> yet. After a meeting or a call, add what they said to the ${link}.</p>` };
-    return { html: `<p>What <b>${esc(co.short)}</b> has told the account team, newest first:</p><ul>${list.slice(0, 5).map((e) => `<li>“${esc(e.text)}” <span class="muted">· ${esc(e.from)}, ${esc(e.source.toLowerCase())}, ${dayShort(e.date)}${e.ai ? '' : ' · not for AI'}</span></li>`).join('')}</ul>${list.length > 5 ? `<p class="small">And ${list.length - 5} more in the ${link}.</p>` : `<p class="small">From the ${link}.</p>`}
+    return { html: `<p>What <b>${esc(co.short)}</b> has told the account team, newest first:</p><ul>${list.slice(0, 5).map((e) => `<li>“${esc(e.text)}” <span class="muted">· ${esc(e.from)}, ${esc(e.source.toLowerCase())}, ${dayShort(e.date)}${(e.items || []).length ? ` · ${(e.items || []).map((x) => esc(x.name)).join(', ')}` : ''}${e.ai ? '' : ' · not for AI'}</span></li>`).join('')}</ul>${list.length > 5 ? `<p class="small">And ${list.length - 5} more in the ${link}.</p>` : `<p class="small">From the ${link}.</p>`}
       <p class="xs muted">Quoted as recorded, by role. REKA only: never shown to ${esc(co.short)}. Numbers in what people said are their words, not measured figures.</p>` };
   }
   function askAnswer(raw) {
@@ -2780,7 +2871,7 @@
     r8: 'One word for the whole platform, then what needs an operator, worst first. Each row opens Troubleshoot. R8 words stay in R8; the Dashboard says “not answering” and links here.',
     jobs: 'Every background job with its schedule in plain words, its last run and what failed. Run now and Retry failures are Level 1 actions: they ask for a reason and go to the operations audit.',
     providers: 'Every outside service Outcomes depends on. Test provider makes one real call and shows the result and the time. Keys and secrets are never shown here; they live in the vault.',
-    context: 'Anyone with Support or above adds what an organisation told them: feedback, goals, concerns, requests and meeting notes, by the person’s role, never their name. Entries marked for AI feed Explore impact and Ask for that organisation only, as quoted words, never as instructions or figures. Nothing here reaches the organisation. Archive an entry to stop using it; the audit keeps who added or changed it.',
+    context: 'Anyone with Support or above adds what an organisation told them or gave them: a short summary in their words, plus documents, photos, voice notes and links, by the person’s role, never their name. AI reads the attachments, hides personal details, and you check what it read before saving; the mock reads plain text files only. Entries marked for AI feed Explore impact and Ask for that organisation only, as quoted words, never as instructions or figures. Nothing here reaches the organisation. Archive an entry to stop using it; the audit keeps who added or changed it.',
     links: 'Each organisation’s solution exposes a read-only Measurement Link. This page shows each link’s state, its last good collection, the nightly contract test and its key’s age. A failing link opens Troubleshoot.',
   };
   function render() {
@@ -2874,6 +2965,21 @@
     'tour-start': () => { tourGo(0); },
     'ask-client': (d) => askSubmit(`How is ${d.name} doing this month?`),
     'to-ctx': (d) => { state.coFor = d.org + 'results'; state.resTab = 'context'; state.audience = 'staff'; go('results-' + d.org); },
+    'ctx-pick': (d) => { const el = $('#' + d.for); if (el) el.click(); },
+    'ctx-rec': () => { ctxRecord(); },
+    'ctx-link': () => { ctxReadDraft(); state.ctxLinkOpen = !state.ctxLinkOpen; render(); const el = $('#ctx-link-url'); if (el) el.focus(); },
+    'ctx-link-add': () => {
+      const u = ($('#ctx-link-url').value || '').trim(), l = ($('#ctx-link-label').value || '').trim(), dr = ctxReadDraft();
+      let host = ''; try { const p = new URL(u); if (!/^https?:$/.test(p.protocol)) throw new Error('x'); host = p.hostname; } catch (err) { $('#ctx-link-url').setAttribute('aria-invalid', 'true'); $('#ctx-link-url').focus(); toast('Paste a full link, starting https://'); return; }
+      if (dr.items.length >= CTX_LIMITS.files) { toast(`${CTX_LIMITS.files} attachments to an entry at most.`); return; }
+      dr.items.push({ id: 'ci' + state.seq++, type: 'link', name: l || host, url: u, meta: host, status: 'ready', extract: null }); state.ctxLinkOpen = false; render();
+    },
+    'ctx-att-rm': (d) => { const dr = ctxReadDraft(), x = dr.items.find((i) => i.id === d.id); if (x && x.url && x.url.startsWith('blob:')) URL.revokeObjectURL(x.url); dr.items = dr.items.filter((i) => i.id !== d.id); render(); },
+    'ctx-draft-sum': () => {
+      const dr = ctxReadDraft(), parts = dr.items.filter((x) => x.extract).map((x) => x.extract.split(/(?<=[.!?])\s+/).slice(0, 2).join(' '));
+      let t = parts.join(' '); if (t.length > 400) t = t.slice(0, 397).replace(/\s+\S*$/, '') + '…';
+      dr.text = dr.text && dr.text.trim() ? dr.text.trim() + ' ' + t : t; render(); const el = $('#ctx-text'); if (el) el.focus(); toast('Drafted from the attachments. Check it says what they meant.');
+    },
     'ctx-ai': (d) => { const e = ctxAll().find((x) => x.id === d.id); if (!e) return; e.ai = !e.ai; const c = coById(e.org); log(`${e.ai ? 'Let AI use' : 'Stopped AI using'} a client context note from ${c ? c.short : e.org} (${e.from})`); render(); toast(e.ai ? 'AI may use this note.' : 'AI won’t use this note.'); },
     'ctx-archive': (d) => { const e = ctxAll().find((x) => x.id === d.id); if (!e) return; e.archived = true; const c = coById(e.org); log(`Archived a client context note from ${c ? c.short : e.org} (${e.from})`); render(); toast('Archived. AI no longer uses it.', () => { e.archived = false; render(); }); },
     'ctx-explore': (d) => {
@@ -2949,12 +3055,13 @@
       const dr = state.ctxDraft, org = ($('#ctx-org') || {}).value, text = (dr.text || '').trim(), from = (dr.from || '').trim(), help = $('#ctx-help');
       const bad = (id, msg) => { const el = $('#' + id); el.setAttribute('aria-invalid', 'true'); if (msg && help) { help.textContent = msg; help.classList.add('err'); } el.focus(); };
       if (!coById(org)) return;
+      if (dr.items.some((x) => x.status === 'reading')) { toast('Wait until the attachments are read.'); return; }
       if (text.length < 10) { bad('ctx-text', 'Write what they said, in a sentence or more.'); return; }
       if (!from) { bad('ctx-from', 'Say who said it, by role: for example, Finance director.'); return; }
       if (ctxPersonal(text + ' ' + from)) { bad('ctx-text', 'That looks like an email, phone or identity card number. Take it out and record the person’s role instead.'); return; }
       const c = coById(org);
-      ctxAll().unshift({ id: 'cn' + state.seq++, org, proj: dr.proj || null, kind: dr.kind || 'feedback', source: dr.source || CTX_SOURCES[0], date: dr.date || today(), from, text, tags: dr.tags.slice(), ai: dr.ai !== false, by: me().name, at: now(), uses: 0 });
-      log(`Added client context from ${c.short} (${from}, ${(dr.source || CTX_SOURCES[0]).toLowerCase()})`);
+      ctxAll().unshift({ id: 'cn' + state.seq++, org, proj: dr.proj || null, kind: dr.kind || 'feedback', source: dr.source || CTX_SOURCES[0], date: dr.date || today(), from, text, tags: dr.tags.slice(), ai: dr.ai !== false, by: me().name, at: now(), uses: 0, items: dr.items.slice() });
+      log(`Added client context from ${c.short} (${from}, ${(dr.source || CTX_SOURCES[0]).toLowerCase()})${dr.items.length ? `, with ${dr.items.length} attachment${dr.items.length === 1 ? '' : 's'}` : ''}`);
       state.ctxDraft = null; render(); toast(dr.ai !== false ? `Added. AI can use it for ${c.short}.` : 'Added. AI won’t use it.'); return;
     }
     if (e.target.id === 'f-note') { e.preventDefault(); const t = ($('#note-t').value || '').trim(); if (!t) return; const id = e.target.dataset.org; state.notes[id].unshift([me().name, now(), t]); log(`Added a note on ${coById(id).short}`); render(); toast('Note added.'); return; }
