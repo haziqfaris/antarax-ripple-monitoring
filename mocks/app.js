@@ -442,13 +442,17 @@
   // AXLE page header (SPEC §6): the title lives in the top bar; the page says what it is for, its state line,
   // "How this page works", and its range picker or main action. Entity pages also show who they are about.
   let curTitle = '', curPage = '';
+  // Pages that show an organisation's own figures; everything else in the Dashboard is managing Outcomes.
+  const DATA_PAGES = /^(results|reports|report|approvals|analytics|ask|solution|sim)$/;
   const stateWord = () => demo() ? 'Example data' : sandbox() ? 'Demo workspace, simulated' : 'Live database';
   function head(o) {
-    curTitle = String(o.title).replace(/<span class="avatar[^>]*>[^<]*<\/span>/g, '').replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').trim();
+    curTitle = o.topTitle || String(o.title).replace(/<span class="avatar[^>]*>[^<]*<\/span>/g, '').replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').trim();
     const ranged = /data-range=/.test(o.actions || '');
     const stateLine = o.state !== undefined ? o.state : `${stateWord()}${ranged ? ' · ' + rangeLabel().toLowerCase() : ''} · updated ${day(today())}, 14:30 MYT`;
     const how = o.how || HOW[curPage];
-    return `<header class="page-head${o.crumbs ? ' entity' : ''}"><div style="min-width:0;display:grid;gap:4px">
+    const kind = o.kind || (DATA_PAGES.test(curPage) ? 'data' : R8_ROUTES.test(curPage) ? null : 'manage');
+    const chip = kind === 'data' ? `<span class="kind-chip data">${icon('analytics', 'sm')}Client data</span>` : kind === 'manage' ? `<span class="kind-chip manage">${icon('settings', 'sm')}Managing Outcomes</span>` : '';
+    return `<header class="page-head${o.crumbs ? ' entity' : ''}"><div style="min-width:0;display:grid;gap:4px">${chip ? `<div>${chip}</div>` : ''}
       ${o.crumbs ? `<nav class="crumbs" aria-label="Breadcrumbs">${o.crumbs}</nav><h2 class="entity-title">${o.title}</h2>` : ''}
       ${o.lead ? `<p class="lead">${o.lead}</p>` : ''}${o.meta ? `<div class="meta-line">${o.meta}</div>` : ''}
       ${stateLine ? `<p class="state-line mono">${stateLine}</p>` : ''}
@@ -553,7 +557,7 @@
         ['Operations', 'operations', [['Errors'], ['Alerts'], ['Backups'], ['Access']]],
         ['Trail', 'trail', [['Audit', 'audit'], ['Staff', 'staff']]],
       ],
-      dashOnly: [['Approvals', 'approvals', waiting, has('Approve') ? 'loud' : 'quiet'], ['Reports', 'reports', reportsDue, 'loud'], ['Analytics', 'analytics'], ['Ask', 'ask']],
+      dashOnly: [['Results', 'results'], ['Reports', 'reports', reportsDue, 'loud'], ['Approvals', 'approvals', waiting, has('Approve') ? 'loud' : 'quiet'], ['Analytics', 'analytics'], ['Ask', 'ask']],
       r8: [
         ['Command', 'command', [['Overview', 'r8'], ['Incidents', 'incidents', R.incidents.filter((i) => i.state === 'open').length, 'loud'], ['Troubleshoot', 'troubleshoot']]],
         ['System', 'system', [['Jobs', 'jobs', R.jobs.filter((j) => j.st === 'fault').length, 'loud'], ['Providers', 'providers', R.providers.filter((x) => x.st === 'fault').length, 'loud'], ['Services', 'services']]],
@@ -562,7 +566,7 @@
       r8Only: [['Measurement links', 'links', R.links.filter((l) => l.st !== 'ok').length, 'loud']],
     };
   }
-  const NAV_CUR = { 'new-organisation': 'organisations', 'new-project': 'organisations', connect: 'organisations', organisation: 'organisations', solution: 'organisations', sim: 'organisations', report: 'reports', guide: 'home' };
+  const NAV_CUR = { 'new-organisation': 'organisations', 'new-project': 'organisations', connect: 'organisations', organisation: 'organisations', results: 'results', solution: 'results', sim: 'results', report: 'reports', guide: 'home' };
   function navHtml(route) {
     const mode = axMode(route), N = navModel();
     const curKey = R8_ROUTES.test(route) ? route.replace(/-.+$/, '') : (NAV_CUR[route] || NAV_CUR[parse()[0]] || route);
@@ -592,9 +596,10 @@
     return `<a class="ax-brand" href="#home"><img src="assets/antarax-mark.svg" alt="AntaraX"><span><b>AXLE</b><small>REKA STAFF CONSOLE</small></span></a>
       <div class="ax-mode" role="tablist" aria-label="AXLE mode"><a href="#home" role="tab" aria-selected="${mode === 'dash'}">Dashboard</a><a href="#r8" role="tab" aria-selected="${mode === 'r8'}">R8</a></div>
       <div class="ax-modeline">${mode === 'r8' ? 'R8 Full · is the platform okay, and why did this fail?' : 'How is Outcomes doing, and who needs us?'}</div>
+      <section class="ax-only" aria-label="Outcomes only"><div class="ax-only-head"><span>${icon('analytics', 'sm').replace('<svg', '<svg style="color:#0459F7;width:15px;height:15px"')}</span><b>Outcomes only</b></div><p class="ax-sub">${mode === 'r8' ? 'The machinery only Outcomes runs' : 'Client data: what each organisation’s solutions delivered'}</p>${only.map(item).join('')}</section>
       <div class="ax-std"><span>AXLE STANDARD</span><i></i><button type="button" data-act="nav-all">${allOpen ? 'Collapse all' : 'Expand all'}</button></div>
+      <p class="ax-sub" style="padding:0 8px">${mode === 'r8' ? 'The same groups in every product' : 'Managing Outcomes: organisations, people, settings, the trail'}</p>
       ${groups}
-      <section class="ax-only" aria-label="Outcomes only"><div class="ax-only-head"><span>${icon('analytics', 'sm').replace('<svg', '<svg style="color:#0459F7;width:15px;height:15px"')}</span><b>Outcomes only</b></div>${only.map(item).join('')}</section>
       <div class="ax-spacer"></div>
       <div class="ax-foot"><div class="ax-staff"><span class="av">${u.initials}</span><span><b>${esc(u.name)}</b><small>${esc(rungOf(u).toUpperCase())}</small></span></div><div class="ax-footline">Authorised REKA staff · every action is recorded</div></div>`;
   }
@@ -905,7 +910,7 @@
   }
   function homeMine() {
     const collecting = state.sims.filter((s) => s.stage === 'collecting');
-    const greet = head({ title: 'Overview', lead: collecting.length ? 'What needs a person, and what each organisation’s solutions delivered.' : 'Outcomes is new here. Seven first steps take your first project from nothing to its first report.', actions: collecting.length ? rangeSeg() : '' });
+    const greet = head({ title: 'Overview', lead: collecting.length ? 'What needs a person, and how Outcomes is running. Each organisation’s figures are in Results.' : 'Outcomes is new here. Seven first steps take your first project from nothing to its first report.', actions: collecting.length ? rangeSeg() : '' });
     if (!collecting.length) {
       return `${greet}
       <section class="grid g-side">${checklistCard(false)}
@@ -956,9 +961,8 @@
         ${collect.why.length ? `<p class="small">${esc(collect.why[0])}</p>` : '<p class="small">Every link answered and every figure passed its checks.</p>'}<a class="small" href="#jobs">Open the job</a></section>
     </div>
     <section class="figs" aria-label="Figures">
-      ${fig(`Hours saved`, h === null ? '–' : nf(h) + '<small>h</small>', h === null ? 'No baseline approved yet' : `Likely ${nf(rg[0])} to ${nf(rg[1])}${cmp ? ' · ' + chgHtml(chgPct(h, hm.calc(P))) : ''}`, '#analytics', q('estimated'))}
-      ${fig(`Value of time freed`, fmtM(vm, vm.calc(T)) || '–', 'At RM45 an hour, an estimate', '#analytics', q('estimated'))}
-      ${fig(`Work handled`, T.n ? nf(T.vol) : '–', `${ps.length} solution${ps.length === 1 ? '' : 's'} collecting`, '#analytics', q('measured'))}
+      ${fig(`Hours saved`, h === null ? '–' : nf(h) + '<small>h</small>', h === null ? 'No baseline approved yet' : `Likely ${nf(rg[0])} to ${nf(rg[1])} · open Results`, '#results', q('estimated'))}
+
       ${fig('Solutions sending data', `${sending}<small>of ${sols.length}</small>`, `${R.bad} not answering · ${R.late} late`, '#links')}
       ${fig('KPIs live', `${kp[0]}<small>of ${kp[1]}</small>`, `${waiting} waiting for approval`, '#approvals')}
       ${fig('Organisations', String(all.length), `${all.filter((x) => x.stage === 'live').length} live`, '#organisations')}
@@ -967,13 +971,11 @@
       <div class="stackbar" role="img" aria-label="${stages.map((x) => `${x[1]} ${x[3]}`).join(', ')}">${stages.map(([k, l, c, n]) => `<a href="#organisations" data-cfshow-go="${k === 'live' ? 'live' : 'early'}" title="${l}: ${n}" style="flex:${n} 1 0;background:${c}"></a>`).join('')}</div>
       <div class="legend">${stages.map(([, l, c, n]) => `<span><i style="background:${c}"></i>${l} <b class="mono ink">${n}</b></span>`).join('')}</div></section>
     <section class="card" aria-labelledby="glance-h"><div class="card-head"><h2 id="glance-h">Organisations at a glance</h2><a class="small" href="#organisations">All ${all.length} organisations</a></div>
-      <div class="table-wrap"><table><thead><tr><th>Organisation</th><th>Stage</th><th>Solutions</th><th>Readiness</th><th>Problems</th><th class="num">Projects</th><th class="num">Hours saved</th></tr></thead><tbody>
+      <div class="table-wrap"><table><thead><tr><th>Organisation</th><th>Stage</th><th>Solutions</th><th>Readiness</th><th>Problems</th><th class="num">Projects</th><th>Results</th></tr></thead><tbody>
       ${rows.map(({ c, r, needs, t }) => { const done = r.filter((x) => x[1]).length, hv = hm.calc(t); return `<tr class="link" data-go="${c.href.slice(1)}" tabindex="0"><td><span class="name">${esc(c.name)}</span><span class="sub mono">${slug(c.short)}</span></td><td><span class="pill idle">${cap(c.stage)}</span></td><td>${statusPill(coStatus(c))}</td>
         <td><span class="ready"><span class="bar-track"><span class="bar-fill" style="width:${100 * done / r.length}%"></span></span><span class="mono xs">${done} of ${r.length}</span></span></td>
-        <td style="color:var(--${needs.length ? (needSeverity(needs) === 0 ? 'fault-ink' : 'warn-ink') : 'muted'})">${needs.length ? `${needs.length} open` : 'None'}</td><td class="num">${c.projects.length}</td><td class="num">${hv === null ? '<span class="dash">–</span>' : nf(hv) + ' h'}</td></tr>`; }).join('')}
+        <td style="color:var(--${needs.length ? (needSeverity(needs) === 0 ? 'fault-ink' : 'warn-ink') : 'muted'})">${needs.length ? `${needs.length} open` : 'None'}</td><td class="num">${c.projects.length}</td><td>${coProjs(c).length ? `<a class="btn sm ghost" href="#results-${c.id}" data-stop>${icon('analytics', 'sm')}Results</a>` : '<span class="muted xs">Not yet</span>'}</td></tr>`; }).join('')}
       </tbody></table></div></section>
-    <section class="card"><div class="card-head"><div><h2>Hours saved</h2><p class="sub">${rangeLabel()} · every project with an approved baseline</p></div></div><div class="chart" id="${demo() ? 'ch-home' : 'ch-mine-home'}"></div>
-      <div class="legend"><span><i style="background:var(--s1)"></i>Hours saved</span><span><i style="background:repeating-linear-gradient(135deg,var(--s1) 0 2px,var(--s1-soft) 2px 5px)"></i>Likely range</span><span><i style="box-shadow:inset 0 0 0 1.5px var(--warn)"></i>No data that day, not zero</span></div></section>
     <section class="card"><div class="card-head"><h2>Recent actions</h2><a class="small" href="#audit">Audit</a></div>${activityList(6)}</section>`;
   }
   function activityList(n) {
@@ -983,12 +985,13 @@
   }
   pages.home.after = () => {
     if (demo()) {
+      if (!$('#ch-home')) return;
       const daily = windowDays(state.range).map((d) => {
         const parts = ROLLED.map((s) => impactDaily(s, [d])[0]), ok = parts.filter((p) => !p.gap && !p.before);
         if (!ok.length) return { d, gap: parts.some((p) => p.gap), before: parts.every((p) => p.before) };
         return { d, mid: ok.reduce((a, p) => a + p.mid, 0), low: ok.reduce((a, p) => a + p.low, 0), high: ok.reduce((a, p) => a + p.high, 0) };
       });
-      drawChart($('#ch-home'), bucket(daily, state.range > 30), { id: 'home', kind: 'band', label: 'Hours saved across organisations', height: 240, tip: bandTip });
+      if ($('#ch-home')) drawChart($('#ch-home'), bucket(daily, state.range > 30), { id: 'home', kind: 'band', label: 'Hours saved across organisations', height: 240, tip: bandTip });
       return;
     }
     const el = $('#ch-mine-home'); if (!el) return;
@@ -1003,7 +1006,7 @@
 
   // example workspace home
   function homeDemo() {
-    return overviewHtml(head({ title: 'Overview', lead: 'What needs a person, and what each organisation’s solutions delivered.', actions: rangeSeg() }));
+    return overviewHtml(head({ title: 'Overview', lead: 'What needs a person, and how Outcomes is running. Each organisation’s figures are in Results.', actions: rangeSeg() }));
   }
 
   // ------------------------------------------------------------------ CLIENTS: one model for every workspace (organisation → project → solution)
@@ -1085,7 +1088,7 @@
   // ---------- the organisation list
   pages.organisations = () => {
     const all = companies();
-    const lead = 'Every organisation, how its solutions are doing, and what each needs from a person.';
+    const lead = 'Every organisation REKA measures for: its stage, setup and what it needs from a person. Its figures are in Results.';
     if (!all.length) return `${head({ title: 'Organisations', lead, actions: `<a class="btn primary" href="#new-organisation">${icon('plus', 'sm')}New organisation</a>` })}<section class="card"><div class="empty">${emptyArt}<h3>No organisations yet</h3><p>Start with the organisation. You record their data agreement here, because nothing is collected until it is signed.</p><div class="head-actions" style="justify-content:center"><a class="btn primary" href="#new-organisation">${icon('plus', 'sm')}Add organisation</a><button type="button" class="btn" data-act="studio">Try a demo workspace</button></div></div></section>`;
     const f = state.cf = state.cf || { show: 'all', sort: 'needs', q: '' };
     const days = aWindow(state.range), prevDays = windowDays(state.range, M.addDays(days[0], -1)), hm = mByKey('hours'), vm = mByKey('value');
@@ -1100,22 +1103,21 @@
     if (f.group === 'stage' || f.group === 'industry') { const key = (r) => f.group === 'stage' ? ['live', 'pilot', 'onboarding', 'planning'].indexOf(r.c.stage) : r.c.industry; rows = rows.map((r, i) => [r, i]).sort((a, b) => (key(a[0]) < key(b[0]) ? -1 : key(a[0]) > key(b[0]) ? 1 : a[1] - b[1])).map((x) => x[0]); }
     const wk = weeksOf(aWindow(84));
     const strip = [['all', 'All', all.length], ['needs', 'Need a person', counts.needs], ['live', 'Live', counts.live], ['early', 'Getting started', all.length - counts.live]];
-    return `${head({ title: 'Organisations', lead, actions: `${rangeSeg()}<button type="button" class="btn" data-act="export">Export CSV</button>${demo() ? '' : `<a class="btn primary" href="#new-organisation">${icon('plus', 'sm')}New organisation</a>`}` })}
+    return `${head({ title: 'Organisations', lead, actions: `<button type="button" class="btn" data-act="export">Export CSV</button>${demo() ? '' : `<a class="btn primary" href="#new-organisation">${icon('plus', 'sm')}New organisation</a>`}` })}
     <section class="strip" aria-label="Organisations by state">${strip.map(([k, l, n]) => `<button type="button" class="strip-b" data-cfshow="${k}" aria-pressed="${f.show === k}"><span>${l}</span><b class="mono">${n}</b></button>`).join('')}
-      <div class="strip-b static"><span>Hours saved ${q('estimated')}</span><b class="mono">${hm.calc(totH) === null ? '–' : nf(hm.calc(totH)) + ' h'}</b></div></section>
+</section>
     <section class="card" style="padding:14px 18px"><div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
       <div class="field" style="flex:1;min-width:180px"><input id="cf-q" placeholder="Search organisations or projects" aria-label="Search organisations" value="${esc(f.q)}" autocomplete="off"></div>
       <div class="field"><select id="cf-sort" aria-label="Sort">${[['needs', 'Needs a person first'], ['hours', 'Most hours saved'], ['change', 'Biggest improvement'], ['name', 'A to Z']].map(([k, l]) => `<option value="${k}" ${f.sort === k ? 'selected' : ''}>Sort: ${l}</option>`).join('')}</select></div>
       <div class="field"><select id="cf-group" aria-label="Group">${[['none', 'No grouping'], ['stage', 'Stage'], ['industry', 'Industry']].map(([k, l]) => `<option value="${k}" ${(f.group || 'none') === k ? 'selected' : ''}>Group: ${l}</option>`).join('')}</select></div>
     </div></section>
-    <section class="card"><div class="table-wrap"><table class="client-table"><thead><tr><th>Organisation</th><th>Projects</th><th class="num">Hours saved</th><th class="num">Change</th><th>12 weeks</th><th>Next report</th>${has('Commercial') ? '<th class="num">Fee</th>' : ''}<th>Renewal</th></tr></thead><tbody>
+    <section class="card"><div class="table-wrap"><table class="client-table"><thead><tr><th>Organisation</th><th>Projects and solutions</th><th>Readiness</th><th>Data agreement</th><th>Results</th>${has('Commercial') ? '<th class="num">Fee</th>' : ''}<th>Renewal</th></tr></thead><tbody>
     ${rows.length ? rows.map((r, i) => { const c = r.c, ps = coProjs(c), gk = f.group === 'stage' ? cap(c.stage) : f.group === 'industry' ? c.industry : null, gh = gk && (i === 0 || (f.group === 'stage' ? cap(rows[i - 1].c.stage) : rows[i - 1].c.industry) !== gk) ? `<tr class="grp-row"><td colspan="8">${esc(gk)} <span class="mono">${rows.filter((x) => (f.group === 'stage' ? cap(x.c.stage) : x.c.industry) === gk).length}</span></td></tr>` : ''; return `${gh}<tr class="link" data-go="${c.href.slice(1)}" tabindex="0">
       <td><div style="display:flex;gap:10px;align-items:center"><span class="avatar" style="border-radius:10px">${initials(c.short)}</span><div><span class="name">${esc(c.name)}</span><span class="sub">${esc(c.industry)} · ${cap(c.stage)}</span></div></div>${r.needs ? `<span class="pill warn" style="margin-top:6px"><span class="dot"></span>${r.needs} need${r.needs === 1 ? 's' : ''} a person</span>` : ''}</td>
       <td>${c.projects.length ? c.projects.map((p) => `<div class="small" style="display:flex;gap:6px;align-items:center;white-space:nowrap">${p.solutions.map((s) => `<span class="dot" title="${esc(s.name)}: ${STATUS[s.status][1]}" style="color:var(--${STATUS[s.status][0] === 'idle' ? 'faint' : STATUS[s.status][0] === 'info' ? 'primary' : STATUS[s.status][0]})"></span>`).join('')}${esc(p.name)}</div>`).join('') : '<span class="muted">None yet</span>'}</td>
-      <td class="num">${r.h === null ? `<span class="dash">–</span>` : `<span class="ink">${nf(r.h)} h</span><div class="sub">${fmtM(mByKey('value'), r.v)}</div>`}</td>
-      <td class="num">${chgHtml(r.hc)}</td>
-      <td>${ps.length ? sparkline(wk.map((w) => hm.calc(mergeTotals(ps.map((p) => totals(p, w))))), 90, 26) : ''}</td>
-      <td>${c.projects.length ? (() => { const rep = c.projects.find((p) => p.report[0] === 'warn') || c.projects[0]; return `<span class="pill ${rep.report[0]}">${esc(rep.report[1])}</span>`; })() : '<span class="muted">–</span>'}</td>
+      <td>${(() => { const rd = readiness(c), done = rd.filter((x) => x[1]).length; return `<span class="ready"><span class="bar-track"><span class="bar-fill" style="width:${100 * done / rd.length}%"></span></span><span class="mono xs">${done} of ${rd.length}</span></span>`; })()}</td>
+      <td>${c.signed ? `<span class="pill ok">${icon('check', 'sm')}Signed</span>` : '<span class="pill warn">Not signed</span>'}</td>
+      <td>${ps.length ? `<a class="btn sm ghost" href="#results-${c.id}" data-stop>${icon('analytics', 'sm')}Results</a>` : '<span class="muted xs">Not collecting yet</span>'}</td>
       ${has('Commercial') ? `<td class="num">${c.contract ? money(c.contract.amount, c.contract.currency) : '–'}</td>` : ''}
       <td class="mono">${esc(c.renewal)}</td></tr>`; }).join('') : `<tr><td colspan="8"><div class="empty" style="padding:16px"><p>No organisations match. <button type="button" class="btn sm ghost" data-act="cf-reset">Show all</button></p></div></td></tr>`}
     </tbody></table></div></section>`;
@@ -1148,21 +1150,34 @@
       <section class="card" style="flex:1 1 280px;min-width:0"><h3>Stage</h3><ol class="stepper">${st.map((x, i) => `<li class="${i < at ? 'done' : i === at ? 'now' : ''}"><span class="dotc"></span><span>${cap(x)}</span></li>`).join('')}</ol></section>
     </div>`;
   }
-  function companyPage(c) {
+  // One organisation, two places (owner feedback, 15 Oct 2026): its account, which staff manage (Organisations),
+  // and its results, the client data (Outcomes only → Results). Each links to the other.
+  function companyPage(c, view = 'account') {
     rememberClient(c);
-    if (state.coFor !== c.id) { state.coFor = c.id; state.coTab = 'overview'; }
-    const organisation = state.audience === 'client', tab = state.coTab || 'overview';
+    const acct = view !== 'results', tk = acct ? 'coTab' : 'resTab';
+    state.coView = view;
+    if (state.coFor !== c.id + view) { state.coFor = c.id + view; state[tk] = 'overview'; }
+    const organisation = !acct && state.audience === 'client', tab = state[tk] || 'overview';
     const days = aWindow(state.range), prevDays = windowDays(state.range, M.addDays(days[0], -1));
     const T = coTotals(c, days), P = coTotals(c, prevDays), cmp = comparable(T, P);
     const needs = organisation ? [] : coNeeds(c);
-    const tabs = [['overview', 'Summary'], ['projects', `Projects and solutions (${c.projects.length})`], ['reports', 'Reports']].concat(organisation ? [] : [['notes', 'Notes'], ['activity', 'Audit']]);
+    const tabs = acct ? [['overview', 'Summary'], ['projects', `Projects and solutions (${c.projects.length})`], ['notes', 'Notes'], ['activity', 'Audit']] : [['overview', 'Results'], ['reports', 'Reports']];
     const stat = (key, alt) => { let m = mByKey(key), v = m.calc(T); if (v === null && alt) { m = mByKey(alt); v = m.calc(T); } const pv = cmp ? m.calc(P) : null, rg = m.range ? m.range(T) : null; return `<div class="card stat"><span class="label">${esc(m.name)} ${q(m.quality)}</span><span class="value">${fmtM(m, v) || '–'}</span><span class="hint">${v === null ? 'Not shared by these solutions yet' : `${rg ? `Likely ${fmtM(m, rg[0])} to ${fmtM(m, rg[1])} · ` : ''}${cmp ? chgHtml(chgPct(v, pv), m.better) + ' vs before' : 'Too few days before to compare'}`}</span></div>`; };
     let body = '';
     if (tab === 'overview') {
       const canNarr = has('Approve') && state.role !== 'nurul';
       const wk = weeksOf(aWindow(84));
-      body = `
+      const hTot = mByKey('hours').calc(T);
+      const resultsCard = coProjs(c).length ? `<section class="card handoff"><div><span class="kind-chip data">${icon('analytics', 'sm')}Client data</span><h2 style="margin-top:8px">${esc(c.short)}’s results</h2><p class="small">${hTot !== null ? `<b class="mono ink">${nf(hTot)} h</b> saved ${rangeLabel().toLowerCase()}, an estimate. ` : ''}Figures, the monthly summary, reports and measures live in Results.</p></div><a class="btn" href="#results-${c.id}">Open results${icon('chev', 'sm')}</a></section>` : '';
+      body = acct ? `
       ${needs.length ? `<section class="card"><div class="card-head"><h2>Needs you for ${esc(c.short)}</h2><span class="pill warn">${needs.length}</span></div><div class="list">${needs.map(([sev, ic, t, m, h, a]) => `<div class="row"><span class="ico ${sev}">${icon(ic, 'sm')}</span><div><div class="what">${esc(t)}</div><div class="meta">${esc(m)}</div></div><a class="btn sm" href="${h}">${a}</a></div>`).join('')}</div></section>` : ''}
+      ${resultsCard}
+      ${organisation ? '' : `<section class="grid g2">
+        <div class="card"><div class="card-head"><h2>Contract</h2><span class="pill idle">${icon('lock', 'sm')}REKA only</span></div>
+          ${!c.contract ? '<p class="small muted">No contract recorded yet.</p>' : has('Commercial') ? `<div class="grid g2"><div class="stat"><span class="label">Monthly fee</span><span class="value" style="font-size:1.375rem">${money(c.contract.amount, c.contract.currency)}</span></div><div class="stat"><span class="label">Running cost, September</span><span class="value" style="font-size:1.375rem">${c.runCost ? money(c.runCost.amount, c.runCost.currency) : '–'}</span><span class="hint">From AX Frame</span></div><div class="stat"><span class="label">Renewal</span><span class="value" style="font-size:1.125rem">${esc(c.renewal)}</span><span class="hint">Risk: ${esc(c.renewalRisk)}</span></div></div>` : `<div class="callout info">${icon('lock')}<span>Only people with the commercial right see fees. Switch to Aisyah Rahman from your profile menu to try it.</span></div>`}</div>
+        <div class="card"><div class="card-head"><h2>People and agreement</h2><span class="pill idle">${icon('lock', 'sm')}REKA only</span></div>${kv([['Organisation contact', esc(c.contact)], ['REKA owner', 'Daniel Lim'], ['Data agreement', c.signed ? `<span class="pill ok">${icon('check', 'sm')}${esc(c.agreement)}</span>` : '<span class="pill warn">Not signed: nothing is collected</span>'], ['Notes', c.id === 'contoh-logistik' ? 'Finance director asked for a split by document type from October.' : 'None yet']], 120)}</div>
+      </section>`}
+      <section class="card"><div class="card-head"><h2>Recent activity</h2><button type="button" class="btn sm ghost" data-cotab="activity">Audit${icon('chev', 'sm')}</button></div>${(() => { const names = [c.name, c.short].concat(c.projects.map((p) => p.name), coSolutions(c).map((x) => x.name)); const list = auditList().filter(([, , w]) => names.some((n) => w.includes(n))).slice(0, 4); return list.length ? `<div class="list">${list.map(([t, w, x]) => `<div class="row" style="grid-template-columns:minmax(0,1fr) auto"><div class="small"><b class="ink">${esc(w.split(' · ')[0])}</b> ${esc(x)}</div><span class="xs muted mono">${esc(t.replace(' 2026,', ''))}</span></div>`).join('')}</div>` : '<p class="small muted">Nothing recorded yet.</p>'; })()}</section>` : `
       ${coProjs(c).length ? `<section class="grid g4 stats">${stat('hours', 'volume')}${stat('value', 'straight')}${stat('volume')}${stat('sla', 'quality')}</section>
       <section class="card"><div class="card-head"><div><h2>${mByKey('hours').calc(T) !== null ? 'Hours saved' : 'Work handled'} by project</h2><p class="sub">By week, last 12 weeks · each project on its own line</p></div><details class="more"><summary>How totals are counted</summary><div class="small" style="max-width:52ch">${c.id === 'contoh-logistik' ? 'Only Document workflow’s hours count: Invoice triage touches the same work, so adding it would count hours twice. ' : ''}Hours and work handled add up across projects. Rates are worked out from the combined totals, never averaged. People are never added across days.</div></details></div>
         <div class="chart" id="ch-co"></div><div class="legend" id="lg-co"></div></section>` : `<section class="card"><div class="empty">${emptyArt}<h3>${c.projects.length ? 'No figures yet' : 'No projects yet'}</h3><p>${c.projects.length ? 'Figures appear here once a solution is collecting.' : `Create the project you agreed with ${esc(c.short)}. You’ll connect its solution next.`}</p>${c.example ? '' : c.projects.length ? `<a class="btn primary" href="${c.projects[0].solutions[0].href}">Open ${esc(c.projects[0].name)}</a>` : `<button type="button" class="btn primary" data-act="proj-for" data-org="${c.id}">${icon('plus', 'sm')}Create project</button>`}</div></section>`}
@@ -1170,12 +1185,7 @@
       ${c.projects.length ? `<section class="card"><div class="card-head"><h2>Projects</h2>${c.example ? '' : `<button type="button" class="btn sm" data-act="proj-for" data-org="${c.id}">${icon('plus', 'sm')}New project</button>`}</div><div class="table-wrap"><table><thead><tr><th>Project</th><th>Solutions</th><th class="num">Hours saved</th><th class="num">Work handled</th><th class="num">Change</th><th>12 weeks</th><th>Report</th></tr></thead><tbody>
         ${c.projects.map((p) => { const ps = p.solutions.filter((s) => s.proj).map((s) => s.proj), t = mergeTotals(ps.map((x) => totals(x, days))), tp = mergeTotals(ps.map((x) => totals(x, prevDays))), h = mByKey('hours').calc(t), ch = comparable(t, tp) ? chgPct(h !== null ? h : t.vol, h !== null ? mByKey('hours').calc(tp) : tp.vol) : null, first = p.solutions.find((s) => s.href);
           return `<tr ${first ? `class="link" data-go="${first.href.slice(1)}" tabindex="0"` : ''}><td><span class="name">${esc(p.name)}</span><span class="sub">${esc(p.kind)}</span></td><td>${p.solutions.map((s) => `<div style="display:flex;gap:6px;align-items:center;white-space:nowrap" class="small">${statusPill(s.status)} ${esc(s.name)}</div>`).join('')}</td><td class="num">${h === null ? '<span class="dash">–</span>' : nf(h) + ' h'}</td><td class="num">${t.n ? nf(t.vol) : '<span class="dash">–</span>'}</td><td class="num">${chgHtml(ch)}</td><td>${ps.length ? sparkline(wk.map((w) => { const tt = mergeTotals(ps.map((x) => totals(x, w))); return h !== null ? mByKey('hours').calc(tt) : (tt.n ? tt.vol : null); }), 90, 26) : ''}</td><td><span class="pill ${p.report[0]}">${esc(p.report[1])}</span></td></tr>`; }).join('')}
-      </tbody></table></div></section>` : ''}
-      ${organisation ? '' : `<section class="grid g2">
-        <div class="card"><div class="card-head"><h2>Contract</h2><span class="pill idle">${icon('lock', 'sm')}REKA only</span></div>
-          ${!c.contract ? '<p class="small muted">No contract recorded yet.</p>' : has('Commercial') ? `<div class="grid g2"><div class="stat"><span class="label">Monthly fee</span><span class="value" style="font-size:1.375rem">${money(c.contract.amount, c.contract.currency)}</span></div><div class="stat"><span class="label">Running cost, September</span><span class="value" style="font-size:1.375rem">${c.runCost ? money(c.runCost.amount, c.runCost.currency) : '–'}</span><span class="hint">From AX Frame</span></div><div class="stat"><span class="label">Renewal</span><span class="value" style="font-size:1.125rem">${esc(c.renewal)}</span><span class="hint">Risk: ${esc(c.renewalRisk)}</span></div></div>` : `<div class="callout info">${icon('lock')}<span>Only people with the commercial right see fees. Switch to Aisyah Rahman from your profile menu to try it.</span></div>`}</div>
-        <div class="card"><div class="card-head"><h2>People and agreement</h2><span class="pill idle">${icon('lock', 'sm')}REKA only</span></div>${kv([['Organisation contact', esc(c.contact)], ['REKA owner', 'Daniel Lim'], ['Data agreement', c.signed ? `<span class="pill ok">${icon('check', 'sm')}${esc(c.agreement)}</span>` : '<span class="pill warn">Not signed: nothing is collected</span>'], ['Notes', c.id === 'contoh-logistik' ? 'Finance director asked for a split by document type from October.' : 'None yet']], 120)}</div>
-      </section>`}`;
+      </tbody></table></div></section>` : ''}`;
     } else if (tab === 'projects') {
       body = `<div class="grid" style="gap:16px">${c.projects.map((p) => `<section class="card">
         <div class="card-head"><div><p class="xs muted">${esc(p.kind)} · ${esc(p.cadence)} report</p><h2>${esc(p.name)}</h2></div><span class="pill ${p.report[0]}">${esc(p.report[1])}</span></div>
@@ -1197,11 +1207,12 @@
       const list = auditList().filter(([, , what]) => names.some((n) => what.includes(n)));
       body = `<section class="card">${list.length ? `<div class="list">${list.slice(0, 20).map(([t, w, what]) => `<div class="row"><span class="avatar">${w === 'Collector' ? icon('live', 'sm') : initials(w.split(' · ')[0])}</span><div class="small"><b class="ink">${esc(w.split(' · ')[0])}</b> ${esc(what)}</div><span class="xs muted mono">${esc(t.replace(' 2026,', ''))}</span></div>`).join('')}</div>` : '<p class="small muted">Nothing recorded for this organisation yet.</p>'}</section>`;
     }
-    return `${head({ crumbs: crumbs(['Organisations', '#organisations'], [c.short]), title: orgTitle(c.name),
+    if (!acct) state.coView = 'results';
+    return `${head({ crumbs: acct ? crumbs(['Organisations', '#organisations'], [c.short]) : crumbs(['Results', '#results'], [c.short]), title: orgTitle(c.name), topTitle: `${c.short} · ${acct ? 'Account' : 'Results'}`, kind: acct ? 'manage' : 'data',
       meta: `<span class="mono">${slug(c.short)}</span><span>${esc(c.industry)}</span><span class="pill ${c.stage === 'live' ? 'info' : 'idle'}">${cap(c.stage)}</span>${statusPill(coStatus(c))}${c.renewal !== '–' ? `<span>Renews ${esc(c.renewal)}</span>` : ''}`,
-      actions: `<button type="button" class="btn sm" data-act="ask-client" data-name="${esc(c.short)}"><img src="${SPARK}" alt="" style="width:16px">Ask about ${esc(c.short)}</button>${coProjs(c).length ? `<div class="seg" role="group" aria-label="View as"><button type="button" data-aud="staff" aria-pressed="${!organisation}">Staff view</button><button type="button" data-aud="client" aria-pressed="${organisation}">Organisation view</button></div>${rangeSeg()}` : ''}` })}
+      actions: acct ? `${coProjs(c).length ? `<a class="btn" href="#results-${c.id}">${icon('analytics', 'sm')}Open results</a>` : ''}${c.example ? '' : `<button type="button" class="btn" data-act="proj-for" data-org="${c.id}">${icon('plus', 'sm')}New project</button>`}` : `<a class="btn sm ghost" href="#organisation-${c.id}">${icon('organisation', 'sm')}Account</a><button type="button" class="btn sm" data-act="ask-client" data-name="${esc(c.short)}"><img src="${SPARK}" alt="" style="width:16px">Ask about ${esc(c.short)}</button>${coProjs(c).length ? `<div class="seg" role="group" aria-label="View as"><button type="button" data-aud="staff" aria-pressed="${!organisation}">Staff view</button><button type="button" data-aud="client" aria-pressed="${organisation}">Organisation view</button></div>${rangeSeg()}` : ''}` })}
     ${organisation ? `<div class="callout info">${icon('client-view')}<span><b>You’re seeing what ${esc(c.short)} sees.</b> Fees, notes, activity and anything not yet approved are hidden.</span></div>` : ''}
-    ${organisation ? '' : readinessBlock(c)}
+    ${acct ? readinessBlock(c) : ''}
     <div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button type="button" role="tab" data-cotab="${k}" aria-selected="${tab === k}">${l}</button>`).join('')}</div>
     ${body}`;
   }
@@ -1216,7 +1227,31 @@
     drawLines(el, wk.map((w) => dayShort(w[0])), series, { label: 'By project', height: 220, fmt: (v) => useH ? nf(v) + ' h' : nf(v), tipLabel: (i) => 'Week of ' + day(wk[i][0]) });
     $('#lg-co').innerHTML = series.map((s) => `<span><i style="background:${s.color}"></i>${esc(s.name)}</span>`).join('');
   }
-  pages.organisation = (id) => companyPage(coById(id));
+  // ---------- Results: the client data, across organisations and for one (Outcomes only)
+  pages.results = (id) => {
+    if (id) return coById(id) ? companyPage(coById(id), 'results') : pages.results();
+    const all = companies().filter((c) => c.projects.length), days = aWindow(state.range), prevDays = windowDays(state.range, M.addDays(days[0], -1));
+    const hm = mByKey('hours'), vm = mByKey('value'), wk = weeksOf(aWindow(84));
+    const rows = all.map((c) => { const t = coTotals(c, days), tp = coTotals(c, prevDays), h = hm.calc(t); return { c, t, h, v: vm.calc(t), ch: comparable(t, tp) && h !== null ? chgPct(h, hm.calc(tp)) : null, ps: coProjs(c) }; }).sort((a, b) => (b.h === null ? -1 : b.h) - (a.h === null ? -1 : a.h));
+    const T = mergeTotals(rows.map((r) => r.t)), P = mergeTotals(all.map((c) => coTotals(c, prevDays))), h = hm.calc(T), rg = hm.range(T);
+    const fig = (label, value, hint, tag = '') => `<div class="card fig"><span class="label">${label} ${tag}</span><span class="value mono">${value}</span><span class="hint">${hint}</span></div>`;
+    return `${head({ title: 'Results', kind: 'data', lead: 'What each organisation’s solutions delivered: the client data behind every report.', actions: rangeSeg() })}
+    <section class="figs">
+      ${fig('Hours saved', h === null ? '–' : nf(h) + '<small>h</small>', h === null ? 'No baseline approved yet' : `Likely ${nf(rg[0])} to ${nf(rg[1])}${comparable(T, P) ? ' · ' + chgHtml(chgPct(h, hm.calc(P))) : ''}`, q('estimated'))}
+      ${fig('Value of time freed', fmtM(vm, vm.calc(T)) || '–', 'At RM45 an hour, an estimate', q('estimated'))}
+      ${fig('Work handled', T.n ? nf(T.vol) : '–', `${rows.reduce((a, r) => a + r.ps.length, 0)} solutions collecting`, q('measured'))}
+      ${fig('Organisations with results', String(rows.filter((r) => r.ps.length).length), `of ${companies().length}`)}
+    </section>
+    <section class="card"><div class="card-head"><div><h2>Hours saved</h2><p class="sub">${rangeLabel()} · every project with an approved baseline</p></div><a class="small" href="#analytics">Analytics</a></div><div class="chart" id="${demo() ? 'ch-home' : 'ch-mine-home'}"></div>
+      <div class="legend"><span><i style="background:var(--s1)"></i>Hours saved</span><span><i style="background:repeating-linear-gradient(135deg,var(--s1) 0 2px,var(--s1-soft) 2px 5px)"></i>Likely range</span><span><i style="box-shadow:inset 0 0 0 1.5px var(--warn)"></i>No data that day, not zero</span></div></section>
+    <section class="card"><div class="card-head"><h2>By organisation</h2><span class="xs muted">Most hours saved first</span></div><div class="table-wrap"><table class="client-table"><thead><tr><th>Organisation</th><th>Projects</th><th class="num">Hours saved</th><th class="num">Change</th><th>12 weeks</th><th class="num">Work handled</th><th>Next report</th></tr></thead><tbody>
+      ${rows.map((r) => { const c = r.c, rep = c.projects.find((p) => p.report[0] === 'warn') || c.projects[0]; return `<tr class="link" data-go="results-${c.id}" tabindex="0"><td><span class="name">${esc(c.name)}</span><span class="sub">${esc(c.industry)}</span></td><td>${c.projects.map((p) => `<div class="small">${esc(p.name)}</div>`).join('')}</td>
+        <td class="num">${r.h === null ? '<span class="dash">–</span>' : `<span class="ink">${nf(r.h)} h</span><div class="sub">${fmtM(vm, r.v)}</div>`}</td><td class="num">${chgHtml(r.ch)}</td><td>${r.ps.length ? sparkline(wk.map((w) => { const tt = mergeTotals(r.ps.map((x) => totals(x, w))); return r.h !== null ? hm.calc(tt) : (tt.n ? tt.vol : null); }), 90, 26) : '<span class="muted xs">Not collecting yet</span>'}</td>
+        <td class="num">${r.t.n ? nf(r.t.vol) : '<span class="dash">–</span>'}</td><td><span class="pill ${rep.report[0]}">${esc(rep.report[1])}</span></td></tr>`; }).join('')}
+    </tbody></table></div></section>`;
+  };
+  pages.results.after = (id) => { if (id && coById(id)) return companyAfter(coById(id)); pages.home.after(); };
+  pages.organisation = (id) => companyPage(coById(id), 'account');
   pages.organisation.after = (id) => companyAfter(coById(id));
 
   pages['new-organisation'] = () => `
@@ -1391,7 +1426,7 @@
       </tbody></table></div></section>`;
     }
     return `
-    ${head({ crumbs: crumbs(['Organisations', '#organisations'], [o.short, '#organisation-' + o.id], [o.projects.find((x) => x.solutions.includes(s.id)).name], [s.name]), title: esc(s.name), meta: `${statusPill(st)}<span>${esc(o.projects[0].name)}</span><span>Live since ${day(s.live)}</span>`, actions: rangeSeg() })}
+    ${head({ crumbs: crumbs(['Results', '#results'], [o.short, '#results-' + o.id], [o.projects.find((x) => x.solutions.includes(s.id)).name], [s.name]), title: esc(s.name), meta: `${statusPill(st)}<span>${esc(o.projects[0].name)}</span><span>Live since ${day(s.live)}</span>`, actions: rangeSeg() })}
     ${banner}
     <div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button type="button" role="tab" data-tab="${k}" aria-selected="${state.solTab === k}">${l}</button>`).join('')}</div>
     ${body}
@@ -1441,7 +1476,7 @@
         ${!s.reportScheduled ? `<section class="card"><div class="row" style="border:0;padding:0"><span class="ico info">${icon('reports', 'sm')}</span><div><div class="what">Schedule the organisation report</div><div class="meta">${esc(s.project.cadence)} · drafted for you, sent only after you check it</div></div><button type="button" class="btn primary sm" data-act="schedule-report" data-sim="${s.id}">Schedule report</button></div></section>`
         : `<section class="card"><div class="row" style="border:0;padding:0"><span class="ico ${rs.st === 'ready' ? 'warn' : 'ok'}">${icon('reports', 'sm')}</span><div><div class="what">${rs.st === 'ready' ? `${monthName(rs.ym)} report is ready to review` : rs.st === 'approved' ? `${monthName(rs.ym)} report approved` : `${esc(s.project.cadence)} report scheduled`}</div><div class="meta">${rs.st === 'waiting' ? `First draft on ${nextMonthStart()}, once a full month of figures is in. Move the date forward in Demo studio to see it.` : 'Drafted from the figures above'}</div></div>${rs.st !== 'waiting' ? `<a class="btn sm ${rs.st === 'ready' ? 'primary' : ''}" href="#report-${s.id}">Open report</a>` : ''}</div></section>`}`;
     }
-    return `${head({ crumbs: crumbs(['Organisations', '#organisations'], [o.name, '#organisation-' + o.id], [s.project.name], [s.name]), title: esc(s.name), meta: `${statusPill(st)}<span>${esc(s.project.name)}</span><span>${K.label}</span>`, actions: s.stage === 'collecting' ? rangeSeg() : '' })}
+    return `${head({ crumbs: crumbs(['Results', '#results'], [o.name, '#results-' + o.id], [s.project.name], [s.name]), title: esc(s.name), meta: `${statusPill(st)}<span>${esc(s.project.name)}</span><span>${K.label}</span>`, actions: s.stage === 'collecting' ? rangeSeg() : '' })}
       ${strip}${body}`;
   };
   pages.sim.after = (id) => {
@@ -2624,11 +2659,11 @@
     const old = /^(?:client|org)-(.+)$/.exec(h);
     if (old) h = 'organisation-' + old[1]; else if (OLD[h]) h = OLD[h];
     if (was && h !== was) { try { history.replaceState(null, '', '#' + h); } catch (err) { /* file pages may refuse; the alias still works */ } }
-    for (const p of ['organisation', 'solution', 'sim', 'connect', 'report', 'troubleshoot']) if (h.startsWith(p + '-')) return [p, h.slice(p.length + 1), h];
+    for (const p of ['organisation', 'results', 'solution', 'sim', 'connect', 'report', 'troubleshoot']) if (h.startsWith(p + '-')) return [p, h.slice(p.length + 1), h];
     return [h, null, h];
   }
   let last = '';
-  const TITLES = { analytics: 'Analytics', ask: 'Ask', signin: 'Sign in', welcome: 'Welcome', home: 'Overview', organisations: 'Organisations', 'new-organisation': 'New organisation', 'new-project': 'New project', connect: 'Connect a solution', approvals: 'Approvals', reports: 'Reports', report: 'Report', settings: 'Settings', guide: 'AXLE guide', adoption: 'Adoption', demo: 'Demo', audit: 'Audit', staff: 'Staff', r8: 'Overview', incidents: 'Incidents', troubleshoot: 'Troubleshoot', jobs: 'Jobs', providers: 'Providers', services: 'Services', configuration: 'Configuration', 'ops-audit': 'Operations audit', links: 'Measurement links' };
+  const TITLES = { results: 'Results', analytics: 'Analytics', ask: 'Ask', signin: 'Sign in', welcome: 'Welcome', home: 'Overview', organisations: 'Organisations', 'new-organisation': 'New organisation', 'new-project': 'New project', connect: 'Connect a solution', approvals: 'Approvals', reports: 'Reports', report: 'Report', settings: 'Settings', guide: 'AXLE guide', adoption: 'Adoption', demo: 'Demo', audit: 'Audit', staff: 'Staff', r8: 'Overview', incidents: 'Incidents', troubleshoot: 'Troubleshoot', jobs: 'Jobs', providers: 'Providers', services: 'Services', configuration: 'Configuration', 'ops-audit': 'Operations audit', links: 'Measurement links' };
   // "How this page works" for the standard pages (SPEC §3.6). Pages may pass their own.
   const HOW = {
     home: 'Start with <b>Needs a person</b>: each row says what is wrong and links to the fix; a technical problem opens Troubleshoot in R8. Every figure is worked out from the solutions’ daily figures and opens the list behind it. Hours saved and value are estimates against agreed baselines, always shown with a likely range. Fees need the Commercial right; without it you see a dash, never a zero.',
@@ -2739,6 +2774,7 @@
   document.addEventListener('click', (e) => {
     if (e.target.id === 'scrim') { $('#sidebar').classList.remove('open'); e.target.hidden = true; return; }
     if (!e.target.closest('.rel')) closePops();
+    if (e.target.closest('[data-stop]')) return;
     const cg = e.target.closest('[data-cfshow-go]'); if (cg) { state.cf = Object.assign(state.cf || { sort: 'needs', q: '' }, { show: cg.dataset.cfshowGo }); }
     if (e.target.closest('#pal-list a')) { closePalette(); return; }
     const t = e.target.closest('button, [data-go], [data-act], [data-anpick], [data-jobsel], [data-provsel]');
@@ -2759,7 +2795,7 @@
     if (d.jobsel) { state.jobSel = d.jobsel; render(); return; }
     if (d.provsel) { state.provSel = d.provsel; render(); return; }
     if (d.cfshow) { state.cf.show = d.cfshow; render(); return; }
-    if (d.cotab) { state.coTab = d.cotab; render(); return; }
+    if (d.cotab) { state[state.coView === 'results' ? 'resTab' : 'coTab'] = d.cotab; render(); return; }
     if (d.repfor) { state.repFor = d.repfor === 'all' ? null : { k: repKey(), id: d.repfor }; render(); return; }
     if (d.tab) { state.solTab = d.tab; render(); return; }
     if (d.demo) { state.demoState = d.demo; render(); return; }

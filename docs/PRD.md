@@ -345,7 +345,7 @@ All four levels share one widget library and are configured, not coded (brief §
 | Id | Requirement | Priority |
 |---|---|---|
 | FR-DSH-1 | **Portfolio** (REKA): what needs a person; collection status; clients at a glance (projects, solutions, KPI coverage, freshness, outcome trend, renewal); outcome trend; instrumentation gaps; commercial summary for those with the right | MVP |
-| FR-DSH-2 | **Client page**: one template with tabs. **Overview**: what needs you for this client; hours saved, value of time freed, work handled and time agreed (or quality), each with change against the period before; hours saved by project, one line per project; executive narrative (AI draft, approved); projects table (solutions with status, hours saved, work handled, change, 12-week trend, report status); contract and agreement (REKA only). **Projects**: each project's outcome in the client's words and its solutions. **Reports**: each project's cadence and next report. **Activity**: audit entries for this client (REKA only). Totals are deduplicated across projects | MVP |
+| FR-DSH-2 | **An organisation's two pages.** Its **account** (managing): readiness checklist and stage; Summary with what needs a person, contract (REKA only), people and agreement, a link to its results and recent activity; Projects and solutions setup; internal notes; audit. Its **results** (client data): hours saved, value of time freed, work handled and time agreed (or quality), each with change against the period before; hours saved by project; the executive narrative (AI draft, approved); outcomes by project; reports; staff view and organisation view. Each page links to the other. Totals are deduplicated across projects | MVP |
 | FR-DSH-3 | **Project**: objectives and the KPIs that answer them; contributing solutions; baseline comparison; exceptions; improvement backlog | MVP |
 | FR-DSH-4 | **Solution**: outcomes, usage, technical health, operational KPIs, metric catalog, collection diagnostics, trend detail | MVP |
 | FR-DSH-5 | Every figure shows its quality tag and its freshness on hover or tap: "Measured · from Document workflow · updated 14:00 MYT" | MVP |
@@ -785,18 +785,28 @@ The mock answers with fixed rules over the same calculations as the dashboards, 
 
 ### 12.2 Navigation
 
+**Client data apart from managing (owner feedback, 15 Oct 2026).** Staff found it hard to tell the pages that hold an organisation's own figures from the pages that run Outcomes. So:
+
+- **The Outcomes-only box comes first** in the Dashboard menu, headed "Client data: what each organisation's solutions delivered", with Results, Reports, Approvals, Analytics and Ask. The AXLE standard groups follow, headed "Managing Outcomes". This answers AXLE SPEC §20 question 12 (where the product box sits) for Outcomes. It needs recording in the kit before another product follows (D19).
+- **Each organisation has two pages, linked both ways.**
+  - Its **account** (`#organisation-…`, under Organisations) is for managing: readiness, stage, needs, contract, agreement, projects and solutions setup, notes, audit.
+  - Its **results** (`#results-…`, under Results) is the client data: figures, hours saved by project, the monthly summary, outcomes by project, reports, and organisation view.
+- **Every Dashboard page says which it is**, with a chip above its header: "Client data" (blue) or "Managing Outcomes" (grey). The top bar title says "Contoh Logistik · Results" or "Contoh Logistik · Account".
+- **Solution pages belong to client data.** Their breadcrumbs read Results › organisation › project › solution. Connecting a solution stays under Organisations.
+- **The Overview manages.** It keeps one hours-saved figure that opens Results; the trend chart moved to Results.
+
 Two modes share one sign-in, one top bar and one audit log; the switch changes only the menu (SPEC §7.1). Standard items keep the standard's names and order; items this mock does not draw are listed but not links. Outcomes is **R8 Full**: it runs machinery of its own (nightly collectors, health checks, the contract test, report drafting).
 
 | Mode | Group | Items in AXLE · Outcomes |
 |---|---|---|
-| **Dashboard** | Watch | **Overview** (§8 of the SPEC: health strip, Needs a person, Nightly collection, figures, organisations by stage, organisations at a glance, hours saved, recent actions; first use shows the first-steps checklist), **Adoption** (people using each organisation's solutions, and who stopped) |
-| | Organisations | **Organisations** (the list, FR-DSH-10, 11) and the organisation page; Members, Invitations, Requests, Support (standard, not drawn) |
+| **Dashboard** | Outcomes only, first: client data | **Results** (every organisation's figures, hours saved over time, by organisation; then one organisation's results), **Reports**, **Approvals**, **Analytics**, **Ask** |
+| | Watch | **Overview** (§8 of the SPEC: health strip, Needs a person, Nightly collection, figures, organisations by stage, organisations at a glance with a link to each one's results, recent actions; first use shows the first-steps checklist), **Adoption** (people using each organisation's solutions, and who stopped) |
+| | Organisations | **Organisations** (the list for managing: stage, setup, readiness, agreement, a link to results) and each organisation's account; Members, Invitations, Requests, Support (standard, not drawn) |
 | | AI | Models & keys, AI usage, Live trace, Prompts & quality (standard, not drawn) |
 | | Money | Plans & features (standard, not drawn). No Billing: Outcomes does not bill |
 | | Platform | **Demo** (the demo workspace, Demo studio and example data), **Settings** (platform switches with a reason, collection, retention, the integration pack) |
 | | Operations | Errors, Alerts, Backups, Access (standard, not drawn) |
 | | Trail | **Audit**, **Staff** (the ladder and rights) |
-| | Outcomes only | **Approvals**, **Reports**, **Analytics**, **Ask** |
 | **R8** | Command | **Overview** (one state word, the build, Needs an operator, platform services, Outcomes' machinery, incidents, cost per organisation behind the Commercial right, recent operations), **Incidents**, **Troubleshoot** |
 | | System | **Jobs**, **Providers**, **Services** |
 | | Control and diagnostics | **Configuration** (set or missing, never values; schedules and limits in plain words), **Operations audit** |
@@ -829,8 +839,9 @@ A new workspace must lead a person from sign-in to a measured project without re
 | Connect a solution | `#connect` | The full guided connection, with the baseline captured up front |
 | Your solution | `#sim-…` | Waiting states, then first figures computed from the baseline you typed |
 | Overview, established | `#home` (example workspace) | The AXLE overview blocks; Needs a person links technical problems to Troubleshoot |
-| Organisations | `#organisations` | Stats strip as filters, search, sort, group by stage or industry, export; needs a person counted per organisation; fees gated by right |
-| Organisation | `#organisation-contoh-logistik` (the same address in every workspace) | Opens on readiness and stage; tabs Summary, Projects and solutions, Reports, Notes, Audit; staff view and organisation view |
+| Organisations | `#organisations` | Stats strip as filters, search, sort, group by stage or industry, export; readiness and agreement per organisation; a link to each one's results; fees gated by right |
+| Results | `#results`, `#results-contoh-logistik` | Client data: every organisation's figures and trend, then one organisation's figures, hours saved by project, the monthly summary, outcomes by project and its reports; staff view and organisation view |
+| Organisation account | `#organisation-contoh-logistik` (the same address in every workspace) | Managing: opens on readiness and stage; tabs Summary (needs, contract, agreement, a link to results, recent activity), Projects and solutions, Notes, Audit |
 | Solution | `#solution-doc-workflow` | Where the time goes; Measures; **Explore** (§8.17) |
 | Approvals, Reports, Analytics, Ask | `#approvals`, `#reports`, `#analytics`, `#ask` | The Outcomes-only pages |
 | Adoption, Demo, Settings, Audit, Staff | `#adoption`, `#demo`, `#settings`, `#audit`, `#staff` | Standard Dashboard pages; switches ask for a reason and raise the state banner; the ladder with "Needs Admin" |
@@ -1042,6 +1053,7 @@ The brief's §16, extended with points this review raised. Each needs the owner.
 | D16 | **Ask**: model, logging and retention of questions; whether clients ever get Ask | Current Claude model with tool calls; 90-day log; staff only in the MVP |
 | D17 | **Demo studio** | **Decided 15 Oct 2026: a product feature**, in separate demo workspaces, core in the MVP (§8.16) |
 | D18 | **Client or organisation** on screen | **Settled by AXLE v1.0** (SPEC §15): "organisation" on screen, "member" for a client's person. This document keeps "client" in prose (§7.1) |
+| D19 | **Where the product-only box sits** (AXLE SPEC §20 question 12) | For Outcomes: first, as client data, with the standard groups after it as "Managing Outcomes" (owner feedback, 15 Oct 2026; §12.2). Record it in the AXLE kit, mocked beside the standard pages, before any other product follows |
 
 ## 21 Appendices
 

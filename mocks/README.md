@@ -42,17 +42,20 @@ In the demo workspace, the dashed **Demo studio** button in the top bar shows th
 
 ## What to look at
 
+**Client data or managing.** The Outcomes-only box comes first and holds the client data; the AXLE standard groups below it are for managing Outcomes. Every Dashboard page carries a chip saying which it is: "Client data" or "Managing Outcomes".
+
 **The shell** (AXLE SPEC §4, §6, §7). The top bar: the AntaraX A and the Outcomes chip, the orange `AXLE` tag, the page title, the organisation scope picker, Find (⌘K), the health button (opens R8; a red count when a measurement link fails), and the staff menu. The sidebar: the Dashboard · R8 switch, the AXLE STANDARD groups as folding cards (fold one to see its grey preview and orange roll-up), and the dashed **Outcomes only** box. Standard items this mock doesn't draw are listed in grey and aren't links.
 
 | Mode | Where | What it shows |
 |---|---|---|
-| Dashboard | **Overview** (`#home`) | First use: the checklist. Later: health strip, Needs a person (a technical problem opens Troubleshoot), Nightly collection, figures that open their lists, organisations by stage, organisations at a glance with readiness, hours saved, recent actions |
+| Dashboard: client data (Outcomes only, first) | **Results** (`#results`, `#results-…`) | Every organisation's figures and hours saved over time; then one organisation's figures, hours saved by project, the monthly summary, outcomes by project and reports, with staff view and organisation view |
+| | **Reports**, **Approvals**, **Analytics**, **Ask** | Reports by organisation; separation of duties; any measure by organisation or solution; questions in plain words |
+| Dashboard: managing | **Overview** (`#home`) | First use: the checklist. Later: health strip, Needs a person (a technical problem opens Troubleshoot), Nightly collection, figures that open their lists, organisations by stage, organisations at a glance with readiness, hours saved, recent actions |
 | | **Adoption** | People using each organisation's solutions, change, 12 weeks, and who stopped |
 | | **Organisations** (`#organisations`) | Stats strip as filters, search, sort, group by stage or industry, export |
-| | An organisation (`#organisation-…`) | Readiness and stage first; tabs Summary, Projects and solutions, Reports, Notes (REKA only), Audit; staff view and organisation view |
+| | An organisation's account (`#organisation-…`) | Managing it: readiness and stage first; tabs Summary, Projects and solutions, Notes (REKA only), Audit; a link to its results |
 | | A solution | **Measures** (13 standard measures; add your own) and **Explore**: re-prompt and explore other measures of business impact |
 | | **Demo**, **Settings**, **Audit**, **Staff** | Demo workspaces; platform switches that ask for a reason and raise the state banner; the audit; the ladder with "Needs Admin" |
-| | Outcomes only: **Approvals**, **Reports**, **Analytics**, **Ask** | Separation of duties; reports by organisation; any measure by organisation or solution; questions in plain words |
 | R8 | **Overview** (`#r8`) | One word for the platform, the build, Needs an operator, services, Outcomes' machinery, incidents, cost per organisation (Commercial right only), recent operations |
 | | **Troubleshoot** (`#troubleshoot-quote-drafter` in example data) | Evidence in layers, timeline, AXLE's reading kept apart from your conclusion, Level 1 actions that ask for a reason |
 | | **Incidents**, **Jobs**, **Providers**, **Services**, **Configuration**, **Operations audit** | Acknowledge; run now, retry failures, pause; test a provider; set or missing, never values; every R8 action with who and why |

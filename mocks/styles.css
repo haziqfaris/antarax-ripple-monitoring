@@ -569,6 +569,15 @@ ol.stepper li.now .dotc { background: var(--axle-link); box-shadow: 0 0 0 3px va
 ol.stepper li.now, ol.stepper li.done { color: var(--ink); }
 @media (max-width: 640px) { ul.ready-list { grid-template-columns: minmax(0, 1fr); } }
 
+/* client data or managing (owner feedback, 15 Oct 2026) */
+.kind-chip { display: inline-flex; align-items: center; gap: 6px; font-size: .6875rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding: 3px 9px 3px 7px; border-radius: 999px; }
+.kind-chip.data { background: var(--axle-info-chip); color: var(--axle-link); }
+.kind-chip.manage { background: var(--axle-row-line); color: var(--axle-text-muted); }
+.ax-sub { font-size: 11px; color: var(--axle-bar-muted); padding: 0 10px 6px; line-height: 1.4; }
+.ax-only { margin-top: 12px; }
+.handoff { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: space-between; background: var(--axle-info-tint); border-color: var(--axle-info-line); }
+.handoff > div { flex: 1 1 320px; min-width: 0; }
+
 /* switches and rung chips (SPEC §5.2, §13.2) */
 .switch { width: 44px; height: 26px; border-radius: 999px; border: 0; padding: 3px; background: var(--axle-switch-off); cursor: pointer; display: flex; flex: none; }
 .switch span { width: 20px; height: 20px; border-radius: 50%; background: #FFFFFF; transition: transform .15s var(--ease); }
