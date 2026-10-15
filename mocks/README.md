@@ -1,36 +1,50 @@
-# Outcomes console: first mock
+# Outcomes: clickable product mock
 
-A clickable mock of Performance Intelligence's staff console, built to the AXLE standard. Plain HTML, CSS and JavaScript; no build step and no libraries.
+A clickable mock of Performance Intelligence (working name "Outcomes"), from first sign-in to a measured project, plus an established workspace with example clients. Plain HTML, CSS and JavaScript. No build step, no libraries.
 
 **Open it:** `index.html` in a browser, or `python3 -m http.server -d mocks` from the repository root.
 
-**Every organisation, person and figure is invented.** The raw daily observations are generated from a fixed seed in `data.js`; every figure on screen is computed from them in `app.js`, the way the real compute service would work (PRD §8.5). So the portfolio, the organisation page, the solution page and the client report always agree.
+**Every organisation, person and figure is invented.** The example workspace says "Example data" in the top bar. Its daily figures are generated from a fixed seed in `data.js`, and every number on screen is worked out from them in `app.js`, so the home page, organisation, solution and client report always agree. In the first-use journey, the figures for your new solution come from the baseline you type in the connect flow.
 
-## Screens
+## Journey 1: first use
+
+1. **Sign in** with the REKA account button.
+2. **Welcome:** name the workspace, invite the team (or skip), then choose **Connect my first project**.
+3. **Home** shows a seven-step getting-started checklist. Follow its buttons:
+   - **Add organisation:** the client and their signed data agreement.
+   - **Create project:** pick the kind of work and write the outcome in the client's words.
+   - **Connect solution:** eight guided steps. Copy the developer brief, tick that the link is in, run the live connection test, review what the solution shares (one figure is held back for privacy), keep or drop the AI-suggested KPIs, record the baseline, send for approval.
+4. On the **solution page**, use the dashed "Mock controls" bar to move time forward: Aisyah approves, then the first nightly collection runs. Or switch to Aisyah Rahman from the profile menu and approve the KPIs yourself in **Approvals**.
+5. **Schedule the report.** The checklist on Home completes.
+
+## Journey 2: an established workspace
+
+From the profile menu choose **Open the example workspace** (or pick "Explore with example data" at welcome).
 
 | Address | Screen | Try this |
 |---|---|---|
-| `#portfolio` | Portfolio | Change the range; hover the chart; switch staff (top right) to Aisyah Rahman to see commercial figures |
-| `#organisation-contoh-logistik` | Organisation | "As the client sees it" hides commercial figures, notes and drafts; read how the total avoids double counting |
-| `#solution-doc-workflow` | Solution | The impact breakdown (measured vs estimated, with range); switch Live, Stale, Failing, Not connected; open each tab |
-| `#connect` | Connect a solution | Test the connection, validate metrics (one warning, one quarantined), let AI propose a plan, keep or reject, send for approval |
-| `#approvals` | Approvals | As Daniel Lim, approve "Time to first response" with a reason; open his own baseline change and see why he can't approve it |
-| `#report` | Client report | The light, reviewed PDF layout, with evidence, caveats and next steps |
+| `#home` | Home | Change the range; hover the chart; open a project card |
+| `#organisations` | Organisations | Switch to Aisyah Rahman to see fees |
+| `#organisation-contoh-logistik` | Organisation | Team view and client view; how totals avoid double counting; approve the AI summary |
+| `#solution-doc-workflow` | Solution | Where the time goes; the four tabs; the mock control for late and not-answering data |
+| `#approvals` | Approvals | As Daniel, approve "Time to first response" with a reason; open his own baseline change and see why he can't |
+| `#report` | Client report | The reviewed PDF layout |
 
-Other navigation items open a placeholder that says what the screen will hold.
+## People in the mock
 
-## Staff in the mock
+| Person | Can |
+|---|---|
+| Daniel Lim (you, by default) | Approve, except what he set up himself |
+| Nurul Aina | Suggest KPIs, not approve; no fees |
+| Aisyah Rahman | Approve; sees fees |
 
-| Person | Rung | Rights | Shows |
-|---|---|---|---|
-| Nurul Aina | Support | Measurement | Can propose; can't approve; can't see commercial figures |
-| Daniel Lim (default) | Operator | Approve | Can approve, except his own proposals |
-| Aisyah Rahman | Admin | Approve, Commercial | Sees contract value and run cost |
+Light, dark or system appearance is in the profile menu.
 
 ## Files
 
-- `index.html`: the shell (sidebar, top bar, example-data banner)
-- `styles.css`: AXLE tokens and components, the light report paper
-- `data.js`: example organisations, solutions, observations, KPIs, approvals and audit
-- `app.js`: routing, computation, charts and the interactive flows
-- `assets/`: the AntaraX A, the AI sparkle and the REKA lockup, copied from the brand kit
+- `index.html`: the page
+- `styles.css`: the light AntaraX look and its dark mode
+- `icons.js`: the brand kit's line icons plus a few interface glyphs
+- `data.js`: example organisations, solutions, daily figures, KPIs, approvals and audit
+- `app.js`: screens, routing, calculations, charts and both journeys
+- `assets/`: the AntaraX A, the AI sparkle, the REKA lockup and two BaTech pieces, copied from the brand kit

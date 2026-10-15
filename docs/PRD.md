@@ -1,12 +1,12 @@
 # Performance Intelligence: product requirements
 
-**Version 0.1, draft, 15 Oct 2026.** Working name throughout. Owner: Muhammad Haziq Faris (Founder). Status: for review at the next design workshop.
+**Version 0.2, draft, 15 Oct 2026.** 0.2 adds first use and onboarding (§8.12, §12.3) and moves the console to the light AntaraX look (§12.1). Working name throughout. Owner: Muhammad Haziq Faris (Founder). Status: for review at the next design workshop.
 
 | | |
 |---|---|
 | **Source brief** | [MASTER_BRIEF.md](MASTER_BRIEF.md), version 0.1, 15 Oct 2026 |
 | **Aligned with** | AntaraX brand kit 1.4 (`haziqfaris/AntaraX-brand-kit`), AXLE standard 0.1 (`haziqfaris/AntaraX-Dashboard-kit/axle/SPEC.md`), AntaraX API framework v0.6.0 (`haziqfaris/antarax-api`), website strategy (`haziqfaris/antarax-ai/docs/strategy/`) |
-| **Mocks** | [../mocks/](../mocks/README.md): six screens, clickable, with example data |
+| **Mocks** | [../mocks/](../mocks/README.md): a clickable product, from sign-in through first project to the example workspace |
 | **Decision rules** | Where this PRD and the brief disagree, the PRD records why and lists the point in [§20 Open decisions](#20-open-decisions). Nothing here is decided until the owner signs it off. Brand decisions are recorded in the brand kit, not here. |
 
 **How to read this document.** §1 to §6 say what we are building and why. §7 to §12 are the requirements, numbered so tickets and tests can cite them. §13 to §17 cover the platform underneath. §18 to §21 cover delivery, risk and open decisions. Requirements use **must**, **should** and **may** as in the AXLE standard.
@@ -178,7 +178,7 @@ The brief's non-negotiables (§17), with the AXLE principles they meet:
 
 The brand kit (01) says: "a capability moves to AntaraX when it has a repeatable deployment, a published starting price and a fast path to first value. Until then it stays at REKA." Performance Intelligence meets none of these yet. So:
 
-- **MVP:** a REKA internal tool, supporting REKA's Managed AI service. Staff-only screens follow the AXLE look (dark, REKA orange accent, never shown to clients).
+- **MVP:** a REKA internal tool, supporting REKA's Managed AI service. Staff screens follow AXLE's rules (attention first, never a false zero, a trail for every change) in the light AntaraX product look (§12.1, D13). Clients never see the console.
 - **Client output:** the report is light, in AntaraX type and layout, credited "Run by REKA as part of Managed AI." where REKA runs the solution (brand kit 12). No "by AntaraX" until it graduates.
 - **Later:** if it graduates, it becomes an AntaraX product with its own name, family, mark and sheet in the brand kit.
 
@@ -402,6 +402,19 @@ Detailed in [§11](#11-ai-assistance-and-approval-gates).
 | FR-ADM-3 | Audit page per AXLE §8.5: one row per action, filterable, never editable. Collector and AI actions appear as the service ("Collector paused Contoh Logistik: 3 failures") | MVP |
 | FR-ADM-4 | Find (⌘K) over organisations, projects, solutions, KPIs, metrics and pages | P2 |
 
+### 8.12 First use and onboarding
+
+| Id | Requirement | Priority |
+|---|---|---|
+| FR-ONB-1 | A new workspace opens on a getting-started checklist that shows progress and the one next step, until the first report is scheduled | MVP |
+| FR-ONB-2 | Welcome asks only for workspace name, time zone and optional invites, then offers "Connect my first project" or "Explore with example data" | MVP |
+| FR-ONB-3 | The example workspace is clearly labelled "Example data" on every screen and never mixes with real organisations, audit or reports | MVP |
+| FR-ONB-4 | The connect flow gives the developer a copyable brief that matches the integration pack, and does not move on until the person confirms the link is in place | MVP |
+| FR-ONB-5 | The project's kind of work steers which KPIs AI suggests; every suggestion explains why it matters and how it is worked out, in plain words | MVP |
+| FR-ONB-6 | The baseline is captured inside the connect flow, with "not available yet" as an honest option that blocks only the impact KPI | MVP |
+| FR-ONB-7 | After sending for approval, the solution page shows where it is (connected, approved, first data, report) and what happens next, with no blank screens | MVP |
+| FR-ONB-8 | Progress in the connect flow is saved, so a person can leave while the developer works and come back | MVP |
+
 ## 9 The measurement interface (Measurement Link)
 
 The brief's L2 contract, written to the AntaraX API framework (`antarax-api` docs 03, 04 and 07) so a REKA-built solution and an AntaraX product speak the same way. Working name **Measurement Link**, by analogy with AXLE Link.
@@ -620,43 +633,65 @@ The brief's ten steps, with the gate at each:
 
 ### 12.1 Look and shell
 
-Staff screens follow the **AXLE standard** (Dashboard kit `axle/SPEC.md`):
+**Changed in 0.2, after owner review of the first mock.** The first mock followed the AXLE standard literally (dark only, REKA orange accent). The owner found it did not read as a product people would use. From 0.2 the staff console uses the **light AntaraX product look**, the same family as the customer apps, with dark mode as an option:
 
-- Dark only: ground `#071233`, raised `#0C1B47`, raised 2 `#13255C`; ink `#EAF0FF`, body `#B6C3EA`, muted `#8E9CC9`; lines `rgba(157,184,255,.16)`.
-- REKA orange `#FB9800` for the active item, role chip and the one primary action per page, with navy text. Links and focus `#4D84FE`.
+- Light first: ground `#F4F6FB`, white surfaces, navy ink `#0B1B4F`, body `#3B4469`, muted `#5B6488`, hairlines `#E5E8EE` (brand kit tokens 1.8).
+- AntaraX blue `#0459F7` for every action and the focus ring. No REKA orange.
 - Status ok `#12B76A`, warn `#F79009`, fault `#F04438`, only on real signal, always with a word.
-- Poppins for UI, JetBrains Mono for every number, id, time and e-mail.
-- Sidebar 240px with the AntaraX A, "AXLE" and an "Outcomes" chip; top bar 56px with organisation scope, Find and the staff menu; state banner; page header with one line and "How this page works".
-- Phones: drawer below 1024px, tiles two across, tables scroll in their own box, 44px targets.
+- Charts: `#074AF8`, `#13A8A0`, `#B98A12` (Frame chart hues, checked for colour-blind separation); estimates hatched, missing days dashed, never zero.
+- Poppins for the interface, JetBrains Mono for every number.
+- The AI sparkle beside every AI suggestion and draft, never a spinner.
+- Dark mode uses the brand's product navy (`#071233`, raised `#0C1B47`) and the dark chart steps. Light, dark or system, chosen in the profile menu.
+- Shell: 248px sidebar (AntaraX A, product name, a "New" button, Home, Organisations, Approvals, Reports, Settings, Help, the workspace card at the foot); 60px top bar with search (⌘K), notifications and the profile menu.
+- Phones: the sidebar becomes a drawer below 1024px; figures go two across; tables scroll in their own box; 44px targets.
 
-Client output (report, later embed) uses the light AntaraX treatment: white ground, navy text, Poppins and JetBrains Mono, AntaraX blue for focus, no orange, no AXLE name.
+What it keeps from AXLE: attention first, never a false zero, read wide and change narrow, a reason and a trail for every change, gate messages that say which right is missing. What it drops: the dark-only rule, orange, and the "AXLE" name on screen. This is an open decision for the AXLE standard too (D13).
+
+Client output (report, later embed) uses the same light treatment, with the REKA credit line and no internal names.
 
 ### 12.2 Navigation
 
-Following AXLE §6 groups:
-
-| Group | Items |
+| Item | Holds |
 |---|---|
-| **Watch** | Portfolio · Collection health · Alerts |
-| **Organisations** | Organisations · Projects · Solutions |
-| **Outcomes** (the product group) | Measurement plans · KPIs · Baselines · Metric catalog · Reports |
-| **Connect** | Integrations · Connect a solution |
-| **Trail** | Approvals · Audit · Staff · Guide |
+| **Home** | First use: the getting-started checklist. After that: what each client's solutions delivered, what needs you, projects, recent activity |
+| **Organisations** | Every client; under each, its projects and solutions |
+| **Approvals** | KPIs, baselines, mappings, client visibility and reports waiting for a second person. Counter is blue when one is yours |
+| **Reports** | Scheduled, drafted, approved and sent reports |
+| **Settings** | Team and rights, collection schedule, audit trail, integration pack |
+| **Help** | What measured, derived and estimated mean; never a false zero; support address |
+| **New** | Organisation, project, or connect a solution, from anywhere |
 
-Counters: alerts open, approvals waiting (orange when one is yours to approve), reports due.
+### 12.3 First use
 
-### 12.3 Screens in the mocks
+A new workspace must lead a person from sign-in to a measured project without reading documentation (FR-ONB).
 
-| Screen | Mock | What it proves |
+| Step | Screen | What happens |
 |---|---|---|
-| Portfolio | `#portfolio` | Attention first; collection freshness strip; organisations table with KPI coverage and freshness; outcome trend; commercial figures gated by right |
-| Organisation | `#organisation` | Deduplicated outcomes; rollup notes; AI narrative with citations and approval state; audience preview ("As the client sees it") |
-| Solution | `#solution` | Impact breakdown (measured vs estimated with range); baseline line; usage, health, catalog and collector diagnostics; stale state |
-| Connect a solution | `#connect` | Test connection; manifest discovery; validation per metric; AI-proposed KPIs to accept or reject |
-| Approvals | `#approvals` | Queue; before and after; separation of duties; approve with a reason; audit trail |
-| Client report | `#report` | The light, reviewed PDF: outcomes, evidence, caveats, next steps; draft vs approved |
+| 1 | Sign in | REKA account (SSO) or an e-mailed link; two-step sign-in on |
+| 2 | Welcome, 3 short steps | Workspace name and time zone; invite the team with roles; choose "Connect my first project" or "Explore with example data" |
+| 3 | Home: getting started | A seven-step checklist with progress: workspace, organisation, project, connect, approval, first data, report. Each step has one button |
+| 4 | Add an organisation | Name, industry, time zone, contact, and the data agreement. Nothing is collected until it is recorded as signed |
+| 5 | Create a project | Name, the kind of work (documents, triage, planning, other: it steers the KPI suggestions), the outcome in the client's words, go-live, owner, report cadence |
+| 6 | Connect a solution, 8 steps | Solution; how it shares data (measurement link, AntaraX product via AXLE, spreadsheet); a copyable brief for the developer (works with Claude Code or Codex); connect and live test; check each figure in plain words (ready, note, held back for privacy); AI-suggested KPIs to keep or drop; the baseline (timed sample, past records, client estimate, or not available); review and send |
+| 7 | Solution page | A progress strip (connected, approved, first data, report). Waiting for approval, then waiting for the first nightly collection (with "Collect now" for operators), then the first KPIs and trend |
+| 8 | Schedule the report | One button. The checklist completes |
 
-### 12.4 States
+### 12.4 Screens in the mock
+
+| Screen | Address | What it proves |
+|---|---|---|
+| Sign in and welcome | `#signin`, `#welcome` | A product someone can start using on their own |
+| Home, first use | `#home` (fresh workspace) | The checklist drives the whole setup |
+| Add organisation, create project | `#new-organisation`, `#new-project` | Plain forms; the data agreement gate |
+| Connect a solution | `#connect` | The full guided connection, with the baseline captured up front |
+| My solution | `#solution-mine` | Waiting states, then first figures computed from the baseline you typed |
+| Home, established | `#home` (example workspace) | Hours saved with range, what needs you, project cards |
+| Organisation | `#organisation-contoh-logistik` | Deduplicated totals explained; AI summary with approval; team view and client view; fees gated by right |
+| Solution | `#solution-doc-workflow` | Where the time goes (measured vs estimated); usage, health, data and connection; late and not answering states |
+| Approvals | `#approvals` | Separation of duties; reason required; undo |
+| Client report | `#report` | The reviewed PDF: outcomes, evidence, caveats, next steps |
+
+### 12.5 States
 
 From AXLE §10, applied:
 
@@ -672,7 +707,7 @@ From AXLE §10, applied:
 | Loading | Skeleton in dark neutrals; nothing spins |
 | Example data (preview and mocks) | State banner: "Example data: figures are illustrative and no client is real." |
 
-### 12.5 Words and formats
+### 12.6 Words and formats
 
 From AXLE §12 and brand kit 13: organisation, member, staff; Sign in; `RM1,200` and `US$45`, grouped by currency; `15 Oct 2026` and `14:30 MYT`; British spelling; sentence case; numbers in JetBrains Mono; "Estimated" and "Measured", never "approx."; no "Oops".
 
@@ -846,6 +881,7 @@ The brief's §16, extended with points this review raised. Each needs the owner.
 | D10 | **Aggregation grain and cardinality limits** | Daily grain; 20 values per dimension; 200 metrics per solution |
 | D11 | **SDK languages** for the contract test and signing | TypeScript first; Python second |
 | D12 | **Roles**: map the brief's roles onto the AXLE ladder plus Measurement, Approve and Commercial rights (§4.2)? | Yes |
+| D13 | **Look**: the console uses the light AntaraX product look (§12.1) instead of AXLE's dark-only, orange-accent rule. Keep this as an exception for Outcomes, or change the AXLE standard so every staff console can be light? | Owner review of the first mock chose light. Raise against AXLE SPEC §3 and §17 |
 
 ## 21 Appendices
 
