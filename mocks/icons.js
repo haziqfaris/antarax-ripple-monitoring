@@ -1,5 +1,6 @@
 /* Line icons: the brand kit's feature icons (assets/icons/features, 1.75px stroke, round caps) plus a few interface glyphs drawn to the same rules. */
 window.ICONS = {
+"analytics": "<path d=\"M4 20V4 M4 20h16 M8 16v-3 M12 16V8 M16 16v-5\"/>",
 "home": "<path d=\"M4 11 12 4l8 7v9H4z M10 20v-6h4v6\"/>",
 "organisation": "<path d=\"M4 21V5h10v16 M14 9h6v12 M7 9h1 M10 9h1 M7 13h1 M10 13h1 M7 17h1 M10 17h1 M17 13h0 M17 17h0 M3 21h18\"/>",
 "projects": "<path d=\"M3.5 7.5V18a1.5 1.5 0 0 0 1.5 1.5h14a1.5 1.5 0 0 0 1.5-1.5V9a1.5 1.5 0 0 0-1.5-1.5h-7l-2-3H5A1.5 1.5 0 0 0 3.5 6z\"/>",

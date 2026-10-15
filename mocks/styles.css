@@ -447,3 +447,41 @@ details.more > div { margin-top: 10px; }
   .pop { width: min(320px, calc(100vw - 32px)); }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* ---------- demo studio and guided tour (mock only, styled apart from the product) ---------- */
+.studio-btn { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px; border-radius: var(--r-pill); border: 1.5px dashed var(--ai); background: var(--ai-tint); color: var(--ai); font-weight: 600; font-size: .8125rem; cursor: pointer; white-space: nowrap; }
+.studio-btn .date { font-family: var(--mono); font-weight: 600; color: var(--ink); }
+.studio { position: fixed; top: 0; right: 0; bottom: 0; width: min(400px, 100vw); z-index: 70; background: var(--surface); border-left: 1px solid var(--line); box-shadow: var(--shadow-lg); display: flex; flex-direction: column; padding-top: env(safe-area-inset-top, 0px); padding-right: env(safe-area-inset-right, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.studio-head { display: flex; align-items: center; gap: 10px; padding: 16px 18px; border-bottom: 1px solid var(--line); }
+.studio-head h2 { flex: 1; }
+.studio-body { overflow-y: auto; padding: 6px 18px 24px; display: grid; gap: 0; }
+.studio-sec { display: grid; gap: 10px; padding: 16px 0; border-top: 1px solid var(--line); }
+.studio-sec:first-child { border-top: 0; }
+.studio-sec h3 { display: flex; align-items: center; gap: 8px; }
+.studio-sec .help { font-size: .75rem; color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 12px; border-radius: var(--r-pill); border: 1px solid var(--line-strong); background: var(--surface); color: var(--body); font-size: .8125rem; font-weight: 500; cursor: pointer; }
+.chip:hover { border-color: var(--primary); color: var(--ink); }
+.chip[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.chip.warn { border-color: var(--warn); color: var(--warn-ink); } .chip.fault { border-color: var(--fault); color: var(--fault-ink); } .chip.ok { border-color: var(--ok); color: var(--ok-ink); }
+.sim-date { font-family: var(--mono); font-size: 1.375rem; font-weight: 600; color: var(--ink); }
+.mock-tag { font-family: var(--mono); font-size: .6875rem; font-weight: 700; color: var(--ai); letter-spacing: .04em; }
+.tour { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 75; width: min(400px, calc(100vw - 32px)); background: var(--ink); color: var(--surface); border-radius: var(--r-lg); padding: 18px 20px; box-shadow: var(--shadow-lg); display: grid; gap: 10px; }
+.tour h3 { color: var(--surface); font-size: 1rem; }
+.tour p { font-size: .875rem; opacity: .88; }
+.tour .bar { display: flex; gap: 4px; }
+.tour .bar span { height: 3px; flex: 1; border-radius: 3px; background: rgba(255, 255, 255, .22); }
+.tour .bar span.on { background: var(--primary-tint-2); }
+.tour .nav { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.tour .btn { box-shadow: none; }
+.tour .btn.ghost { color: var(--surface); }
+.tour .btn.ghost:hover { background: rgba(255, 255, 255, .1); }
+.tour .count { font-family: var(--mono); font-size: .75rem; opacity: .7; }
+.tour-mark { outline: 3px solid var(--ai) !important; outline-offset: 4px; border-radius: 14px; }
+@media (max-width: 640px) { .studio-btn .lbl { display: none; } .tour { bottom: calc(10px + env(safe-area-inset-bottom, 0px)); padding: 14px 16px; } }
+.tour .tour-nav { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.narrative ul { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+.narrative table { font-size: .8125rem; }
+.cite:hover { text-decoration: none; background: var(--primary-tint-2); }
+.an-controls { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; }
+@media (max-width: 900px) { .an-controls { grid-template-columns: minmax(0, 1fr); } }

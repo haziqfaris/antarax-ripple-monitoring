@@ -1,6 +1,6 @@
 # Performance Intelligence: product requirements
 
-**Version 0.2, draft, 15 Oct 2026.** 0.2 adds first use and onboarding (§8.12, §12.3) and moves the console to the light AntaraX look (§12.1). Working name throughout. Owner: Muhammad Haziq Faris (Founder). Status: for review at the next design workshop.
+**Version 0.3, draft, 15 Oct 2026.** 0.2 added first use and onboarding (§8.12, §12.3) and the light AntaraX look (§12.1). 0.3 records the owner's decision to keep that look (D13), and adds the measure library (§10.6), your own measures (§8.13), Ask (§8.14, §11.4), standard analytics (§8.15) and the demo studio (§8.16). Working name throughout. Owner: Muhammad Haziq Faris (Founder). Status: for review at the next design workshop.
 
 | | |
 |---|---|
@@ -415,6 +415,55 @@ Detailed in [§11](#11-ai-assistance-and-approval-gates).
 | FR-ONB-7 | After sending for approval, the solution page shows where it is (connected, approved, first data, report) and what happens next, with no blank screens | MVP |
 | FR-ONB-8 | Progress in the connect flow is saved, so a person can leave while the developer works and come back | MVP |
 
+### 8.13 Measure library and your own measures
+
+| Id | Requirement | Priority |
+|---|---|---|
+| FR-MSR-1 | Every connected solution shows the standard measure library (§10.6) across the brief's five domains, worked out the same way for every project, with quality tag, change against the previous period and a 12-week trend | MVP |
+| FR-MSR-2 | A measure the solution can't support shows a dash and "Not shared by this solution yet", never a zero | MVP |
+| FR-MSR-3 | A change against the previous period is shown only when that period has at least 80% as many days of data; otherwise "Too few days before to compare" | MVP |
+| FR-MSR-4 | Staff with the Measurement right can add their own measure from the figures a solution shares: total, average a day, share of, per, or value of (× an agreed rate). Name, optional target, and who sees it (team, or team and client) | MVP |
+| FR-MSR-5 | The builder shows a live preview over the last 30 days and the 30 before, the quality the result will carry, and the formula in words | MVP |
+| FR-MSR-6 | A new measure goes to Approvals like any KPI. The proposer can't approve it. Until approved it is marked "Waiting for approval" and is not in client output | MVP |
+| FR-MSR-7 | Any measure (standard or approved custom) can be promoted to a KPI that appears in reports, through the same approval | P2 |
+| FR-MSR-8 | Commercial measures (running cost per item, margin) need the Commercial right and never reach client output, Ask answers for people without the right, exports or embeds | MVP |
+
+### 8.14 Ask
+
+| Id | Requirement | Priority |
+|---|---|---|
+| FR-ASK-1 | A chat page where staff ask about their projects in plain words: values for a period, why a figure moved, which project is best or most improved, comparisons, trends, how a measure is worked out, and what needs attention | MVP |
+| FR-ASK-2 | Every number in an answer comes from the compute service, never from the model. Answers name the projects and period they used, link to the source pages, and say how many days are missing | MVP |
+| FR-ASK-3 | "Why" answers list what moved at the same time and say plainly that this is not proof of cause | MVP |
+| FR-ASK-4 | When a question can't be answered from the collected figures, Ask says so and suggests questions it can answer | MVP |
+| FR-ASK-5 | Ask respects rights: no commercial figures without the Commercial right, only organisations the person can see | MVP |
+| FR-ASK-6 | Ask can answer with a small chart or table inline, and suggests follow-up questions from the data | MVP |
+| FR-ASK-7 | Every question and answer is logged (who, when, which figures were read); kept 90 days | MVP |
+| FR-ASK-8 | "Ask about this" from Analytics and project pages opens Ask with the context filled in | P2 |
+
+### 8.15 Standard analytics
+
+| Id | Requirement | Priority |
+|---|---|---|
+| FR-ANL-1 | One Analytics page: pick any measure (standard or approved custom), one project or all, and a period (30 days, 90 days, 12 months) | MVP |
+| FR-ANL-2 | Standard views: headline with the period before, change and days with data; trend by day or week against the period before; by project with share bars and trends; by weekday | MVP |
+| FR-ANL-3 | Combining projects follows the rollup rules (§10.4): sums for additive measures, rates and averages recomputed from combined totals, people never added across days | MVP |
+| FR-ANL-4 | Missing days are gaps in every view, and the days-with-data figure is always on screen | MVP |
+| FR-ANL-5 | Export the current view as CSV, named `outcomes-<measure>-<YYYY-MM-DD>.csv` | P2 |
+| FR-ANL-6 | Breakdowns by a solution's own dimensions (for example document type, reason) once approved | P2 |
+
+### 8.16 Demo studio and guided demo
+
+For sales conversations, training new staff, and testing reports before a real client goes live.
+
+| Id | Requirement | Priority |
+|---|---|---|
+| FR-DEMO-1 | A demo workspace, separate from real ones and marked "Demo" or "Example data" on every screen, never mixed into real totals, audit or reports | P2 |
+| FR-DEMO-2 | Simulate a new project: client, project, kind of work, daily volume, minutes by hand (or none), history (2 weeks to 4 months), and whether its KPIs are approved, waiting, or not yet connected | P2 |
+| FR-DEMO-3 | Move the simulated date forward (a day, a week, a month, or play a day a second); nightly collection, first data and monthly report drafts happen as they would for real | P2 |
+| FR-DEMO-4 | Cause events on a simulated solution: data stops, stops answering, recovers (with or without filling the gap), volume spike, quality drop, a new detail in its data | P2 |
+| FR-DEMO-5 | A guided demo that walks a new project from nothing to its first report, then measures, analytics and Ask, in about 20 steps | P2 |
+
 ## 9 The measurement interface (Measurement Link)
 
 The brief's L2 contract, written to the AntaraX API framework (`antarax-api` docs 03, 04 and 07) so a REKA-built solution and an AntaraX product speak the same way. Working name **Measurement Link**, by analogy with AXLE Link.
@@ -591,6 +640,28 @@ Rollups always show "includes 3 of 4 solutions; 1 not rolled up" rather than sil
 - A figure for a period with missing data, without saying so.
 - A target as a result.
 
+### 10.6 The measure library
+
+The same definitions for every project, so projects and clients can be compared. A solution shares what it can; anything it can't is shown as not shared.
+
+| Domain | Measure | Worked out as | Kind | Better |
+|---|---|---|---|---|
+| Technical health | Days with data | Days with figures ÷ days expected | measured | Higher |
+| Technical health | Failed runs | Runs the solution reported as failed | measured | Lower |
+| Usage | Work handled | Items finished | measured | Higher |
+| Usage | People using it, a day | Average distinct people on a working day, never added across days | measured | Higher |
+| Usage | Handled per person, a day | Work handled ÷ person-days | derived | Higher |
+| Operations | Turnaround time | Median hours from arrival to done, weighted by volume | measured | Lower |
+| Operations | Within agreed time | Share done inside the time agreed with the client, weighted by volume | measured | Higher |
+| Operations | Needed a person to fix | Items sent back or corrected ÷ items handled | derived | Lower |
+| Operations | Straight-through rate | Items with no correction ÷ items handled | derived | Higher |
+| Business impact | Hours saved | Items × (minutes by hand − machine − review) ÷ 60, with a likely range | estimated | Higher |
+| Business impact | Value of time freed | Hours saved × the hourly staff cost agreed with the client (RM45 in the mock); an estimate, not cash saved | estimated | Higher |
+| Business impact | Faster than before | Turnaround now against turnaround before go-live | derived | Higher |
+| Commercial (REKA only) | Running cost per item | Running cost from AX Frame ÷ work handled | derived | Lower |
+
+To report these, a solution's Measurement Link shares daily: items handled, items corrected, processing time (sum and count), turnaround (median and count), items within agreed time, distinct active people (pseudonymous), and failed runs. The integration pack lists them as the standard metric set; only items handled is required.
+
 ## 11 AI assistance and approval gates
 
 ### 11.1 The flow
@@ -629,11 +700,24 @@ The brief's ten steps, with the gate at each:
 - **Shown as AI.** AI proposals and drafts carry the AntaraX sparkle (brand kit 12) and "Proposed by AI. A person approves." While AI works, the sparkle loader with words ("Proposing KPIs from 14 metrics"), never a spinner.
 - **Model.** A current Claude model through the Anthropic API, with structured output. Provider and cost are decided after pilot volumes are known (D7).
 
+### 11.4 Ask, grounded in the figures
+
+Ask is the place where AI answers questions, so it carries the strictest rules:
+
+1. **The model never produces a number.** It chooses which measure, projects and period the question is about, and calls the compute service (the same functions dashboards use) for the values. It only writes the sentences around them.
+2. **Number check.** Before an answer is shown, every number in it is matched against the values the compute service returned. An unmatched number blocks the answer.
+3. **Scope check.** The tools the model can call only return organisations and measures the person may see. Commercial measures are not offered to people without the right.
+4. **No causation.** "Why" answers list what moved at the same time and say it isn't proof of cause. A lint rejects causal phrases ("because of", "caused", "thanks to").
+5. **Honest refusals.** Out-of-scope questions get "I can only answer from the figures Outcomes collects" and suggestions.
+6. **Untrusted text.** Project names, labels and anything from a solution are passed as data, never instructions (§11.3).
+
+The mock answers with fixed rules over the same calculations as the dashboards, to show the behaviour; the product uses a current Claude model with tool calls to the compute service.
+
 ## 12 Experience and screens
 
 ### 12.1 Look and shell
 
-**Changed in 0.2, after owner review of the first mock.** The first mock followed the AXLE standard literally (dark only, REKA orange accent). The owner found it did not read as a product people would use. From 0.2 the staff console uses the **light AntaraX product look**, the same family as the customer apps, with dark mode as an option:
+**Decided by the owner, 15 Oct 2026: keep the light look.** The first mock followed the AXLE standard literally (dark only, REKA orange accent). The owner found it did not read as a product people would use. The staff console uses the **light AntaraX product look**, the same family as the customer apps, with dark mode as an option:
 
 - Light first: ground `#F4F6FB`, white surfaces, navy ink `#0B1B4F`, body `#3B4469`, muted `#5B6488`, hairlines `#E5E8EE` (brand kit tokens 1.8).
 - AntaraX blue `#0459F7` for every action and the focus ring. No REKA orange.
@@ -642,10 +726,10 @@ The brief's ten steps, with the gate at each:
 - Poppins for the interface, JetBrains Mono for every number.
 - The AI sparkle beside every AI suggestion and draft, never a spinner.
 - Dark mode uses the brand's product navy (`#071233`, raised `#0C1B47`) and the dark chart steps. Light, dark or system, chosen in the profile menu.
-- Shell: 248px sidebar (AntaraX A, product name, a "New" button, Home, Organisations, Approvals, Reports, Settings, Help, the workspace card at the foot); 60px top bar with search (⌘K), notifications and the profile menu.
+- Shell: 248px sidebar (AntaraX A, product name, a "New" button, Home, Organisations, Analytics, Ask, Approvals, Reports, Settings, Help, the workspace card at the foot); 60px top bar with search (⌘K), Ask, notifications and the profile menu.
 - Phones: the sidebar becomes a drawer below 1024px; figures go two across; tables scroll in their own box; 44px targets.
 
-What it keeps from AXLE: attention first, never a false zero, read wide and change narrow, a reason and a trail for every change, gate messages that say which right is missing. What it drops: the dark-only rule, orange, and the "AXLE" name on screen. This is an open decision for the AXLE standard too (D13).
+What it keeps from AXLE: attention first, never a false zero, read wide and change narrow, a reason and a trail for every change, gate messages that say which right is missing. What it drops: the dark-only rule, orange, and the "AXLE" name on screen. Whether other staff consoles follow is a separate question for the AXLE standard (D14).
 
 Client output (report, later embed) uses the same light treatment, with the REKA credit line and no internal names.
 
@@ -654,7 +738,9 @@ Client output (report, later embed) uses the same light treatment, with the REKA
 | Item | Holds |
 |---|---|
 | **Home** | First use: the getting-started checklist. After that: what each client's solutions delivered, what needs you, projects, recent activity |
-| **Organisations** | Every client; under each, its projects and solutions |
+| **Organisations** | Every client; under each, its projects and solutions. A solution has Overview and Measures tabs |
+| **Analytics** | Any measure over time, by project and by weekday, against the period before (§8.15) |
+| **Ask** | Questions about the data in plain words (§8.14) |
 | **Approvals** | KPIs, baselines, mappings, client visibility and reports waiting for a second person. Counter is blue when one is yours |
 | **Reports** | Scheduled, drafted, approved and sent reports |
 | **Settings** | Team and rights, collection schedule, audit trail, integration pack |
@@ -684,12 +770,16 @@ A new workspace must lead a person from sign-in to a measured project without re
 | Home, first use | `#home` (fresh workspace) | The checklist drives the whole setup |
 | Add organisation, create project | `#new-organisation`, `#new-project` | Plain forms; the data agreement gate |
 | Connect a solution | `#connect` | The full guided connection, with the baseline captured up front |
-| My solution | `#solution-mine` | Waiting states, then first figures computed from the baseline you typed |
+| Your solution | `#sim-…` | Waiting states, then first figures computed from the baseline you typed |
 | Home, established | `#home` (example workspace) | Hours saved with range, what needs you, project cards |
 | Organisation | `#organisation-contoh-logistik` | Deduplicated totals explained; AI summary with approval; team view and client view; fees gated by right |
 | Solution | `#solution-doc-workflow` | Where the time goes (measured vs estimated); usage, health, data and connection; late and not answering states |
 | Approvals | `#approvals` | Separation of duties; reason required; undo |
 | Client report | `#report` | The reviewed PDF: outcomes, evidence, caveats, next steps |
+| Measures | a solution, Measures tab | The 13-measure library in five domains; add your own with a live preview; commercial gated |
+| Analytics | `#analytics` | Trend against the period before, by project, by weekday; fair-comparison guard |
+| Ask | `#ask` | Grounded answers with sources, inline charts and tables, honest refusals |
+| Demo studio | top bar, "Demo studio" | Simulate projects, move the date, cause problems; the 23-step guided demo |
 
 ### 12.5 States
 
@@ -881,7 +971,11 @@ The brief's §16, extended with points this review raised. Each needs the owner.
 | D10 | **Aggregation grain and cardinality limits** | Daily grain; 20 values per dimension; 200 metrics per solution |
 | D11 | **SDK languages** for the contract test and signing | TypeScript first; Python second |
 | D12 | **Roles**: map the brief's roles onto the AXLE ladder plus Measurement, Approve and Commercial rights (§4.2)? | Yes |
-| D13 | **Look**: the console uses the light AntaraX product look (§12.1) instead of AXLE's dark-only, orange-accent rule. Keep this as an exception for Outcomes, or change the AXLE standard so every staff console can be light? | Owner review of the first mock chose light. Raise against AXLE SPEC §3 and §17 |
+| D13 | **Look** | **Decided 15 Oct 2026: keep the light AntaraX look for Outcomes** (§12.1) |
+| D14 | **AXLE standard**: should other staff consoles also be allowed the light look? | Raise against AXLE SPEC §3 and §17; Outcomes stays light either way |
+| D15 | **Value of time freed**: one hourly staff cost per client, agreed in writing, or none at all in client output? | Per client, agreed and shown as an estimate; hidden until agreed |
+| D16 | **Ask**: model, logging and retention of questions; whether clients ever get Ask | Current Claude model with tool calls; 90-day log; staff only in the MVP |
+| D17 | **Demo studio** as a product feature for sales and training, or mock only? | Product feature in Phase 2, in its own demo workspace |
 
 ## 21 Appendices
 
