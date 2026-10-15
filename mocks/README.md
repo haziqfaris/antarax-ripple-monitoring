@@ -1,31 +1,31 @@
-# Outcomes: clickable product mock
+# AXLE · Outcomes: clickable product mock
 
-A clickable mock of Performance Intelligence (working name "Outcomes"): first sign-in, connecting a first project, measures, analytics, Ask, and demo workspaces with Demo studio for simulating new projects. Plain HTML, CSS and JavaScript. No build step, no libraries.
+A clickable mock of Performance Intelligence (working name "Outcomes"), REKA's internal staff console, built on the **AXLE standard v1.0** ([AntaraX-Dashboard-kit](https://github.com/haziqfaris/AntaraX-Dashboard-kit): dark bars around a light page, the standard menu, an R8 mode). It covers first sign-in, connecting a first project, measures, analytics, Ask, and demo workspaces with Demo studio for simulating new projects. Plain HTML, CSS and JavaScript. No build step, no libraries.
 
 **Open it:** `index.html` in a browser, or `python3 -m http.server -d mocks` from the repository root.
 
-**Every client, person and figure is invented.** Your workspace's figures are simulated from each project's kind of work, volume and baseline. The example workspace's figures come from a fixed seed in `data.js`. Every number on screen is worked out from those daily figures in `app.js`, so pages, Ask, analytics and reports always agree.
+**Every organisation, person and figure is invented.** Your workspace's figures are simulated from each project's kind of work, volume and baseline. The example workspace's figures come from a fixed seed in `data.js`. Every number on screen is worked out from those daily figures in `app.js`, so pages, Ask, analytics and reports always agree.
 
 ## Three workspaces
 
-Switch in the sidebar (bottom) or the profile menu.
+Switch in the staff menu (your initials, top right) or Platform → Demo.
 
 | Workspace | What it is |
 |---|---|
-| **Your workspace** (REKA Inisiatif) | Where first use happens: add a client, create a project, connect its solution. Dashed "Mock controls" bars move time on, because there is no real solution behind it |
-| **Demo workspace** | A product feature (PRD §8.16): a separate workspace of simulated clients for sales demos, training and rehearsing reports. A banner says so on every screen; it never sends anything and never touches your real workspace. Demo studio lives here |
-| **Example clients** | Five fixed example clients, labelled "Example data" |
+| **Your workspace** (REKA Inisiatif) | Where first use happens: add an organisation, create a project, connect its solution. Dashed "Mock controls" bars move time on, because there is no real solution behind it |
+| **Demo workspace** | A product feature (PRD §8.16): a separate workspace of simulated organisations for sales demos, training and rehearsing reports. A banner says so on every screen; it never sends anything and never touches your real workspace. Demo studio lives here |
+| **Example data** | Five fixed example organisations, with a state banner on every page |
 
 ## The quickest way in: the guided demo
 
 Sign in, skip through welcome, and choose **Watch the guided demo**. It opens the demo workspace and plays 23 steps:
 
-1. A new client is added, with a project.
+1. A new organisation is added, with a project.
 2. The solution is connected: developer brief, live test, figure checks, AI-suggested KPIs, baseline.
 3. The KPIs are approved, and the first figures arrive.
 4. Five weeks pass, the data stops, then recovers.
 5. The monthly report is drafted.
-6. Three more clients are added.
+6. Three more organisations are added.
 7. Measures, your own measure, analytics and Ask.
 
 Press **Next** on the dark card at the bottom left. You can also start it from Demo studio.
@@ -42,35 +42,39 @@ In the demo workspace, the dashed **Demo studio** button in the top bar shows th
 
 ## What to look at
 
-| Where | What it shows |
-|---|---|
-| Home | First use: the seven-step checklist. Later: hours saved with likely range, what needs you (worked out from the data), and a card per client, those needing you first |
-| **Clients** (`#clients`) | Every client in one list: filter (all, need you, live, getting started), search clients or projects, sort (needs you first, most hours saved, biggest improvement, A to Z). Each row shows its projects with a status dot per solution, hours saved and value at RM45, change, 12-week trend, next report, fee (commercial right only) and renewal. The sidebar keeps your three most recent clients |
-| A client (`#client-…`) | The same page and address in every workspace, with tabs: **Overview** (what needs you for this client, four figures with change, hours saved by project, the AI summary, projects table, contract and agreement), **Projects** (each project's outcome and its solutions), **Reports** (with a link to all of that client's reports), **Activity**. **Ask about** a client answers from that client's figures only. Team view and client view |
-| Breadcrumbs | Clients › client › project › solution, on every solution and connection page |
-| A solution, **Measures** tab | 13 standard measures in five areas (health, usage, operations, impact, commercial), with change and 12-week trend. **Add a measure** builds your own with a live preview and sends it for approval |
-| **Analytics** | Any measure for all clients, one client or one solution, 30 days to 12 months: against the period before, by client or by solution, by weekday. Click a row to focus on it. Changes are only shown when the earlier period has enough data |
-| **Ask** | Questions in plain words, for example "How is Contoh Logistik doing this month?", "How many hours did we save in October?", "Why did Invoice reader change this week?", "Which project improved most this month?", "Compare all projects", "Show the trend of work handled". Answers cite their projects and period; unrelated questions get an honest "I can only answer from the figures" |
-| Approvals | KPIs and measures wait for someone other than the proposer. Switch to Aisyah Rahman in the profile menu to approve |
-| Reports | Every report with its client; show all clients or one. Drafted on the 1st once a month of data is in; open one to see the client PDF layout |
-| Profile menu | Switch person (rights change what you can do and see), light or dark, switch workspace |
-| Settings | Team and rights, collection, RM45 an hour for value of time freed, demo workspace rules, audit trail |
+**The shell** (AXLE SPEC §4, §6, §7). The top bar: the AntaraX A and the Outcomes chip, the orange `AXLE` tag, the page title, the organisation scope picker, Find (⌘K), the health button (opens R8; a red count when a measurement link fails), and the staff menu. The sidebar: the Dashboard · R8 switch, the AXLE STANDARD groups as folding cards (fold one to see its grey preview and orange roll-up), and the dashed **Outcomes only** box. Standard items this mock doesn't draw are listed in grey and aren't links.
 
-Older addresses (`#organisations`, `#organisation-…`, `#org-…`, `#new-organisation`) redirect to the new ones.
+| Mode | Where | What it shows |
+|---|---|---|
+| Dashboard | **Overview** (`#home`) | First use: the checklist. Later: health strip, Needs a person (a technical problem opens Troubleshoot), Nightly collection, figures that open their lists, organisations by stage, organisations at a glance with readiness, hours saved, recent actions |
+| | **Adoption** | People using each organisation's solutions, change, 12 weeks, and who stopped |
+| | **Organisations** (`#organisations`) | Stats strip as filters, search, sort, group by stage or industry, export |
+| | An organisation (`#organisation-…`) | Readiness and stage first; tabs Summary, Projects and solutions, Reports, Notes (REKA only), Audit; staff view and organisation view |
+| | A solution | **Measures** (13 standard measures; add your own) and **Explore**: re-prompt and explore other measures of business impact |
+| | **Demo**, **Settings**, **Audit**, **Staff** | Demo workspaces; platform switches that ask for a reason and raise the state banner; the audit; the ladder with "Needs Admin" |
+| | Outcomes only: **Approvals**, **Reports**, **Analytics**, **Ask** | Separation of duties; reports by organisation; any measure by organisation or solution; questions in plain words |
+| R8 | **Overview** (`#r8`) | One word for the platform, the build, Needs an operator, services, Outcomes' machinery, incidents, cost per organisation (Commercial right only), recent operations |
+| | **Troubleshoot** (`#troubleshoot-quote-drafter` in example data) | Evidence in layers, timeline, AXLE's reading kept apart from your conclusion, Level 1 actions that ask for a reason |
+| | **Incidents**, **Jobs**, **Providers**, **Services**, **Configuration**, **Operations audit** | Acknowledge; run now, retry failures, pause; test a provider; set or missing, never values; every R8 action with who and why |
+| | Outcomes only: **Measurement links** | Each organisation's link: state, last good collection, nightly contract test, key age |
+
+Switch person in the staff menu to see the ladder: Nurul Aina (Support) can acknowledge but not run Level 1 actions, Daniel Lim (Operator) can, Aisyah Rahman (Admin, with the Commercial right) also sees cost and can rotate keys.
+
+The 0.5 addresses (`#clients`, `#client-…`, `#new-client`) and `#org-…` redirect to the organisation addresses.
 
 ## People in the mock
 
 | Person | Can |
 |---|---|
-| Daniel Lim (you, by default) | Approve, except what he set up himself |
-| Nurul Aina | Suggest KPIs and measures, not approve; no fees |
-| Aisyah Rahman | Approve; sees running cost and fees |
+| Daniel Lim (you, by default) | Operator. Approve, except what he set up himself; Level 1 R8 actions |
+| Nurul Aina | Support. Suggest KPIs and measures, not approve; acknowledge incidents; no fees |
+| Aisyah Rahman | Admin. Approve; sees running cost and fees; staff and key rotation |
 
 ## Files
 
 - `index.html`: the page
-- `styles.css`: the light AntaraX look, its dark mode, and the demo studio and tour styles
+- `styles.css`: the AXLE look, with the kit's `axle/tokens.css` values at the top, plus the demo studio and tour styles
 - `icons.js`: the brand kit's line icons plus a few interface glyphs
-- `data.js`: the example workspace's clients, solutions, daily figures, KPIs, approvals and audit
+- `data.js`: the example workspace's organisations, solutions, daily figures, KPIs, approvals and audit
 - `app.js`: screens, routing, simulation, the measure library, analytics, Ask, demo studio and guided demo
 - `assets/`: the AntaraX A, the AI sparkle, the REKA lockup and two BaTech pieces, copied from the brand kit

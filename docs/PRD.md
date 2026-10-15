@@ -1,6 +1,6 @@
 # Performance Intelligence: product requirements
 
-**Version 0.5, draft, 15 Oct 2026.** 0.2 added first use and onboarding (§8.12, §12.3) and the light AntaraX look (§12.1). 0.3 records the owner's decision to keep that look (D13), and adds the measure library (§10.6), your own measures (§8.13), Ask (§8.14, §11.4), standard analytics (§8.15) and the demo studio (§8.16). 0.4 records two more owner decisions: RM45 an hour for value of time freed (D15), and demo workspaces with Demo studio as a product feature in the MVP (D17, §8.16). 0.5 organises the console by client: one client list, one client page template, and client → project → solution throughout (§8.6, §12.2, §12.4); it also renames organisation to client on screen and in this document. Working name throughout. Owner: Muhammad Haziq Faris (Founder). Status: for review at the next design workshop.
+**Version 0.6, draft, 15 Oct 2026.** 0.2 added first use and onboarding (§8.12, §12.3) and the light AntaraX look (§12.1). 0.3 records the owner's decision to keep that look (D13), and adds the measure library (§10.6), your own measures (§8.13), Ask (§8.14, §11.4), standard analytics (§8.15) and the demo studio (§8.16). 0.4 records two more owner decisions: RM45 an hour for value of time freed (D15), and demo workspaces with Demo studio as a product feature in the MVP (D17, §8.16). 0.5 organises the console by client: one client list, one client page template, and client → project → solution throughout (§8.6, §12.2, §12.4); it also renames organisation to client on screen and in this document. 0.6 puts the console on the AXLE standard v1.0 (`haziqfaris/AntaraX-Dashboard-kit`), because it is an internal REKA tool: AXLE · Outcomes, dark bars around a light page, the standard menu with an Outcomes-only box, an R8 mode for the machinery, and "organisation" on screen as the standard requires (§12.1, §12.2, D13, D18). It also adds exploring other measures for a live project (§8.17). Working name throughout. Owner: Muhammad Haziq Faris (Founder). Status: for review at the next design workshop.
 
 | | |
 |---|---|
@@ -178,7 +178,7 @@ The brief's non-negotiables (§17), with the AXLE principles they meet:
 
 The brand kit (01) says: "a capability moves to AntaraX when it has a repeatable deployment, a published starting price and a fast path to first value. Until then it stays at REKA." Performance Intelligence meets none of these yet. So:
 
-- **MVP:** a REKA internal tool, supporting REKA's Managed AI service. Staff screens follow AXLE's rules (attention first, never a false zero, a trail for every change) in the light AntaraX product look (§12.1, D13). Clients never see the console.
+- **MVP:** a REKA internal tool, supporting REKA's Managed AI service. Staff screens follow AXLE's rules (attention first, never a false zero, a trail for every change) as **AXLE · Outcomes**, on the AXLE standard v1.0 (§12.1, D13). Clients never see the console, its name or its address.
 - **Client output:** the report is light, in AntaraX type and layout, credited "Run by REKA as part of Managed AI." where REKA runs the solution (brand kit 12). No "by AntaraX" until it graduates.
 - **Later:** if it graduates, it becomes an AntaraX product with its own name, family, mark and sheet in the brand kit.
 
@@ -229,7 +229,7 @@ flowchart TD
 
 A project may have several solutions; a client may have several projects; a solution may have several environments and versions.
 
-**Client:** a company REKA serves. The brief and the data model call it an organisation (`organisation_id`); on screen and in this document it is always a client.
+**Client:** a company REKA serves. In this document it is a client. On screen it is an **organisation**, as the AXLE standard requires (SPEC §15: "organisation, never client"), and the data model calls it an organisation too (`organisation_id`). A client's person is a **member**; a REKA person is **staff**.
 
 ### 7.2 Entities
 
@@ -356,8 +356,8 @@ All four levels share one widget library and are configured, not coded (brief §
 | FR-DSH-10 | **Client list**: every client with its projects (a status dot per solution), hours saved and value, change, 12-week trend, next report, fee (commercial right only) and renewal. Headline figures: clients (live and getting started), clients that need you, hours saved and value across clients | MVP |
 | FR-DSH-11 | The client list filters by all, needs you, live, getting started; searches client and project names; sorts by needs you first (default; worst status next), most hours saved, biggest improvement, or A to Z. Filter, search and sort live in the address | MVP |
 | FR-DSH-12 | "Needs you" is worked out per client from the same rules as the home attention list (late or failing solutions, quality shifts, missing baselines, reports to review) plus approvals waiting for that client. One count everywhere: list, card and client page | MVP |
-| FR-DSH-13 | Home shows one card per client, those needing you first: hours saved (or work handled before a baseline) with a 12-week trend, and up to three projects with a status dot per solution | MVP |
-| FR-DSH-14 | The sidebar lists the three clients opened most recently, per workspace, and a link to all clients. Breadcrumbs read Clients › client › project › solution on every solution, connection and project page | MVP |
+| FR-DSH-13 | The Overview follows the AXLE overview (SPEC §8): health strip, Needs a person (technical problems link to Troubleshoot in R8), the product block (nightly collection), figures that open their lists, organisations by stage, organisations at a glance with readiness, hours saved over time, recent actions | MVP |
+| FR-DSH-14 | The organisation page opens on a readiness checklist (agreement, project, solution connected, KPIs approved, baseline, first report) and the stage (planning, onboarding, pilot, live). Breadcrumbs read Organisations › organisation › project › solution. The organisation scope picker in the top bar scopes Reports and Analytics | MVP |
 | FR-DSH-15 | "Ask about this client" on the client page asks Ask about that client only (§8.14). Analytics can show all clients, one client or one solution, and compare by client or by solution (§8.15) | MVP |
 
 ### 8.7 AI assistance
@@ -740,35 +740,41 @@ The mock answers with fixed rules over the same calculations as the dashboards, 
 
 ### 12.1 Look and shell
 
-**Decided by the owner, 15 Oct 2026: keep the light look.** The first mock followed the AXLE standard literally (dark only, REKA orange accent). The owner found it did not read as a product people would use. The staff console uses the **light AntaraX product look**, the same family as the customer apps, with dark mode as an option:
+**Decided by the owner, 15 Oct 2026: Outcomes is internal, so it follows the AXLE standard first.** This replaces 0.3's light-look decision (D13). The console is **AXLE · Outcomes**, built from the AXLE kit (`haziqfaris/AntaraX-Dashboard-kit`: `BRIEF.md`, `axle/SPEC.md` v1.0, `axle/tokens.css`, the mock pages). Where this section and the SPEC differ, the SPEC wins.
 
-- Light first: ground `#F4F6FB`, white surfaces, navy ink `#0B1B4F`, body `#3B4469`, muted `#5B6488`, hairlines `#E5E8EE` (brand kit tokens 1.8).
-- AntaraX blue `#0459F7` for every action and the focus ring. No REKA orange.
-- Status ok `#12B76A`, warn `#F79009`, fault `#F04438`, only on real signal, always with a word.
-- Charts: `#074AF8`, `#13A8A0`, `#B98A12` (Frame chart hues, checked for colour-blind separation); estimates hatched, missing days dashed, never zero.
-- Poppins for the interface, JetBrains Mono for every number.
-- The AI sparkle beside every AI suggestion and draft, never a spinner.
-- Dark mode uses the brand's product navy (`#071233`, raised `#0C1B47`) and the dark chart steps. Light, dark or system, chosen in the profile menu.
-- Shell: 248px sidebar (AntaraX A, product name, a "New" button, Home, Clients, Analytics, Ask, Approvals, Reports, Settings, Help, the workspace card at the foot); 60px top bar with search (⌘K), Ask, notifications and the profile menu.
-- Phones: the sidebar becomes a drawer below 1024px; figures go two across; tables scroll in their own box; 44px targets.
-
-What it keeps from AXLE: attention first, never a false zero, read wide and change narrow, a reason and a trail for every change, gate messages that say which right is missing. What it drops: the dark-only rule, orange, and the "AXLE" name on screen. Whether other staff consoles follow is a separate question for the AXLE standard (D14).
-
-Client output (report, later embed) uses the same light treatment, with the REKA credit line and no internal names.
+- **Identity** (SPEC §4): `AXLE` with the product as context. Page titles read `<Page> · AXLE · Outcomes`. The AntaraX A sits in the sidebar corner; Outcomes has no mark of its own yet, so the mock shows a placeholder glyph on the white chip (to settle with D1).
+- **Dark bars, light page:** sidebar, top bar and phone drawer on `#071233` / `#0C1B47`; the page `#F5F7FC` with white cards (radius 20px). No theme toggle.
+- **REKA orange `#FB9800`** only for "needs a person" (counters, the diamond on Needs a person), the current page, the selected range, the `AXLE` tag and the one main action, with navy text. Never orange text on the page. Links and the page focus ring are AntaraX blue `#0459F7`; `#4D84FE` on the bars.
+- **Status** ok `#12B76A`, warn `#F79009`, fault `#F04438`: real signal only, always with a word. **Charts** `#2A78D6`, `#1BAF7A`, `#EB6834`, `#6250D6`; estimates hatched, missing days dashed, never zero.
+- **Type:** Poppins for the interface, JetBrains Mono for every number, id, time and email.
+- **Every colour and size comes from `axle/tokens.css`** (brand kit tokens 1.9.0); the mock's own names are aliases for them.
+- **Top bar:** the AntaraX top bar in its dark variant, as a floating card: the brand pill (the A and the Outcomes chip), the orange `AXLE` tag, the page title, the organisation scope picker, Find (⌘K), the health button (opens R8, with a count when a link fails) and the staff menu (your account, the person and workspace switch in the mock, AXLE guide, Sign out).
+- **Sidebar** (240px): the AXLE brand block, the Dashboard · R8 switch with its one-line purpose, the AXLE STANDARD groups as folding cards (an icon tile and the title in the group's colour; a folded card lists its pages in grey and keeps an orange roll-up of what needs a person), then the dashed **Outcomes only** box, then the staff member with their rung and "Authorised REKA staff · every action is recorded".
+- **Page header:** the title lives in the top bar. Each page says in one line what it is for, a state line (`Live database · last 30 days · updated …`), "How this page works", and its range or main action.
+- **State banner** under the top bar while something staff must not forget holds: the demo workspace, example data, a platform switch turned off, a paused job.
+- **Phones:** the sidebar is a drawer below 1024px; the title moves under the bar at phone width; figures two across; tables scroll in their own box; 44px targets.
+- **Organisation plane:** the client report, client view and any later embed stay in the light AntaraX product look, with the REKA credit line and no internal names, AXLE or staff rungs (SPEC §12).
 
 ### 12.2 Navigation
 
-| Item | Holds |
-|---|---|
-| **Home** | First use: the getting-started checklist. After that: what each client's solutions delivered, what needs you, a card per client (needs you first), recent activity |
-| **Clients** | The client list (FR-DSH-10, 11). Under it in the sidebar, the three most recent clients. A client page has Overview, Projects, Reports and Activity tabs; a solution has Overview and Measures tabs |
-| **Analytics** | Any measure over time for all clients, one client or one solution; by client or by solution, and by weekday; against the period before (§8.15) |
-| **Ask** | Questions about the data in plain words (§8.14) |
-| **Approvals** | KPIs, baselines, mappings, client visibility and reports waiting for a second person. Counter is blue when one is yours |
-| **Reports** | Scheduled, drafted, approved and sent reports, for all clients or one (FR-RPT-9) |
-| **Settings** | Team and rights, collection schedule, audit trail, integration pack |
-| **Help** | What measured, derived and estimated mean; never a false zero; support address |
-| **New** | Client, project, or connect a solution, from anywhere |
+Two modes share one sign-in, one top bar and one audit log; the switch changes only the menu (SPEC §7.1). Standard items keep the standard's names and order; items this mock does not draw are listed but not links. Outcomes is **R8 Full**: it runs machinery of its own (nightly collectors, health checks, the contract test, report drafting).
+
+| Mode | Group | Items in AXLE · Outcomes |
+|---|---|---|
+| **Dashboard** | Watch | **Overview** (§8 of the SPEC: health strip, Needs a person, Nightly collection, figures, organisations by stage, organisations at a glance, hours saved, recent actions; first use shows the first-steps checklist), **Adoption** (people using each organisation's solutions, and who stopped) |
+| | Organisations | **Organisations** (the list, FR-DSH-10, 11) and the organisation page; Members, Invitations, Requests, Support (standard, not drawn) |
+| | AI | Models & keys, AI usage, Live trace, Prompts & quality (standard, not drawn) |
+| | Money | Plans & features (standard, not drawn). No Billing: Outcomes does not bill |
+| | Platform | **Demo** (the demo workspace, Demo studio and example data), **Settings** (platform switches with a reason, collection, retention, the integration pack) |
+| | Operations | Errors, Alerts, Backups, Access (standard, not drawn) |
+| | Trail | **Audit**, **Staff** (the ladder and rights) |
+| | Outcomes only | **Approvals**, **Reports**, **Analytics**, **Ask** |
+| **R8** | Command | **Overview** (one state word, the build, Needs an operator, platform services, Outcomes' machinery, incidents, cost per organisation behind the Commercial right, recent operations), **Incidents**, **Troubleshoot** |
+| | System | **Jobs**, **Providers**, **Services** |
+| | Control and diagnostics | **Configuration** (set or missing, never values; schedules and limits in plain words), **Operations audit** |
+| | Outcomes only | **Measurement links**: each organisation's link, its last good collection, the nightly contract test, the key's age |
+
+R8 actions are Level 1 only (run now, retry failures, pause, test a provider, run the contract test, acknowledge, suppress for a set time), from the Operator rung, each asking for a reason in an in-app dialog and landing in the operations audit (SPEC §14.1). The Dashboard never says probe, queue or p95: a failing link reads "not answering" and opens Troubleshoot.
 
 ### 12.3 First use
 
@@ -789,24 +795,22 @@ A new workspace must lead a person from sign-in to a measured project without re
 
 | Screen | Address | What it proves |
 |---|---|---|
-| Sign in and welcome | `#signin`, `#welcome` | A product someone can start using on their own |
-| Home, first use | `#home` (fresh workspace) | The checklist drives the whole setup |
-| Add client, create project | `#new-client`, `#new-project` | Plain forms; the data agreement gate |
+| Sign in and welcome | `#signin`, `#welcome` | "Sign in to AXLE · Outcomes"; a product staff can start using on their own |
+| Overview, first use | `#home` (fresh workspace) | The first-steps checklist drives the whole setup |
+| New organisation, create project | `#new-organisation`, `#new-project` | Plain forms; the data agreement gate |
 | Connect a solution | `#connect` | The full guided connection, with the baseline captured up front |
 | Your solution | `#sim-…` | Waiting states, then first figures computed from the baseline you typed |
-| Home, established | `#home` (example workspace) | Hours saved with range, what needs you, client cards, needs you first |
-| Client list | `#clients` | Every client on one screen; filter, search, sort; needs you counted per client; fees gated by right |
-| Client | `#client-contoh-logistik`; the same `#client-…` address for a client in your own or a demo workspace | One template everywhere; tabs; hours saved by project; deduplicated totals explained; AI summary with approval; Ask about this client; team view and client view; fees gated by right |
-| Solution | `#solution-doc-workflow` | Where the time goes (measured vs estimated); usage, health, data and connection; late and not answering states |
-| Approvals | `#approvals` | Separation of duties; reason required; undo |
-| Reports | `#reports` | Every report with its client; filter to one client, or open it from a client's Reports tab |
-| Client report | `#report` | The reviewed PDF: outcomes, evidence, caveats, next steps |
-| Measures | a solution, Measures tab | The 13-measure library in five domains; add your own with a live preview; commercial gated |
-| Analytics | `#analytics` | Trend against the period before, by client or solution, by weekday; scope to one client; fair-comparison guard |
-| Ask | `#ask` | Grounded answers with sources, inline charts and tables, honest refusals |
-| Demo workspace and Demo studio | workspace switcher, then "Demo studio" | A separate simulated workspace with its banner; simulate projects, move the date, cause problems; the 23-step guided demo |
+| Overview, established | `#home` (example workspace) | The AXLE overview blocks; Needs a person links technical problems to Troubleshoot |
+| Organisations | `#organisations` | Stats strip as filters, search, sort, group by stage or industry, export; needs a person counted per organisation; fees gated by right |
+| Organisation | `#organisation-contoh-logistik` (the same address in every workspace) | Opens on readiness and stage; tabs Summary, Projects and solutions, Reports, Notes, Audit; staff view and organisation view |
+| Solution | `#solution-doc-workflow` | Where the time goes; Measures; **Explore** (§8.17) |
+| Approvals, Reports, Analytics, Ask | `#approvals`, `#reports`, `#analytics`, `#ask` | The Outcomes-only pages |
+| Adoption, Demo, Settings, Audit, Staff | `#adoption`, `#demo`, `#settings`, `#audit`, `#staff` | Standard Dashboard pages; switches ask for a reason and raise the state banner; the ladder with "Needs Admin" |
+| R8 | `#r8`, `#incidents`, `#troubleshoot-…`, `#jobs`, `#providers`, `#services`, `#configuration`, `#ops-audit`, `#links` | The machinery: evidence in layers, AXLE's reading kept apart from your conclusion, Level 1 actions with a reason, the operations audit |
+| Client report | `#report` | The reviewed PDF, in the light product look: outcomes, evidence, caveats, next steps |
+| Demo workspace and Demo studio | Platform → Demo, or the staff menu | A separate simulated workspace with its banner; simulate projects, move the date, cause problems; the 23-step guided demo |
 
-The older addresses `#organisations`, `#organisation-…`, `#org-…` and `#new-organisation` still work: they redirect to `#clients`, `#client-…` and `#new-client`, so saved links don't break.
+The 0.5 addresses `#clients`, `#client-…`, `#new-client` and the older `#org-…` redirect to the organisation addresses, so saved links don't break.
 
 ### 12.5 States
 
@@ -1004,12 +1008,12 @@ The brief's §16, extended with points this review raised. Each needs the owner.
 | D10 | **Aggregation grain and cardinality limits** | Daily grain; 20 values per dimension; 200 metrics per solution |
 | D11 | **SDK languages** for the contract test and signing | TypeScript first; Python second |
 | D12 | **Roles**: map the brief's roles onto the AXLE ladder plus Measurement, Approve and Commercial rights (§4.2)? | Yes |
-| D13 | **Look** | **Decided 15 Oct 2026: keep the light AntaraX look for Outcomes** (§12.1) |
-| D14 | **AXLE standard**: should other staff consoles also be allowed the light look? | Raise against AXLE SPEC §3 and §17; Outcomes stays light either way |
+| D13 | **Look** | **Decided 15 Oct 2026, revised the same day:** Outcomes is internal, so it follows the AXLE standard v1.0: dark bars, light page, REKA orange as the standard allows (§12.1). Client output keeps the light AntaraX look |
+| D14 | **AXLE standard**: should other staff consoles also be allowed the light look? | **Settled by AXLE v1.0** (SPEC §20 question 1): every AXLE is dark bars around a light page. Nothing left for Outcomes |
 | D15 | **Value of time freed** | **Decided 15 Oct 2026: RM45 an hour for every client**, always shown as an estimate with the rate stated |
 | D16 | **Ask**: model, logging and retention of questions; whether clients ever get Ask | Current Claude model with tool calls; 90-day log; staff only in the MVP |
 | D17 | **Demo studio** | **Decided 15 Oct 2026: a product feature**, in separate demo workspaces, core in the MVP (§8.16) |
-| D18 | **Client or organisation**: screens and reports say "client" while the data model, the API and AXLE's vocabulary say "organisation". Keep it that way? | Yes: "client" on screen and in reports, `organisation` in the data model and API; propose "client" to AXLE as Outcomes' display word |
+| D18 | **Client or organisation** on screen | **Settled by AXLE v1.0** (SPEC §15): "organisation" on screen, "member" for a client's person. This document keeps "client" in prose (§7.1) |
 
 ## 21 Appendices
 

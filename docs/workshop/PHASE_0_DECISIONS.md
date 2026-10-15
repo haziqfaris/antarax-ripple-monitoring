@@ -1,6 +1,6 @@
 # Phase 0 decisions
 
-For the Performance Intelligence design workshop. Fifteen open questions from [PRD §20](../PRD.md#20-open-decisions), each with a recommendation, what is already built to back it, and what it blocks.
+For the Performance Intelligence design workshop. Thirteen open questions from [PRD §20](../PRD.md#20-open-decisions), each with a recommendation, what is already built to back it, and what it blocks.
 
 Calls are recorded on the shared workshop page and copied back here and into PRD §20 afterwards. Until then, every row is **open**.
 
@@ -132,16 +132,6 @@ Building can start without them. Each needs an answer before the stage named.
 |---|---|---|---|
 | Report layout in the mock. | The first client report. | Before the first client report | Open |
 
-### D14. AXLE standard
-
-**Question.** Should other staff consoles also be allowed the light look?
-
-**Recommendation.** Raise it against AXLE SPEC §3 and §17. Outcomes stays light either way (D13).
-
-| Ready to back it | Blocks | Needed by | Call |
-|---|---|---|---|
-| Nothing needed from this product. | Nothing here; it matters to other consoles. | Any time | Open |
-
 ### D16. Ask
 
 **Question.** Which model, how long are questions kept, and do clients ever get Ask?
@@ -152,20 +142,12 @@ Building can start without them. Each needs an answer before the stage named.
 |---|---|---|---|
 | Grounding rules in PRD §11.4; working in the mock. | Ask going live. | Before Ask goes live | Open |
 
-### D18. Client or organisation
-
-**Question.** Screens say "client", while the data model, the API and AXLE's vocabulary say "organisation". Keep it that way?
-
-**Recommendation.** Yes: "client" on screen and in reports, "organisation" in the data model and API (organisation_id). Propose "client" to AXLE as Outcomes' display word.
-
-| Ready to back it | Blocks | Needed by | Call |
-|---|---|---|---|
-| Mock and PRD 0.5 follow it; old organisation addresses still work. | Nothing now; settles before the AXLE shell is shared. | Before the AXLE shell is shared | Open |
-
 ## Already decided
 
 | # | Decision | Outcome | When |
 |---|---|---|---|
-| D13 | Look | Keep the light AntaraX look for Outcomes | 15 Oct 2026 |
+| D13 | Look | Outcomes is internal, so it follows the AXLE standard v1.0: dark bars, light page. Client reports keep the light AntaraX look | 15 Oct 2026, revised |
+| D14 | AXLE standard | Settled by AXLE v1.0: every staff console is dark bars around a light page | 15 Oct 2026 |
 | D15 | Value of time freed | RM45 an hour for every client, always shown as an estimate | 15 Oct 2026 |
 | D17 | Demo studio | A product feature, in separate demo workspaces, core in the MVP | 15 Oct 2026 |
+| D18 | Client or organisation | Settled by AXLE v1.0: "organisation" on screen, "member" for a client's person | 15 Oct 2026 |

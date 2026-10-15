@@ -1,8 +1,8 @@
 /* Outcomes product mock.
-   - Your workspace: sign in, set up, add clients, create projects, connect solutions, approve, collect, report.
+   - Your workspace: sign in, set up, add organisations, create projects, connect solutions, approve, collect, report.
      Any number of projects; their daily figures are simulated from each project's kind, volume and baseline.
    - Demo studio (mock only): create simulated projects, move the date forward, cause problems, and a guided tour.
-   - The example workspace: five fixed clients from data.js.
+   - The example workspace: five fixed organisations from data.js.
    Plain JavaScript, no libraries. Every figure on screen is worked out from the underlying daily figures. */
 (function () {
   'use strict';
@@ -50,7 +50,7 @@
   const RUNGS = ['Viewer', 'Support', 'Operator', 'Admin', 'Owner'];
   const atLeast = (rung) => RUNGS.indexOf(me().rung) >= RUNGS.indexOf(rung);
   const demo = () => state.mode === 'demo';
-  // Workspaces: your real one, a demo workspace (Demo studio and the guided demo live only here), and the example clients.
+  // Workspaces: your real one, a demo workspace (Demo studio and the guided demo live only here), and the example organisations.
   const WS_FIELDS = ['orgs', 'sims', 'myApprovals', 'myAudit', 'simReports', 'focusSim', 'simDay', 'wiz', 'sf', 'eventSim', 'an', 'bld', 'chat'];
   const freshWs = () => ({ orgs: [], sims: [], myApprovals: [], myAudit: [], simReports: {}, focusSim: null, simDay: START_DAY, wiz: freshWizard(), sf: null, eventSim: null, an: null, bld: null, chat: [] });
   const sandbox = () => state.mode === 'new' && state.ws === 'sandbox';
@@ -63,7 +63,7 @@
     Object.assign(state, state.stash[kind] || freshWs());
     state.ws = kind; state.mode = 'new';
   }
-  const wsName = () => demo() ? 'Example clients' : sandbox() ? state.sandboxName : state.setup.workspace;
+  const wsName = () => demo() ? 'Example data' : sandbox() ? state.sandboxName : state.setup.workspace;
 
   // ------------------------------------------------------------------ formats (brand kit 13)
   const nf = (n, dp = 0) => Number(n).toLocaleString('en-GB', { minimumFractionDigits: dp, maximumFractionDigits: dp });
@@ -259,13 +259,13 @@
     { key: 'people', domain: 'Usage', name: 'People using it, a day', unit: '', quality: 'measured', dp: 1, better: 'up', how: 'Average distinct people on a working day. Never added across days.', calc: (t) => t.has.people && t.workdays ? t.peopleSum / t.workdays : null },
     { key: 'perPerson', domain: 'Usage', name: 'Handled per person, a day', unit: '', quality: 'derived', dp: 1, better: 'up', how: 'Work handled ÷ person-days.', calc: (t) => t.has.people && t.peopleSum ? t.vol / t.peopleSum : null },
     { key: 'tat', domain: 'Operations', name: 'Turnaround time', unit: 'h', quality: 'measured', dp: 1, better: 'down', how: 'Median hours from arrival to done, weighted by volume.', calc: (t) => t.has.tat && t.vol ? t.tatW / t.vol : null },
-    { key: 'sla', domain: 'Operations', name: 'Within agreed time', unit: '%', quality: 'measured', dp: 1, better: 'up', how: 'Share done inside the time agreed with the client, weighted by volume.', calc: (t) => t.has.sla && t.vol ? t.slaW / t.vol : null },
+    { key: 'sla', domain: 'Operations', name: 'Within agreed time', unit: '%', quality: 'measured', dp: 1, better: 'up', how: 'Share done inside the time agreed with the organisation, weighted by volume.', calc: (t) => t.has.sla && t.vol ? t.slaW / t.vol : null },
     { key: 'quality', domain: 'Operations', name: 'Needed a person to fix', unit: '%', quality: 'derived', dp: 1, better: 'down', how: 'Items sent back or corrected ÷ items handled, from the totals.', calc: (t) => t.has.flagged && t.vol ? 100 * t.flagged / t.vol : null },
     { key: 'straight', domain: 'Operations', name: 'Straight-through rate', unit: '%', quality: 'derived', dp: 1, better: 'up', how: 'Items done with no correction ÷ items handled.', calc: (t) => t.has.flagged && t.vol ? 100 * (t.vol - t.flagged) / t.vol : null },
     { key: 'hours', domain: 'Business impact', name: 'Hours saved', unit: 'h', quality: 'estimated', dp: 0, better: 'up', sum: true, how: 'Items × (minutes by hand − machine − review) ÷ 60, with a likely range.', calc: (t) => t.has.mid ? t.mid : null, range: (t) => t.has.mid ? [t.low, t.high] : null },
-    { key: 'value', domain: 'Business impact', name: 'Value of time freed', unit: 'RM', quality: 'estimated', dp: 0, better: 'up', sum: true, how: 'Hours saved × RM45, the hourly staff cost agreed with the client. An estimate, not cash saved.', calc: (t) => t.has.mid ? t.mid * 45 : null, range: (t) => t.has.mid ? [t.low * 45, t.high * 45] : null },
+    { key: 'value', domain: 'Business impact', name: 'Value of time freed', unit: 'RM', quality: 'estimated', dp: 0, better: 'up', sum: true, how: 'Hours saved × RM45, the hourly staff cost agreed with the organisation. An estimate, not cash saved.', calc: (t) => t.has.mid ? t.mid * 45 : null, range: (t) => t.has.mid ? [t.low * 45, t.high * 45] : null },
     { key: 'tatChange', domain: 'Business impact', name: 'Faster than before', unit: '%', quality: 'derived', dp: 0, better: 'up', how: 'Turnaround now against turnaround before go-live.', calc: (t) => t.has.tat && t.vol && t.tatBeforeW ? 100 * (t.tatBeforeW - t.tatW) / t.tatBeforeW : null },
-    { key: 'costPer', domain: 'Commercial', name: 'Running cost per item', unit: 'RM', quality: 'derived', dp: 2, better: 'down', reka: true, how: 'Running cost from AX Frame ÷ work handled. REKA only, never in client output.', calc: (t) => t.runCost && t.vol ? t.runCost * t.days / 30 / t.vol : null },
+    { key: 'costPer', domain: 'Commercial', name: 'Running cost per item', unit: 'RM', quality: 'derived', dp: 2, better: 'down', reka: true, how: 'Running cost from AX Frame ÷ work handled. REKA only, never in organisation output.', calc: (t) => t.runCost && t.vol ? t.runCost * t.days / 30 / t.vol : null },
   ];
   const comparable = (a, b) => a.expected > 0 && b.expected >= 0.8 * a.expected;
   const DOMAINS = ['Technical health', 'Usage', 'Operations', 'Business impact', 'Commercial'];
@@ -314,7 +314,7 @@
     return [
       { id: 'volume', name: `${cap(K.nouns)} handled each month`, kind: 'Usage', quality: 'measured', why: 'The basic volume. Every other figure depends on it.', formula: `Total ${K.nouns} handled, by month` },
       { id: 'quality', name: `Share of ${K.nouns} ${K.qual.label}`, kind: 'Quality', quality: 'derived', why: 'Shows whether the AI’s work can be trusted. It should fall as the solution improves.', formula: `${cap(K.nouns)} ${K.qual.label} ÷ ${K.nouns} handled` },
-      { id: 'impact', name: `Hours saved on ${sim.project.name.toLowerCase()}`, kind: 'Business impact', quality: 'estimated', why: `The outcome the client is paying for. Needs a baseline: how long a ${K.noun} takes by hand.`, formula: `${cap(K.nouns)} × (minutes by hand − machine minutes − review minutes) ÷ 60`, needsBaseline: true },
+      { id: 'impact', name: `Hours saved on ${sim.project.name.toLowerCase()}`, kind: 'Business impact', quality: 'estimated', why: `The outcome the organisation is paying for. Needs a baseline: how long a ${K.noun} takes by hand.`, formula: `${cap(K.nouns)} × (minutes by hand − machine minutes − review minutes) ÷ 60`, needsBaseline: true },
     ];
   }
   function sendSimForApproval(sim, keep, auto) {
@@ -325,7 +325,7 @@
       const blocked = p.needsBaseline && !hasBase(sim);
       state.myApprovals.unshift({ id: 'a' + state.seq++, simId: sim.id, type: 'KPI', title: p.name, proposer: 'ai', editedBy: 'daniel', since: now(), status: auto ? (blocked ? 'blocked' : 'approved') : (blocked ? 'blocked' : 'waiting'), summary: p.why,
         fields: [['Worked out as', p.formula], ['Kind', p.kind]].concat(p.needsBaseline && hasBase(sim) ? [['Baseline', `${sim.base.mid} min per ${kindOf(sim).noun} (${sim.base.low} to ${sim.base.high})`]] : []),
-        evidence: p.needsBaseline ? (hasBase(sim) ? (sim.base.note || ({ sample: `Timed sample of ${sim.base.n} ${kindOf(sim).nouns}`, history: 'Past records', estimate: 'Client estimate' })[sim.base.method]) : 'No baseline yet') : `Figures checked on ${day(today())}`,
+        evidence: p.needsBaseline ? (hasBase(sim) ? (sim.base.note || ({ sample: `Timed sample of ${sim.base.n} ${kindOf(sim).nouns}`, history: 'Past records', estimate: 'Organisation estimate' })[sim.base.method]) : 'No baseline yet') : `Figures checked on ${day(today())}`,
         affects: `${sim.name} outcomes and the ${sim.project.cadence.toLowerCase()} report`, blocker: blocked ? 'No baseline yet.' : null });
     });
     return props.length;
@@ -437,9 +437,24 @@
   const solStatus = (id) => (id === 'doc-workflow' && state.demoState !== 'live') ? state.demoState : M.solutions[id].status;
   const RANGES = { 7: 'Last 7 days', 30: 'Last 30 days', 90: 'Last 90 days', 365: 'Last 12 months' };
   const rangeLabel = () => RANGES[state.range];
-  const rangeSeg = () => `<div class="seg" role="group" aria-label="Date range">${[[7, '7D'], [30, '30D'], [90, '90D'], [365, '12M']].map(([v, l]) => `<button type="button" data-range="${v}" aria-pressed="${state.range === v}" aria-label="${RANGES[v]}">${l}</button>`).join('')}</div>`;
+  const rangeSeg = () => `<div class="seg range" role="group" aria-label="Date range">${[[7, '7D'], [30, '30D'], [90, '90D'], [365, '12M']].map(([v, l]) => `<button type="button" data-range="${v}" aria-pressed="${state.range === v}" aria-label="${RANGES[v]}">${l}</button>`).join('')}</div>`;
   const gate = (ok, label, need, attrs = '', cls = 'btn primary') => ok ? `<button ${/type=/.test(attrs) ? '' : 'type="button"'} class="${cls}" ${attrs}>${label}</button>` : `<span class="head-actions"><button type="button" class="${cls}" disabled>${label}</button><span class="needs">${need}</span></span>`;
-  const head = (o) => `<header class="page-head"><div style="min-width:0">${o.crumbs ? `<nav class="crumbs" aria-label="Breadcrumbs">${o.crumbs}</nav>` : ''}<h1>${o.title}</h1>${o.lead ? `<p class="lead">${o.lead}</p>` : ''}${o.meta ? `<div class="meta-line">${o.meta}</div>` : ''}</div><div class="head-actions">${o.actions || ''}</div></header>`;
+  // AXLE page header (SPEC §6): the title lives in the top bar; the page says what it is for, its state line,
+  // "How this page works", and its range picker or main action. Entity pages also show who they are about.
+  let curTitle = '', curPage = '';
+  const stateWord = () => demo() ? 'Example data' : sandbox() ? 'Demo workspace, simulated' : 'Live database';
+  function head(o) {
+    curTitle = String(o.title).replace(/<span class="avatar[^>]*>[^<]*<\/span>/g, '').replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').trim();
+    const ranged = /data-range=/.test(o.actions || '');
+    const stateLine = o.state !== undefined ? o.state : `${stateWord()}${ranged ? ' · ' + rangeLabel().toLowerCase() : ''} · updated ${day(today())}, 14:30 MYT`;
+    const how = o.how || HOW[curPage];
+    return `<header class="page-head${o.crumbs ? ' entity' : ''}"><div style="min-width:0;display:grid;gap:4px">
+      ${o.crumbs ? `<nav class="crumbs" aria-label="Breadcrumbs">${o.crumbs}</nav><h2 class="entity-title">${o.title}</h2>` : ''}
+      ${o.lead ? `<p class="lead">${o.lead}</p>` : ''}${o.meta ? `<div class="meta-line">${o.meta}</div>` : ''}
+      ${stateLine ? `<p class="state-line mono">${stateLine}</p>` : ''}
+      ${how ? `<details class="how"><summary>How this page works</summary><div>${how}</div></details>` : ''}
+    </div><div class="head-actions">${o.actions || ''}</div></header>`;
+  }
   const crumbs = (...parts) => parts.map((p, i) => i < parts.length - 1 ? `${p[1] ? `<a href="${p[1]}">${esc(p[0])}</a>` : `<span>${esc(p[0])}</span>`}${icon('chev', 'sm')}` : `<span>${esc(p[0])}</span>`).join('');
   const kv = (rows, w = 130) => `<div class="list">${rows.map(([k, v]) => `<div class="row" style="grid-template-columns:${w}px minmax(0,1fr)"><span class="small muted">${k}</span><span class="small ink">${v}</span></div>`).join('')}</div>`;
   const emptyArt = '<div class="art" style="background-image:url(assets/spot-quiet.svg)"></div>';
@@ -462,13 +477,13 @@
   function authShell(inner) {
     return `<div class="auth">
       <div class="auth-main">
-        <div class="logo"><img src="assets/antarax-mark.svg" alt="">Outcomes</div>
+        <div class="logo"><img src="assets/antarax-mark.svg" alt="">AXLE · Outcomes</div>
         <div class="auth-body"><div class="auth-card">${inner}</div></div>
         <div class="auth-foot"><span>REKA Inisiatif Sdn Bhd · for REKA staff</span><span>Need help? support@go.antarax.ai</span></div>
       </div>
       <aside class="auth-side" aria-hidden="true"><div class="art" style="background-image:url(assets/panel-white.svg)"></div>
         <span class="eyebrow" style="color:var(--hero-ink)"><img src="${SPARK}" alt="">Managed AI, measured</span>
-        <h2>Show every client what their AI solution changed.</h2>
+        <h2>Show every organisation what their AI solution changed.</h2>
         <p>Connect a solution once. Outcomes collects its figures, compares them with the baseline you agreed, and drafts the monthly report for you to check.</p>
         <div class="quote-card"><div style="display:flex;justify-content:space-between;font-size:.8125rem"><span>Hours saved, September</span><span class="mono">Example</span></div><div class="big">1,035 h</div><div style="display:flex;justify-content:space-between;font-size:.8125rem"><span>Estimated · likely 572 to 1,421</span><span>vs baseline</span></div></div>
       </aside>
@@ -476,22 +491,22 @@
   }
   const pages = {};
   pages.signin = () => authShell(`
-    <div><h1>Sign in to Outcomes</h1><p class="muted" style="margin-top:6px">See what REKA’s client solutions are delivering.</p></div>
+    <div><span class="axle-tag">AXLE</span><h1 style="margin-top:12px">Sign in to AXLE · Outcomes</h1><p class="muted" style="margin-top:6px">REKA’s staff console for what each organisation’s AI solutions deliver.</p></div>
     <div class="sso">
       <button type="button" class="btn lg block primary" data-act="signin">${icon('lock')}Continue with REKA account</button>
       <div class="divider">or</div>
       <div class="field"><label for="si-email">Work email</label><input id="si-email" type="email" value="daniel@reka.re" autocomplete="email"></div>
       <button type="button" class="btn lg block" data-act="signin">Email me a sign-in link</button>
     </div>
-    <p class="xs muted">Two-step sign-in is on for every account. Everything you do is recorded.</p>`);
+    <p class="xs muted">Authorised REKA staff only. Two-step sign-in is on for every account, and every action is recorded. An account that isn’t on the REKA staff list can’t open AXLE.</p>`);
   pages.welcome = () => {
     const s = state.setup;
     const dots = `<div class="progress-dots" aria-label="Step ${s.step} of 3">${[1, 2, 3].map((i) => `<span class="${i <= s.step ? 'on' : ''}"></span>`).join('')}</div>`;
     if (s.step === 1) return authShell(`${dots}<div><p class="xs muted">Step 1 of 3</p><h1>Welcome, Daniel</h1><p class="muted" style="margin-top:6px">Let’s set up your workspace. It takes about a minute.</p></div>
         <form id="f-ws" class="grid" style="gap:16px">
-          <div class="field"><label for="ws-name">Workspace name</label><input id="ws-name" value="${esc(s.workspace)}" required><span class="help">Usually your company. Clients never see it.</span></div>
-          <div class="field"><label for="ws-tz">Reporting time zone</label><select id="ws-tz"><option>Asia/Kuala_Lumpur (MYT)</option><option>Asia/Singapore (SGT)</option><option>Asia/Jakarta (WIB)</option></select><span class="help">Each client can use its own.</span></div>
-          <div class="callout info">${icon('shield')}<span>Data is kept in Singapore. Outcomes only collects totals, never client documents or personal data.</span></div>
+          <div class="field"><label for="ws-name">Workspace name</label><input id="ws-name" value="${esc(s.workspace)}" required><span class="help">Usually your company. Organisations never see it.</span></div>
+          <div class="field"><label for="ws-tz">Reporting time zone</label><select id="ws-tz"><option>Asia/Kuala_Lumpur (MYT)</option><option>Asia/Singapore (SGT)</option><option>Asia/Jakarta (WIB)</option></select><span class="help">Each organisation can use its own.</span></div>
+          <div class="callout info">${icon('shield')}<span>Data is kept in Singapore. Outcomes only collects totals, never organisation documents or personal data.</span></div>
           <button type="submit" class="btn lg primary block">Continue</button>
         </form>`);
     if (s.step === 2) return authShell(`${dots}<div><p class="xs muted">Step 2 of 3</p><h1>Invite your team</h1><p class="muted" style="margin-top:6px">Analysts suggest KPIs. Project managers approve them. You can do this later.</p></div>
@@ -500,31 +515,307 @@
         <div class="head-actions"><button type="button" class="btn lg primary" data-act="ws-next">Send invites</button><button type="button" class="btn lg ghost" data-act="ws-skip">Skip for now</button></div>`);
     return authShell(`${dots}<div><p class="xs muted">Step 3 of 3</p><h1>How do you want to start?</h1></div>
         <div class="choice-grid">
-          <button type="button" class="choice" data-start="new" aria-pressed="false"><span class="ic">${icon('connect-ai')}</span><span><b>Connect my first project</b><span class="d">Add a client, create their project and connect its solution. We’ll guide you.</span></span><span class="pill info tag">Recommended</span></button>
+          <button type="button" class="choice" data-start="new" aria-pressed="false"><span class="ic">${icon('connect-ai')}</span><span><b>Connect my first project</b><span class="d">Add an organisation, create their project and connect its solution. We’ll guide you.</span></span><span class="pill info tag">Recommended</span></button>
           <button type="button" class="choice" data-start="tour" aria-pressed="false"><span class="ic">${icon('live')}</span><span><b>Watch the guided demo</b><span class="d">See a new project go from nothing to its first report, in ${TOUR.length} short steps.</span></span><span class="radio"></span></button>
-          <button type="button" class="choice" data-start="demo" aria-pressed="false"><span class="ic">${icon('overview')}</span><span><b>Explore with example data</b><span class="d">A workspace with five clients already running. Every figure is invented.</span></span><span class="radio"></span></button>
+          <button type="button" class="choice" data-start="demo" aria-pressed="false"><span class="ic">${icon('overview')}</span><span><b>Explore with example data</b><span class="d">A workspace with five organisations already running. Every figure is invented.</span></span><span class="radio"></span></button>
         </div>`);
   };
 
   // ------------------------------------------------------------------ APP SHELL
-  function navHtml(route) {
+  // ---------- AXLE sidebar (SPEC §7): Dashboard · R8 switch, the AXLE standard groups as folding cards, then the Outcomes-only box.
+  // Items with no page in this mock are listed (the standard never drops or renames one) but are not links.
+  const AX_ICON = {
+    watch: 'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 9a3 3 0 100 6 3 3 0 000-6z',
+    organisations: 'M4 21V5l8-3 8 3v16M9 21v-4h6v4M8 8h.01M12 8h.01M16 8h.01M8 12h.01M12 12h.01M16 12h.01',
+    ai: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z',
+    money: 'M12 2a10 10 0 100 20 10 10 0 000-20zM15 9.5c-.5-1-1.6-1.5-3-1.5-1.7 0-3 .8-3 2s1.3 1.7 3 2 3 .8 3 2-1.3 2-3 2c-1.4 0-2.5-.5-3-1.5M12 6v2M12 16v2',
+    platform: 'M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M16 4v4M10 10v4M18 16v4',
+    operations: 'M3 12h4l3-7 4 14 3-7h4',
+    trail: 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01',
+    command: 'M5 21V4M5 4h11l-2 4 2 4H5',
+    system: 'M4 4h16v6H4zM4 14h16v6H4zM8 7h.01M8 17h.01',
+    control: 'M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M16 4v4M10 10v4M18 16v4',
+  };
+  const R8_ROUTES = /^(r8|incidents|troubleshoot|jobs|providers|services|configuration|ops-audit|links)(-.+)?$/;
+  const rungOf = (u) => u.rung || 'Viewer';
+  const axMode = (route) => R8_ROUTES.test(route) ? 'r8' : 'dash';
+  function navModel() {
     const waiting = (demo() ? state.approvals : state.myApprovals).filter((a) => a.status === 'waiting').length;
     const reportsDue = demo() ? (state.reportApproved ? 0 : 1) : state.sims.filter((s) => simReportState(s).st === 'ready').length;
-    const items = [['home', 'Home', 'home'], ['clients', 'Clients', 'organisation'], ['analytics', 'Analytics', 'analytics'], ['ask', 'Ask', 'ask'], ['approvals', 'Approvals', 'shield', waiting, has('Approve')], ['reports', 'Reports', 'reports', reportsDue]];
-    const isCur = (k) => route === k || (k === 'clients' && /^(new-client|new-project|connect)$/.test(route)) || (k === 'reports' && /^report/.test(route));
-    const rec = recentClients(), all = companies(), fill = all.filter((c) => !rec.some((r) => r.id === c.id)).slice(0, Math.max(0, 3 - rec.length)).map((c) => ({ id: c.id, name: c.short, href: c.href.slice(1) }));
-    const shown = rec.concat(fill), cur = (r) => route === r.href || routeClient(route) === r.id;
-    const subs = shown.map((r) => `<a class="sub" href="#${r.href}" ${cur(r) ? 'aria-current="page"' : ''}>${esc(r.name)}</a>`).join('') + (all.length > shown.length ? `<a class="sub" href="#clients">All ${all.length} clients</a>` : '');
-    return items.map(([k, l, ic, c, loud], i) => `<a href="#${k}" ${isCur(k) ? 'aria-current="page"' : ''}>${icon(ic)}<span>${l}</span>${c ? `<span class="count ${loud ? 'loud' : ''}" aria-label="${c} waiting">${c}</span>` : ''}</a>${i === 1 ? subs : ''}`).join('')
-      + `<span class="grp">Workspace</span><a href="#settings" ${route === 'settings' ? 'aria-current="page"' : ''}>${icon('settings')}<span>Settings</span></a><a href="#guide" ${route === 'guide' ? 'aria-current="page"' : ''}>${icon('insight')}<span>Help</span></a>`;
+    const att = demo() ? demoAtt() : needsYou(), orgs = companies().length, R = r8Model();
+    return {
+      dash: [
+        ['Watch', 'watch', [['Overview', 'home', att.length, 'loud'], ['Adoption', 'adoption']]],
+        ['Organisations', 'organisations', [['Organisations', 'organisations', orgs, 'quiet'], ['Members'], ['Invitations'], ['Requests'], ['Support']]],
+        ['AI', 'ai', [['Models & keys'], ['AI usage'], ['Live trace'], ['Prompts & quality']]],
+        ['Money', 'money', [['Plans & features']]],
+        ['Platform', 'platform', [['Demo', 'demo'], ['Settings', 'settings']]],
+        ['Operations', 'operations', [['Errors'], ['Alerts'], ['Backups'], ['Access']]],
+        ['Trail', 'trail', [['Audit', 'audit'], ['Staff', 'staff']]],
+      ],
+      dashOnly: [['Approvals', 'approvals', waiting, has('Approve') ? 'loud' : 'quiet'], ['Reports', 'reports', reportsDue, 'loud'], ['Analytics', 'analytics'], ['Ask', 'ask']],
+      r8: [
+        ['Command', 'command', [['Overview', 'r8'], ['Incidents', 'incidents', R.incidents.filter((i) => i.state === 'open').length, 'loud'], ['Troubleshoot', 'troubleshoot']]],
+        ['System', 'system', [['Jobs', 'jobs', R.jobs.filter((j) => j.st === 'fault').length, 'loud'], ['Providers', 'providers', R.providers.filter((x) => x.st === 'fault').length, 'loud'], ['Services', 'services']]],
+        ['Control and diagnostics', 'control', [['Configuration', 'configuration', R.config.filter((c) => !c.set).length, 'loud'], ['Operations audit', 'ops-audit']]],
+      ],
+      r8Only: [['Measurement links', 'links', R.links.filter((l) => l.st !== 'ok').length, 'loud']],
+    };
   }
+  const NAV_CUR = { 'new-organisation': 'organisations', 'new-project': 'organisations', connect: 'organisations', organisation: 'organisations', solution: 'organisations', sim: 'organisations', report: 'reports', guide: 'home' };
+  function navHtml(route) {
+    const mode = axMode(route), N = navModel();
+    const curKey = R8_ROUTES.test(route) ? route.replace(/-.+$/, '') : (NAV_CUR[route] || NAV_CUR[parse()[0]] || route);
+    state.navClosed = state.navClosed || { dash: { AI: true, Money: true, Operations: true }, r8: {} };
+    const closedMap = state.navClosed[mode];
+    const item = ([label, key, n, kind]) => {
+      const on = key && key === curKey;
+      const cnt = n ? `<span class="ax-count ${kind === 'loud' ? 'loud' : ''}" aria-label="${n} ${kind === 'loud' ? 'need a person' : 'in total'}">${n}</span>` : '';
+      return key ? `<a class="ax-item" href="#${key}" ${on ? 'aria-current="page"' : ''}><span class="intan"></span><span class="lbl">${esc(label)}</span>${cnt}</a>`
+        : `<span class="ax-item off" aria-disabled="true" title="Part of the AXLE standard; not drawn in this mock"><span class="intan"></span><span class="lbl">${esc(label)}</span></span>`;
+    };
+    const groups = N[mode].map(([label, k, items]) => {
+      const hasCur = items.some((it) => it[1] && it[1] === curKey);
+      const closed = !hasCur && !!closedMap[label];
+      const roll = items.reduce((a, it) => a + (it[3] === 'loud' && it[2] ? it[2] : 0), 0);
+      const hue = `var(--axle-group-${k})`;
+      return `<div class="ax-group"><button type="button" class="ax-gbtn" data-navgroup="${esc(label)}" aria-expanded="${!closed}">
+          <span class="ax-tile" style="background:color-mix(in srgb, ${hue} 16%, transparent)"><svg viewBox="0 0 24 24" style="stroke:${hue}"><path d="${AX_ICON[k]}"/></svg></span>
+          <span class="ax-gtitle"><b style="color:${hue}">${esc(label)}</b>${closed ? `<small>${items.map((it) => esc(it[0])).join(' · ')}</small>` : ''}</span>
+          ${closed && roll ? `<span class="ax-count loud" aria-label="${roll} need a person">${roll}</span>` : ''}
+          <svg class="ax-chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+        ${closed ? '' : `<div class="ax-items">${items.map(item).join('')}</div>`}</div>`;
+    }).join('');
+    const allOpen = N[mode].every(([label]) => !closedMap[label]);
+    const only = mode === 'r8' ? N.r8Only : N.dashOnly;
+    const u = me();
+    return `<a class="ax-brand" href="#home"><img src="assets/antarax-mark.svg" alt="AntaraX"><span><b>AXLE</b><small>REKA STAFF CONSOLE</small></span></a>
+      <div class="ax-mode" role="tablist" aria-label="AXLE mode"><a href="#home" role="tab" aria-selected="${mode === 'dash'}">Dashboard</a><a href="#r8" role="tab" aria-selected="${mode === 'r8'}">R8</a></div>
+      <div class="ax-modeline">${mode === 'r8' ? 'R8 Full · is the platform okay, and why did this fail?' : 'How is Outcomes doing, and who needs us?'}</div>
+      <div class="ax-std"><span>AXLE STANDARD</span><i></i><button type="button" data-act="nav-all">${allOpen ? 'Collapse all' : 'Expand all'}</button></div>
+      ${groups}
+      <section class="ax-only" aria-label="Outcomes only"><div class="ax-only-head"><span>${icon('analytics', 'sm').replace('<svg', '<svg style="color:#0459F7;width:15px;height:15px"')}</span><b>Outcomes only</b></div>${only.map(item).join('')}</section>
+      <div class="ax-spacer"></div>
+      <div class="ax-foot"><div class="ax-staff"><span class="av">${u.initials}</span><span><b>${esc(u.name)}</b><small>${esc(rungOf(u).toUpperCase())}</small></span></div><div class="ax-footline">Authorised REKA staff · every action is recorded</div></div>`;
+  }
+  // ---------- R8 model: one reading of the machinery for every R8 page, the health button and the counters.
+  // Outcomes is R8 Full: it runs machinery of its own (nightly collectors, health checks, report drafting).
+  const slug = (t) => String(t).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  function r8Model() {
+    const links = [], incidents = [];
+    const t = today(), stAt = (x) => x === 'failing' ? 'fault' : x === 'stale' ? 'warn' : x === 'fresh' ? 'ok' : 'idle';
+    if (demo()) {
+      Object.values(M.solutions).filter((x) => x.status !== 'not_connected').forEach((x) => {
+        const o = orgById(x.org), st = stAt(solStatus(x.id));
+        const since = st === 'fault' ? '2026-10-14' : st === 'warn' ? '2026-10-13' : null;
+        links.push({ id: x.id, name: x.name, org: o.short, orgId: o.id, st, href: '#solution-' + x.id, url: `https://${slug(o.short)}.example/internal/measure/v1`, since, lastOk: st === 'ok' ? t : since ? M.addDays(since, -1) : t,
+          tests: st === 'fault' ? [3, 17] : [17, 17], keyDays: 40 + Math.round(hash(x.id) * 120), catalog: '2026-09-' + String(10 + Math.round(hash(x.id + 'c') * 18)).padStart(2, '0'), metrics: 4 + Math.round(hash(x.id + 'm') * 6), ms: 180 + Math.round(hash(x.id + 't') * 400) });
+      });
+      incidents.push({ id: 'INC-0213', title: 'Quote drafter not answering', sev: 'High', state: 'open', org: 'Bina Jaya', since: '14 Oct 2026, 22:00', link: 'quote-drafter' });
+      incidents.push({ id: 'INC-0212', title: 'Shift planner sent no figures for 2 nights', sev: 'Medium', state: 'acknowledged', org: 'Acme Plastics', since: '13 Oct 2026, 02:00', link: 'shift-planner' });
+      incidents.push({ id: 'INC-0207', title: 'Document workflow late, then filled in', sev: 'Low', state: 'recovered', org: 'Contoh Logistik', since: '21 Sep 2026, 02:00', link: 'doc-workflow' });
+    } else {
+      state.sims.filter((s) => s.stage !== 'draft').forEach((s, i) => {
+        const o = orgOf(s), st = stAt(simStatus(s)), since = s.ev.down || s.ev.stale || null;
+        links.push({ id: s.id, name: s.name, org: o.name, orgId: o.id, st, href: '#sim-' + s.id, url: `https://${slug(o.name)}.example/internal/measure/v1`, since, lastOk: since ? M.addDays(since, -1) : s.stage === 'collecting' ? M.addDays(t, -1) : null,
+          tests: st === 'fault' ? [3, 17] : [17, 17], keyDays: 3 + Math.round(hash(s.id) * 40), catalog: day(s.start || t).replace(/ /g, ' '), metrics: (s.kpis || []).length + 3, ms: 160 + Math.round(hash(s.id + 't') * 380), waiting: s.stage !== 'collecting' });
+        const n = 300 + i;
+        if (s.ev.down) incidents.push({ id: 'INC-0' + n, title: `${s.name} not answering`, sev: 'High', state: state.ack && state.ack[s.id] ? 'acknowledged' : 'open', org: o.name, since: day(s.ev.down) + ', 02:00', link: s.id });
+        else if (s.ev.stale) incidents.push({ id: 'INC-0' + n, title: `${s.name} sent no figures for 2 nights`, sev: 'Medium', state: state.ack && state.ack[s.id] ? 'acknowledged' : 'open', org: o.name, since: day(s.ev.stale) + ', 02:00', link: s.id });
+        (s.gaps || []).forEach(([a, b], j) => incidents.push({ id: 'INC-0' + (n - 50 - j), title: `${s.name} missed ${M.dayRange(a, b).length - 1} night${M.dayRange(a, b).length === 2 ? '' : 's'}`, sev: 'Low', state: 'recovered', org: o.name, since: day(a) + ', 02:00', link: s.id }));
+      });
+    }
+    const bad = links.filter((l) => l.st === 'fault').length, late = links.filter((l) => l.st === 'warn').length, live = links.filter((l) => l.st !== 'idle').length;
+    const runAt = `${dayShort(t)}, 02:00`;
+    const jobs = [
+      { id: 'collect', name: 'Nightly collection', plain: 'Every night at 02:00, each organisation’s time', st: bad ? 'fault' : late ? 'warn' : 'ok', last: runAt, took: `${2 + live} min`, next: `${dayShort(M.addDays(t, 1))}, 02:00`, eligible: live, processed: live - bad - late, failed: bad + late, skipped: links.length - live, why: links.filter((l) => l.st === 'fault' || l.st === 'warn').map((l) => `${l.name} (${l.org}): ${l.st === 'fault' ? 'the link answered 503' : 'no figures for the day yet'}`) },
+      { id: 'health', name: 'Health checks', plain: 'Every 15 minutes', st: bad ? 'fault' : 'ok', last: `${dayShort(t)}, 14:30`, took: '4 s', next: `${dayShort(t)}, 14:45`, eligible: live, processed: live - bad, failed: bad, skipped: 0, why: links.filter((l) => l.st === 'fault').map((l) => `${l.name}: /health did not answer in 10 s`) },
+      { id: 'compute', name: 'Work out KPIs and measures', plain: 'Every night at 02:30, after collection', st: 'ok', last: `${dayShort(t)}, 02:30`, took: '1 min', next: `${dayShort(M.addDays(t, 1))}, 02:30`, eligible: live, processed: live, failed: 0, skipped: 0, why: [] },
+      { id: 'reports', name: 'Draft monthly reports', plain: 'The 1st of each month at 06:00', st: 'ok', last: `${day(t.slice(0, 7) + '-01')}, 06:00`, took: '3 min', next: nextMonthStart() + ', 06:00', eligible: live, processed: live, failed: 0, skipped: 0, why: [] },
+      { id: 'contract', name: 'Contract test, every link', plain: 'Every night at 03:00', st: bad ? 'fault' : 'ok', last: `${dayShort(t)}, 03:00`, took: '40 s', next: `${dayShort(M.addDays(t, 1))}, 03:00`, eligible: live, processed: live - bad, failed: bad, skipped: 0, why: links.filter((l) => l.st === 'fault').map((l) => `${l.name}: 3 of 17 checks ran before the link stopped answering`) },
+    ];
+    const providers = [
+      { id: 'anthropic', name: 'Anthropic API', what: 'Ask, report drafts, KPI and measure suggestions', st: 'ok', calls: 412, ok: 99.8, ms: 1840, quota: '18% of the monthly budget', lastErr: '12 Oct, 09:14 · 529 overloaded, retried', lastOk: `${dayShort(t)}, 14:29` },
+      { id: 'resend', name: 'Resend', what: 'Report and alert emails', st: 'ok', calls: 37, ok: 100, ms: 210, quota: '1% of the plan', lastErr: 'None in 30 days', lastOk: `${dayShort(t)}, 08:02` },
+      { id: 'r2', name: 'Cloudflare R2', what: 'Backups and report PDFs', st: 'ok', calls: 96, ok: 100, ms: 95, quota: '3 GB of 100 GB', lastErr: 'None in 30 days', lastOk: `${dayShort(t)}, 03:10` },
+      { id: 'links', name: `Measurement links (${links.length})`, what: 'Each organisation’s solution, read every night', st: bad ? 'fault' : late ? 'warn' : 'ok', calls: links.length * 98, ok: links.length ? Math.round(1000 * (1 - (bad * 0.5 + late * 0.1) / Math.max(1, links.length))) / 10 : 100, ms: links.length ? Math.round(links.reduce((a, l) => a + l.ms, 0) / links.length) : 0, quota: 'No quota', lastErr: bad ? `${links.find((l) => l.st === 'fault').name}: 503` : 'None today', lastOk: `${dayShort(t)}, 14:30`, href: '#links' },
+    ];
+    const orgsNoAgreement = companies().filter((c) => !c.signed);
+    const config = [
+      { name: 'Anthropic API key', area: 'AI', set: true, note: 'In the vault · rotated 12 Sep 2026' },
+      { name: 'Resend sender', area: 'Email', set: true, note: 'reports@reka.example · verified' },
+      { name: 'Value of time freed', area: 'Measures', set: true, note: 'RM45 an hour, every organisation (D15)' },
+      { name: 'Backups to R2', area: 'Platform', set: true, note: 'Nightly · last restore drill 1 Oct 2026, passed' },
+      ...links.map((l) => ({ name: `Measurement key · ${l.name}`, area: l.org, set: true, note: `ax_msr_… · ${l.keyDays} days old${l.keyDays > 90 ? ' · due for rotation' : ''}` })),
+      ...orgsNoAgreement.map((c) => ({ name: `Data agreement · ${c.short}`, area: c.short, set: false, note: 'Not recorded as signed: nothing is collected', href: c.href })),
+    ];
+    return { links, incidents, jobs, providers, config, bad, late, live };
+  }
+
+  // ---------- R8 pages (SPEC §7.4, §8.1, §10.11, §14.1). Level 1 actions ask for a reason and land in the operations audit.
+  const stWord = { ok: 'Working', warn: 'Late', fault: 'Failing', idle: 'Waiting' };
+  const stChip = (st, word) => `<span class="pill ${st === 'idle' ? 'idle' : st}"><span class="dot"></span>${esc(word || stWord[st])}</span>`;
+  const opsLog = () => { state.ops = state.ops || {}; const k = demo() ? 'example' : state.ws; return (state.ops[k] = state.ops[k] || []); };
+  const RUNG = ['Viewer', 'Support', 'Operator', 'Admin', 'Owner'];
+  const lvlTag = (n) => `<span class="lvl-tag">Level ${n}</span>`;
+  // An in-app dialog that asks for a reason (SPEC §14: never confirm() or prompt()).
+  function askReason(o) {
+    closeReason();
+    const el = document.createElement('div'); el.id = 'reason';
+    el.innerHTML = `<div class="scrim" data-act="reason-cancel"></div><form class="card reason" role="dialog" aria-modal="true" aria-labelledby="reason-h" id="reason-form">
+      <h2 id="reason-h">${esc(o.title)}</h2><p class="small">${o.body || ''}</p>
+      <div class="field"><label for="reason-t">Reason</label><textarea id="reason-t" required placeholder="${esc(o.placeholder || 'What happened, and why this action')}"></textarea><span class="help">Recorded in the operations audit with your name${o.level ? `, as a Level ${o.level} action` : ''}.</span></div>
+      <div class="head-actions" style="justify-content:flex-end"><button type="button" class="btn" data-act="reason-cancel">Cancel</button><button type="submit" class="btn primary">${esc(o.confirm)}</button></div></form>`;
+    document.body.appendChild(el); state.reasonFor = o; setTimeout(() => { const t = $('#reason-t'); if (t) t.focus(); }, 0);
+  }
+  function closeReason() { const el = $('#reason'); if (el) el.remove(); }
+  function r8Do(o, reason) {
+    opsLog().unshift({ at: now(), who: me().name, rung: rungOf(me()), what: o.what, target: o.target, reason, level: o.level || 1 });
+    log(`${o.what} · ${o.target}: ${reason}`);
+    if (o.run) o.run();
+    closeReason(); render(); toast(o.done);
+  }
+  const r8Btn = (label, attrs, need = 'Operator', cls = 'btn sm') => atLeast(need) ? `<button type="button" class="${cls}" ${attrs}>${label} ${lvlTag(1)}</button>` : `<span class="head-actions"><button type="button" class="${cls}" disabled>${label} ${lvlTag(1)}</button><span class="needs">Needs ${need}</span></span>`;
+  const r8Line = (label) => `R8 Full · ${label}`;
+
+  pages.r8 = () => {
+    const R = r8Model(), word = R.bad ? 'Degraded' : R.late ? 'Degraded' : 'Working', st = R.bad ? 'fault' : R.late ? 'warn' : 'ok';
+    const ops = [...R.incidents.filter((x) => x.state === 'open').map((x) => ['fault', `${x.title}`, `${x.org} · ${x.id} · since ${x.since}`, '#troubleshoot-' + x.link, 'Troubleshoot']),
+      ...R.jobs.filter((j) => j.st !== 'ok').map((j) => [j.st, `${j.name}: ${j.failed} of ${j.eligible} ${j.st === 'fault' ? 'failed' : 'late'}`, `Last run ${j.last} MYT`, '#jobs', 'Open job']),
+      ...R.config.filter((c) => !c.set).map((c) => ['warn', `Missing setup: ${c.name}`, c.note, '#configuration', 'Open'])];
+    const svc = SERVICES();
+    return `${head({ title: 'Overview', lead: 'Is the platform okay, and why did this fail?', state: `${r8Line('collectors, health checks and report drafting')} · last check ${dayShort(today())}, 14:30 MYT` })}
+    <section class="card state-card ${st}"><div class="sc-word"><span class="hd"></span><b>${word}</b></div>
+      <p>${R.bad ? `${R.bad} measurement link${R.bad === 1 ? ' is' : 's are'} not answering` : R.late ? `${R.late} measurement link${R.late === 1 ? ' is' : 's are'} late` : 'Every service answered and every job ran'}${R.bad || R.late ? `, since ${esc((R.incidents.find((x) => x.state !== 'recovered') || {}).since || dayShort(today()))}` : ''}.</p>
+      <dl class="mini build"><div><dt>Build</dt><dd class="mono">3e1f2a9</dd></div><div><dt>Deployed</dt><dd class="mono">14 Oct, 18:20</dd></div><div><dt>Matches main</dt><dd>${stChip('ok', 'Yes')}</dd></div><div><dt>Last check</dt><dd class="mono">14:30 MYT</dd></div></dl></section>
+    <section class="card"><div class="card-head"><h2 class="diamond">Needs an operator</h2><span class="mono xs muted">${ops.length} · worst first</span></div>
+      ${ops.length ? `<ul class="needs-list">${ops.map(([sv, t, m, h, a]) => `<li><span class="lvl" style="background:var(--${sv}-tint);color:var(--${sv}-ink)">${sv === 'fault' ? 'Failing' : 'Late'}</span><span class="w"><b>${esc(t)}</b><small>${esc(m)}</small></span><a class="btn sm" href="${h}">${a}</a></li>`).join('')}</ul>` : '<p class="small muted">Nothing. Every job ran and every service answered.</p>'}</section>
+    <section class="grid g2">
+      <div class="card"><div class="card-head"><h2>Platform services</h2><a class="small" href="#services">Services</a></div><div class="hstrip">${svc.map((x) => `<a class="htile ${x.st}" href="#services"><span class="n"><span class="hd"></span>${esc(x.name)}</span><span class="w">${stWord[x.st]}</span><span class="d mono">${esc(x.median)}</span></a>`).join('')}</div></div>
+      <div class="card"><div class="card-head"><h2>Outcomes’ machinery</h2><span class="only-tag">OUTCOMES ONLY</span></div><div class="hstrip">${R.jobs.map((j) => `<a class="htile ${j.st}" href="#jobs"><span class="n"><span class="hd"></span>${esc(j.name)}</span><span class="w">${j.st === 'ok' ? 'Ran' : j.st === 'fault' ? 'Failed ' + j.failed : 'Late ' + j.failed}</span><span class="d mono">${esc(j.last)}</span></a>`).join('')}<a class="htile ${R.bad ? 'fault' : R.late ? 'warn' : 'ok'}" href="#links"><span class="n"><span class="hd"></span>Measurement links</span><span class="w">${R.live - R.bad - R.late} of ${R.live}</span><span class="d mono">answering</span></a></div></div>
+    </section>
+    <section class="card"><div class="card-head"><h2>Incidents</h2><a class="small" href="#incidents">All incidents</a></div>${incidentTable(R.incidents.slice(0, 5))}</section>
+    <section class="card"><div class="card-head"><div><h2>Cost per organisation and subsystem</h2><p class="sub">An internal estimate for pricing and abuse decisions, this month</p></div></div>
+      ${has('Commercial') ? `<div class="table-wrap"><table><thead><tr><th>Organisation</th><th class="num">Collection</th><th class="num">AI (Ask, drafts)</th><th class="num">Storage and email</th><th class="num">Total</th></tr></thead><tbody>${companies().map((c) => { const n = coSolutions(c).filter((x) => x.status !== 'not_connected').length, ai = Math.round(18 + 40 * hash(c.id)), col = n * 6, st = 2 + n; return `<tr><td><span class="name">${esc(c.short)}</span></td><td class="num">RM${col}</td><td class="num">RM${ai}</td><td class="num">RM${st}</td><td class="num ink">RM${col + ai + st}</td></tr>`; }).join('')}</tbody></table></div>`
+        : `<div class="gate">${icon('lock')}<div><b class="ink">Needs the Commercial right</b><p class="small">Cost per organisation covers collection calls, AI usage and storage. Aisyah Rahman, an Admin, can grant it from Staff.</p></div></div><div class="figs" style="margin-top:12px">${['Collection', 'AI', 'Storage and email'].map((x) => `<div class="card fig"><span class="label">${x}</span><span class="value mono">–</span><span class="hint">Needs the Commercial right</span></div>`).join('')}</div>`}</section>
+    <section class="card"><div class="card-head"><h2>Recent operations</h2><a class="small" href="#ops-audit">Operations audit</a></div>${opsTable(opsLog().slice(0, 5))}</section>`;
+  };
+  function SERVICES() {
+    return [['API', 'ok', '42 ms'], ['Database', 'ok', '12 ms'], ['Workers', r8Model().bad ? 'warn' : 'ok', r8Model().bad ? '1 job retrying' : '0 queued'], ['Queue', 'ok', '0 waiting'], ['Storage', 'ok', '95 ms'], ['AI gateway', 'ok', '1.8 s'], ['Email', 'ok', '210 ms']].map(([name, st, median]) => ({ name, st, median }));
+  }
+  function incidentTable(list) {
+    if (!list.length) return '<p class="small muted">No incidents. A failed check is a signal; an incident opens when one keeps failing.</p>';
+    return `<div class="table-wrap"><table><thead><tr><th>Incident</th><th>Severity</th><th>Organisation</th><th>Since</th><th>State</th><th></th></tr></thead><tbody>${list.map((x) => `<tr><td><span class="name">${esc(x.title)}</span><span class="sub mono">${x.id}</span></td><td><span class="pill ${x.sev === 'High' ? 'fault' : x.sev === 'Medium' ? 'warn' : 'idle'}">${x.sev}</span></td><td>${esc(x.org)}</td><td class="mono">${esc(x.since)}</td><td>${stChip(x.state === 'open' ? 'fault' : x.state === 'acknowledged' ? 'warn' : 'ok', cap(x.state))}</td>
+      <td style="text-align:right;white-space:nowrap">${x.state === 'open' ? (atLeast('Support') ? `<button type="button" class="btn sm" data-act="r8-ack" data-id="${x.id}" data-link="${x.link}">Acknowledge ${lvlTag(1)}</button>` : '') : ''} <a class="btn sm" href="#troubleshoot-${x.link}">Troubleshoot</a></td></tr>`).join('')}</tbody></table></div>`;
+  }
+  function opsTable(list) {
+    if (!list.length) return '<p class="small muted">No operations yet. Run now, retry, test and suppress all appear here with who, what and why.</p>';
+    return `<div class="table-wrap"><table><thead><tr><th>When</th><th>Who</th><th>What</th><th>Target</th><th>Reason</th></tr></thead><tbody>${list.map((o) => `<tr><td class="mono">${esc(o.at)}</td><td><span class="name">${esc(o.who)}</span><span class="sub">${esc(o.rung)}</span></td><td>${esc(o.what)} ${lvlTag(o.level)}</td><td>${esc(o.target)}</td><td>${esc(o.reason)}</td></tr>`).join('')}</tbody></table></div>`;
+  }
+  pages.incidents = () => {
+    const R = r8Model(), f = state.incF || 'all', counts = ['open', 'acknowledged', 'recovered'].map((k) => [k, R.incidents.filter((x) => x.state === k).length]);
+    const list = R.incidents.filter((x) => f === 'all' || x.state === f);
+    return `${head({ title: 'Incidents', lead: 'Signals that kept failing, with their state from open to closed.', state: r8Line('an incident opens when a link misses two nights or stops answering') })}
+    <section class="strip">${[['all', 'All', R.incidents.length], ...counts.map(([k, n]) => [k, cap(k), n])].map(([k, l, n]) => `<button type="button" class="strip-b" data-incf="${k}" aria-pressed="${f === k}"><span>${l}</span><b class="mono">${n}</b></button>`).join('')}</section>
+    <section class="card">${incidentTable(list)}</section>`;
+  };
+  pages.troubleshoot = (id) => {
+    const R = r8Model(), L = id && R.links.find((l) => l.id === id);
+    if (!L) {
+      const bad = R.links.filter((l) => l.st !== 'ok' && l.st !== 'idle');
+      return `${head({ title: 'Troubleshoot', lead: 'One problem, all its evidence. Pick a problem, or open one from Needs a person.', state: r8Line('application layer: links, jobs, providers') })}
+      <section class="card">${bad.length ? `<ul class="needs-list">${bad.map((l) => `<li><span class="lvl" style="background:var(--${l.st}-tint);color:var(--${l.st}-ink)">${l.st === 'fault' ? 'Failing' : 'Late'}</span><span class="w"><b>${esc(l.name)} ${l.st === 'fault' ? 'not answering' : 'late'}</b><small>${esc(l.org)} · since ${l.since ? dayShort(l.since) : '–'}</small></span><a class="btn sm" href="#troubleshoot-${l.id}">Open</a></li>`).join('')}</ul>` : '<p class="small muted">Nothing to troubleshoot. Every link answered last night.</p>'}</section>`;
+    }
+    const fault = L.st === 'fault', since = L.since ? dayShort(L.since) : dayShort(today());
+    const conc = (state.conclusions || {})[L.id] || '';
+    const sup = (state.suppress || {})[L.id];
+    const mine = opsLog().filter((o) => o.target === L.name);
+    const tl = [[`${dayShort(L.lastOk || today())}, 02:04`, 'Collector', 'Last good collection: every figure passed its checks'],
+      [`${since}, 02:00`, 'Collector', fault ? 'GET /health answered 503; observations not read' : 'Link answered; no figures for the day yet'],
+      [`${since}, 02:15`, 'AXLE', fault ? 'Retried 3 times, 5 minutes apart; still 503' : 'Retried at 02:15 and 02:30; still no figures'],
+      [`${since}, 06:00`, 'AXLE', `Alert sent to the project manager by email and in AXLE`],
+      ...mine.slice().reverse().map((o) => [o.at, o.who, `${o.what}: ${o.reason}`])];
+    return `${head({ title: `Troubleshoot · ${L.name}`, crumbs: crumbs(['Troubleshoot', '#troubleshoot'], [L.name]), lead: `${fault ? 'Not answering' : 'Late: no figures for the last night'} · ${esc(L.org)} · since ${since}`, state: r8Line(`opened from ${fault ? 'an open incident' : 'Needs a person'} · scope ${slug(L.org)}`) })}
+    <div class="ts-head"><span class="pill ${fault ? 'fault' : 'warn'}">${fault ? 'High' : 'Medium'}</span>${stChip(L.st, fault ? 'Not answering' : 'Late')}${sup ? `<span class="pill idle">Alerts suppressed until ${esc(sup)}</span>` : ''}<a class="small" href="${L.href}">Open ${esc(L.name)}</a></div>
+    <section class="card"><div class="card-head"><h2>Evidence</h2><span class="xs muted">Each fact says where it came from and when it was read. Layers with no backend are not shown.</span></div>
+      <div class="layers">
+        <div class="layer"><h3>Outside</h3><ul class="facts">
+          <li>${stChip('ok', 'Resolves')} <span>DNS for <span class="mono">${esc(L.url.replace(/^https:\/\//, '').split('/')[0])}</span></span><small class="mono">health check · 14:30</small></li>
+          <li>${stChip('ok', 'Valid')} <span>TLS certificate, 61 days left</span><small class="mono">health check · 14:30</small></li>
+          <li>${stChip(fault ? 'fault' : 'ok', fault ? '503' : '200')} <span><span class="mono">GET /internal/measure/v1/health</span>${fault ? ' answered “Service unavailable” in 10.0 s' : ` answered ok in ${L.ms} ms`}</span><small class="mono">health check · 14:30</small></li></ul></div>
+        <div class="layer"><h3>Application</h3><ul class="facts">
+          <li>${stChip(fault ? 'fault' : 'warn', fault ? 'Not read' : 'Missing')} <span>Observations for ${since}${fault ? '' : ': the day ended, the link has none yet'}</span><small class="mono">collector · 02:30</small></li>
+          <li>${stChip(L.tests[0] === L.tests[1] ? 'ok' : 'fault', `${L.tests[0]} of ${L.tests[1]}`)} <span>Contract test checks passed${L.tests[0] < L.tests[1] ? '; it stopped when the link stopped answering' : ''}</span><small class="mono">contract test · 03:00</small></li>
+          <li>${stChip('ok', 'Valid')} <span>Signature accepted with the current key (${L.keyDays} days old)</span><small class="mono">collector · ${dayShort(L.lastOk || today())}</small></li>
+          <li>${stChip('idle', 'Unchanged')} <span>Metric catalog version <span class="mono">${esc(String(L.catalog))}</span></span><small class="mono">manifest · ${dayShort(L.lastOk || today())}</small></li></ul></div>
+      </div></section>
+    <section class="grid g2">
+      <div class="card"><h2>Timeline</h2><ol class="timeline">${tl.map(([t, w, x]) => `<li><span class="mono xs">${esc(t)}</span><span><b class="ink">${esc(w)}</b> ${esc(x)}</span></li>`).join('')}</ol></div>
+      <div class="grid" style="gap:16px;align-content:start">
+        <div class="card reading"><span class="eyebrow">AXLE’s reading · derived</span><p>${fault ? `The solution’s own service is down or overloaded: DNS and TLS are fine, but its health endpoint answers 503, and nothing reached the measurement code. This rests on the 14:30 health check and the 02:00 and 02:15 collection attempts. It does not show why the service is down.` : `The link answers and is signed correctly, but the day’s figures are not there yet. The solution’s own nightly job has probably not run. This rests on the 02:00 and 02:30 collection attempts and the last good collection on ${dayShort(L.lastOk || today())}.`}</p></div>
+        <div class="card"><label class="eyebrow" for="conc" style="color:var(--ink)">Your conclusion</label><p class="xs muted">Stored apart from the evidence and the reading. An AI guess is never stored as a fact.</p><textarea id="conc" class="conc" placeholder="What you found, in your words">${esc(conc)}</textarea><div class="head-actions" style="margin-top:8px">${atLeast('Support') ? `<button type="button" class="btn sm" data-act="save-conc" data-id="${L.id}">Save conclusion</button>` : '<span class="needs">Needs Support</span>'}</div></div>
+      </div>
+    </section>
+    <section class="card"><div class="card-head"><h2>Safe actions</h2><span class="xs muted">Only what applies to this problem. Changing the key lives in Configuration.</span></div>
+      <div class="head-actions">${r8Btn('Retry collection now', `data-act="r8-retry" data-id="${L.id}"`)}${r8Btn('Run the contract test', `data-act="r8-test" data-id="${L.id}"`)}${r8Btn('Suppress alerts for 1 hour', `data-act="r8-suppress" data-id="${L.id}"`)}<a class="btn sm ghost" href="#configuration">Rotate the key</a></div></section>`;
+  };
+  pages.jobs = () => {
+    const R = r8Model(), sel = R.jobs.find((j) => j.id === state.jobSel) || R.jobs.find((j) => j.st !== 'ok') || R.jobs[0];
+    const paused = (state.paused || {});
+    const durs = Array.from({ length: 14 }, (_, k) => 2 + Math.round(6 * hash(sel.id + k)));
+    return `${head({ title: 'Jobs', lead: 'Every background job: when it runs, what it did, and what failed.', state: r8Line(`${R.jobs.length} jobs`) })}
+    <section class="card"><div class="table-wrap"><table><thead><tr><th>Job</th><th>Runs</th><th>Last run</th><th>Result</th><th class="num">Took</th><th>Next run</th></tr></thead><tbody>
+    ${R.jobs.map((j) => `<tr class="link ${j.id === sel.id ? 'sel' : ''}" data-jobsel="${j.id}" tabindex="0"><td><span class="name">${esc(j.name)}</span></td><td>${esc(j.plain)}</td><td class="mono">${esc(j.last)}</td><td>${paused[j.id] ? stChip('idle', 'Paused') : stChip(j.st, j.st === 'ok' ? 'Ran' : `${j.failed} ${j.st === 'fault' ? 'failed' : 'late'}`)}</td><td class="num">${esc(j.took)}</td><td class="mono">${paused[j.id] ? '–' : esc(j.next)}</td></tr>`).join('')}
+    </tbody></table></div></section>
+    <section class="card"><div class="card-head"><div><h2>${esc(sel.name)}</h2><p class="sub">${esc(sel.plain)}</p></div><div class="head-actions">${r8Btn('Run now', `data-act="r8-run" data-id="${sel.id}"`)}${sel.failed ? r8Btn('Retry failures', `data-act="r8-retryjob" data-id="${sel.id}"`) : ''}${r8Btn(paused[sel.id] ? 'Resume' : 'Pause', `data-act="r8-pause" data-id="${sel.id}"`)}</div></div>
+      <dl class="mini four"><div><dt>Eligible</dt><dd class="mono">${sel.eligible}</dd></div><div><dt>Processed</dt><dd class="mono">${sel.processed}</dd></div><div><dt>Failed</dt><dd class="mono" style="color:var(--${sel.failed ? 'fault-ink' : 'ok-ink'})">${sel.failed}</dd></div><div><dt>Skipped</dt><dd class="mono">${sel.skipped}</dd></div></dl>
+      ${sel.why.length ? `<h3 style="margin-top:16px">Why items failed</h3><ul class="plain">${sel.why.map((w) => `<li>${esc(w)}</li>`).join('')}</ul>` : '<p class="small" style="margin-top:12px">Nothing failed on the last run.</p>'}
+      <div style="margin-top:16px;display:flex;gap:16px;align-items:center;flex-wrap:wrap"><span class="small muted">Last 14 runs, minutes</span>${sparkline(durs, 160, 32)}</div>
+      <details class="more" style="margin-top:12px"><summary>Advanced</summary><div class="mono small">${({ collect: '0 2 * * *', health: '*/15 * * * *', compute: '30 2 * * *', reports: '0 6 1 * *', contract: '0 3 * * *' })[sel.id]} · in each organisation’s time zone</div></details></section>`;
+  };
+  pages.providers = () => {
+    const R = r8Model(), sel = R.providers.find((x) => x.id === state.provSel) || R.providers[0], res = (state.provTest || {})[sel.id];
+    return `${head({ title: 'Providers', lead: 'Every outside service Outcomes depends on, worst first.', state: r8Line('calls and success in the last 24 hours') })}
+    <section class="card"><div class="table-wrap"><table><thead><tr><th>Provider</th><th>Used for</th><th>State</th><th class="num">Calls</th><th class="num">Success</th><th class="num">Median</th><th>Quota</th></tr></thead><tbody>
+    ${R.providers.slice().sort((a, b) => ['fault', 'warn', 'ok'].indexOf(a.st) - ['fault', 'warn', 'ok'].indexOf(b.st)).map((x) => `<tr class="link ${x.id === sel.id ? 'sel' : ''}" data-provsel="${x.id}" tabindex="0"><td><span class="name">${esc(x.name)}</span></td><td>${esc(x.what)}</td><td>${stChip(x.st)}</td><td class="num">${nf(x.calls)}</td><td class="num">${nf(x.ok, 1)}%</td><td class="num">${x.ms >= 1000 ? nf(x.ms / 1000, 1) + ' s' : x.ms + ' ms'}</td><td>${esc(x.quota)}</td></tr>`).join('')}
+    </tbody></table></div></section>
+    <section class="card"><div class="card-head"><div><h2>${esc(sel.name)}</h2><p class="sub">${esc(sel.what)}</p></div>${sel.href ? `<a class="btn sm" href="${sel.href}">Open measurement links</a>` : r8Btn('Test provider', `data-act="r8-ptest" data-id="${sel.id}"`)}</div>
+      <dl class="mini four"><div><dt>Latest success</dt><dd class="mono" style="font-size:1rem">${esc(sel.lastOk)}</dd></div><div><dt>Latest error</dt><dd style="font-size:.875rem">${esc(sel.lastErr)}</dd></div><div><dt>Quota</dt><dd style="font-size:.875rem">${esc(sel.quota)}</dd></div><div><dt>Key</dt><dd style="font-size:.875rem">In the vault, never shown here</dd></div></dl>
+      ${res ? `<div class="callout ${res.ok ? 'ok' : 'warn'}" style="margin-top:14px">${icon(res.ok ? 'check' : 'alerts')}<span>Test at ${esc(res.at)}: ${res.ok ? 'answered' : 'failed'} in <b class="mono">${res.ms} ms</b>.</span></div>` : ''}</section>`;
+  };
+  pages.services = () => {
+    const svc = SERVICES();
+    return `${head({ title: 'Services', lead: 'REKA’s own platform under Outcomes.', state: r8Line('uptime over the last 30 days') })}
+    <section class="card"><div class="table-wrap"><table><thead><tr><th>Service</th><th>State</th><th class="num">Median</th><th class="num">Uptime, 30 days</th></tr></thead><tbody>${svc.map((x, i) => `<tr><td><span class="name">${esc(x.name)}</span></td><td>${stChip(x.st)}</td><td class="num">${esc(x.median)}</td><td class="num">${nf(99.9 + (i % 3) * 0.03, 2)}%</td></tr>`).join('')}
+      <tr><td><span class="name">Deployed version</span></td><td>${stChip('ok', 'Matches main')}</td><td class="num">v0.5.0</td><td class="num mono">3e1f2a9</td></tr><tr><td><span class="name">Backups</span></td><td>${stChip('ok', 'Done')}</td><td class="num">03:10</td><td class="num">Restore drill 1 Oct, passed</td></tr></tbody></table></div></section>`;
+  };
+  pages.configuration = () => {
+    const R = r8Model();
+    return `${head({ title: 'Configuration', lead: 'Whether each setting Outcomes needs is set, never its value. Schedules and limits in plain words.', state: r8Line('changes need Admin') })}
+    <section class="card"><div class="card-head"><h2>Setup</h2><span class="mono xs muted">${R.config.filter((c) => !c.set).length} missing</span></div><div class="table-wrap"><table><thead><tr><th>Setting</th><th>Area</th><th>State</th><th>Note</th><th></th></tr></thead><tbody>
+      ${R.config.map((c) => `<tr><td><span class="name">${esc(c.name)}</span></td><td>${esc(c.area)}</td><td>${c.set ? stChip('ok', 'Set') : stChip('warn', 'Missing')}</td><td>${esc(c.note)}</td><td style="text-align:right">${c.href ? `<a class="btn sm" href="${c.href}">Open</a>` : /Measurement key/.test(c.name) ? (atLeast('Admin') ? `<button type="button" class="btn sm" data-act="r8-rotate" data-name="${esc(c.name)}">Rotate</button>` : '<span class="needs">Needs Admin</span>') : ''}</td></tr>`).join('')}
+    </tbody></table></div></section>
+    <section class="grid g2"><div class="card"><h2>Schedules</h2>${kv([['Collection', 'Every night at 02:00, each organisation’s time'], ['Health checks', 'Every 15 minutes'], ['KPIs and measures', 'Every night at 02:30'], ['Contract test', 'Every night at 03:00'], ['Report drafts', 'The 1st of each month at 06:00']], 150)}</div>
+      <div class="card"><h2>Limits</h2>${kv([['Days per read', '92, as the Measurement Link contract says'], ['Page size', '100 observations'], ['Metrics per solution', '200'], ['Dimensions per metric', '5, with at most 20 values each'], ['Retries a night', '3, five minutes apart']], 150)}</div></section>`;
+  };
+  pages['ops-audit'] = () => `${head({ title: 'Operations audit', lead: 'Every R8 action with who, what, target and reason. The operations side of Audit, the same log.', state: r8Line(`${opsLog().length} actions`) })}<section class="card">${opsTable(opsLog())}</section>`;
+  pages.links = () => {
+    const R = r8Model();
+    return `${head({ title: 'Measurement links', lead: 'Each organisation’s solution and its read-only Measurement Link: state, last good collection, the nightly contract test and the key.', state: r8Line(`${R.links.length} links · Outcomes only`) })}
+    <section class="strip">${[['ok', 'Answering'], ['warn', 'Late'], ['fault', 'Not answering'], ['idle', 'Waiting for first data']].map(([k, l]) => `<div class="strip-b static"><span>${l}</span><b class="mono">${R.links.filter((x) => x.st === k).length}</b></div>`).join('')}</section>
+    <section class="card"><div class="table-wrap"><table><thead><tr><th>Solution</th><th>State</th><th>Last good collection</th><th>Contract test</th><th>Key</th><th>Catalog</th><th class="num">Median</th><th></th></tr></thead><tbody>
+    ${R.links.slice().sort((a, b) => ['fault', 'warn', 'idle', 'ok'].indexOf(a.st) - ['fault', 'warn', 'idle', 'ok'].indexOf(b.st)).map((l) => `<tr><td><span class="name">${esc(l.name)}</span><span class="sub">${esc(l.org)} · <span class="mono">${esc(l.url.replace('https://', ''))}</span></span></td><td>${stChip(l.st, l.st === 'fault' ? 'Not answering' : l.st === 'warn' ? 'Late' : l.st === 'idle' ? 'Waiting' : 'Answering')}</td><td class="mono">${l.lastOk ? dayShort(l.lastOk) : '–'}</td><td>${stChip(l.tests[0] === l.tests[1] ? 'ok' : 'fault', `${l.tests[0]} of ${l.tests[1]}`)}</td><td><span class="mono">${l.keyDays} days</span>${l.keyDays > 90 ? ' <span class="pill warn">Rotate</span>' : ''}</td><td class="mono">${esc(String(l.catalog))}</td><td class="num">${l.ms} ms</td>
+      <td style="text-align:right;white-space:nowrap">${l.st === 'fault' || l.st === 'warn' ? `<a class="btn sm" href="#troubleshoot-${l.id}">Troubleshoot</a>` : `<a class="btn sm ghost" href="${l.href}">Open</a>`}</td></tr>`).join('')}
+    </tbody></table></div></section>`;
+  };
+
   function needsYou() {
     if (demo()) return [];
     const out = [];
     state.sims.forEach((s) => {
       const o = orgOf(s), st = simStatus(s);
-      if (st === 'failing') out.push(['fault', 'alerts', `${s.name} stopped answering`, `${o.name} · since ${dayShort(s.ev.down)}`, '#sim-' + s.id, 'Check']);
-      if (st === 'stale') out.push(['warn', 'clock', `${s.name} hasn’t sent data since ${dayShort(M.addDays(s.ev.stale, -1))}`, `${o.name} · showing the last good figures`, '#sim-' + s.id, 'Open']);
+      if (st === 'failing') out.push(['fault', 'alerts', `${s.name} stopped answering`, `${o.name} · since ${dayShort(s.ev.down)}`, '#troubleshoot-' + s.id, 'Troubleshoot']);
+      if (st === 'stale') out.push(['warn', 'clock', `${s.name} hasn’t sent data since ${dayShort(M.addDays(s.ev.stale, -1))}`, `${o.name} · showing the last good figures`, '#troubleshoot-' + s.id, 'Troubleshoot']);
       if (s.stage === 'collecting' && st !== 'failing') {
         const a = simSum(s, simWindow(7)), b = simSum(s, windowDays(7, M.addDays(state.simDay, -7)));
         if (a.rate !== null && b.rate && a.rate > b.rate * 1.25) out.push(['warn', 'savings', `More ${kindOf(s).nouns} ${kindOf(s).qual.label}`, `${o.name} · ${nf(a.rate, 1)}% this week, ${nf(b.rate, 1)}% the week before`, '#sim-' + s.id, 'Look']);
@@ -547,39 +838,41 @@
     return n.length ? '<h4>Notifications</h4>' + n.map(([c, ic, t, s, h]) => item(c, ic, t, s, h)).join('') : '<div class="empty" style="padding:20px"><p>No notifications yet. Alerts about your solutions appear here.</p></div>';
   }
   function appShell(route, inner) {
-    const u = me(), theme = document.documentElement.getAttribute('data-theme') || 'system';
-    const alert = !demo() && needsYou().some((x) => x[0] !== 'info');
+    const u = me(), R = r8Model(), bad = R.links.filter((l) => l.st === 'fault').length, late = R.links.filter((l) => l.st === 'warn').length;
+    const hb = bad ? 'fault' : late ? 'warn' : '', hn = bad || late;
+    const scope = state.scope && coById(state.scope);
+    const banner = sandbox() ? `<div class="statebanner" role="status">${icon('flask', 'sm')}<span><b>${esc(state.sandboxName)}</b> is a demo workspace: every organisation and figure is simulated, nothing is sent and nothing counts in real totals.</span><button type="button" class="lnk" data-act="studio">Demo studio</button><span class="mono" style="flex:none">${dayShort(today())}</span></div>`
+      : demo() ? `<div class="statebanner" role="status">${icon('alerts', 'sm')}<span><b>Example data.</b> Five invented organisations, for learning the console. Nothing here is real.</span><a href="#demo">Switch workspace</a></div>` : '';
+    const offs = SWITCHES.filter(([k]) => !swOn(k)).map(([, l]) => l), paused = r8Model().jobs.filter((j) => (state.paused || {})[j.id]).map((j) => j.name);
+    const banner2 = offs.length || paused.length ? `<div class="statebanner" role="status">${icon('alerts', 'sm')}<span><b>${[...offs.map((l) => `${l} is off`), ...paused.map((n) => `${n} is paused`)].join(' · ')}</b> since ${now()}. Figures may be out of date until it is back on.</span><a href="#${offs.length ? 'settings' : 'jobs'}">${offs.length ? 'Settings' : 'Jobs'}</a></div>` : '';
     return `<a class="skip" href="#view">Skip to content</a>
     <div class="app">
-      <aside class="sidebar" id="sidebar" aria-label="Navigation">
-        <div class="brand"><img src="assets/antarax-mark.svg" alt=""><div><b>Outcomes</b><small>REKA Managed AI</small></div></div>
-        <div class="rel"><button type="button" class="btn primary new-btn" data-act="new-menu" aria-haspopup="true">${icon('plus', 'sm')}New</button>
-          <div class="pop" id="new-pop" hidden style="left:0;right:auto;top:48px;width:100%"><a href="#new-client">${icon('organisation', 'sm')}<span>Client</span></a><a href="#new-project">${icon('projects', 'sm')}<span>Project</span></a><a href="#connect">${icon('connect-ai', 'sm')}<span>Connect a solution</span></a></div></div>
-        <nav class="nav" aria-label="Main">${navHtml(route)}</nav>
-        <div class="rel"><button type="button" class="workspace" data-act="ws-menu" aria-haspopup="true" style="width:100%;cursor:pointer;text-align:left"><span class="ws" style="${sandbox() ? 'background:var(--ai)' : demo() ? 'background:var(--warn)' : ''}">${initials(wsName())}</span><div style="min-width:0;flex:1"><b>${esc(wsName())}</b><span>${demo() ? 'Example data' : sandbox() ? 'Demo workspace · simulated' : 'Your workspace'}</span></div>${icon('chev-down', 'sm')}</button>
-          <div class="pop" id="ws-pop" hidden style="left:0;right:auto;top:auto;bottom:62px;width:100%"><h4>Switch workspace</h4>${[['real', state.setup.workspace, 'Real clients and their data'], ['sandbox', state.sandboxName, 'Simulated clients for demos, training and rehearsing reports'], ['example', 'Example clients', 'Five fixed example clients']].map(([k, n, d2]) => `<button type="button" data-ws="${k}" aria-pressed="${(k === 'example' ? demo() : !demo() && state.ws === k)}"><span class="ws" style="flex:none;width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-size:.6875rem;font-weight:700;color:var(--surface);background:${k === 'sandbox' ? 'var(--ai)' : k === 'example' ? 'var(--warn)' : 'var(--ink)'}">${initials(n)}</span><span><b class="ink">${esc(n)}</b><small>${d2}</small></span></button>`).join('')}</div></div>
-      </aside>
+      <aside class="sidebar" id="sidebar" aria-label="AXLE">${navHtml(route)}</aside>
       <div class="scrim" id="scrim" hidden></div>
       <div class="main">
-        <header class="topbar">
-          <button type="button" class="icon-btn menu-btn" id="menu-btn" aria-label="Open navigation" aria-controls="sidebar">${icon('menu')}</button>
-          <button type="button" class="search" data-act="palette">${icon('search', 'sm')}<span class="t">Search clients, projects, solutions</span><kbd>⌘K</kbd></button>
+        <div class="topwrap"><header class="topbar">
+          <button type="button" class="roundbtn menu-btn" id="menu-btn" aria-label="Open navigation" aria-controls="sidebar">${icon('menu')}</button>
+          <div class="pillwell"><a class="a" href="https://antarax.ai" aria-label="AntaraX"><img src="assets/antarax-mark.svg" alt=""></a><a class="chip" href="#home" aria-label="Outcomes AXLE home"><span>${icon('analytics', 'sm').replace('<svg', '<svg style="color:#0459F7"')}</span>Outcomes</a></div>
+          <span class="axle-tag">AXLE</span>
+          <h1>${esc(curTitle || TITLES[parse()[0]] || 'Overview')}</h1>
           <div class="top-right">
-            <a class="btn sm ghost" href="#ask" style="gap:6px"><img src="${SPARK}" alt="" style="width:16px">Ask</a>
-            ${demo() ? '<span class="pill warn" title="Every figure is invented">Example data</span>' : sandbox() ? `<button type="button" class="studio-btn" data-act="studio" aria-expanded="${state.studio}">${icon('flask', 'sm')}<span class="lbl">Demo studio</span><span class="date">${dayShort(today())}</span></button>` : ''}
-            <div class="rel"><button type="button" class="icon-btn" data-act="bell" aria-label="Notifications">${icon('bell')}${demo() || alert ? '<span class="badge"></span>' : ''}</button><div class="pop" id="bell-pop" hidden>${bellHtml()}</div></div>
-            <div class="rel"><button type="button" class="user-btn" data-act="user" aria-haspopup="true"><span class="avatar">${u.initials}</span><span class="nm">${u.name}</span>${icon('chev-down', 'sm')}</button>
+            <div class="rel"><button type="button" class="barfield scope" data-act="scope" aria-haspopup="true"><span class="k">Organisation</span><span class="v">${scope ? esc(scope.short) : 'All organisations'}</span>${icon('chev-down', 'sm')}</button>
+              <div class="pop" id="scope-pop" hidden><h4>Organisation</h4><button type="button" data-scope="" aria-pressed="${!scope}"><span><b class="ink">All organisations</b><small>Platform-level figures and every list</small></span></button>${companies().map((c) => `<button type="button" data-scope="${c.id}" aria-pressed="${!!scope && scope.id === c.id}"><span class="avatar" style="border-radius:8px;width:28px;height:28px">${initials(c.short)}</span><span><b class="ink">${esc(c.short)}</b><small>${esc(c.industry)} · ${cap(c.stage)}</small></span></button>`).join('')}</div></div>
+            <button type="button" class="barfield search" data-act="palette">${icon('search', 'sm')}<span class="t">Find…</span><kbd>⌘K</kbd></button>
+            <a class="roundbtn ${hb}" href="#r8" aria-label="R8: ${hn ? `${hn} measurement link${hn === 1 ? '' : 's'} ${bad ? 'failing' : 'late'}` : 'everything answering'}">${icon('monitoring', 'sm')}${hn ? `<span class="n">${hn}</span>` : ''}</a>
+            <div class="rel"><button type="button" class="roundbtn" data-act="user" aria-haspopup="true" aria-label="Staff menu">${u.initials}</button>
               <div class="pop" id="user-pop" hidden>
-                <h4>Signed in as</h4>${Object.values(M.staff).map((s) => `<button type="button" data-role="${s.id}" aria-pressed="${s.id === state.role}"><span class="avatar">${s.initials}</span><span><b class="ink">${s.name}</b><small>${s.note}</small></span></button>`).join('')}
-                <p class="xs muted" style="padding:2px 10px 6px">Mock only: switch person to see how permissions change.</p>
-                <hr><h4>Appearance</h4><div style="padding:4px 10px 8px"><div class="seg">${[['light', 'Light'], ['dark', 'Dark'], ['system', 'System']].map(([v, l]) => `<button type="button" data-theme-set="${v}" aria-pressed="${theme === v}">${l}</button>`).join('')}</div></div>
-                <hr><h4>Workspace</h4>${[['real', state.setup.workspace], ['sandbox', state.sandboxName], ['example', 'Example clients']].map(([k, n]) => `<button type="button" data-ws="${k}" aria-pressed="${(k === 'example' ? demo() : !demo() && state.ws === k)}">${icon(k === 'sandbox' ? 'flask' : k === 'example' ? 'overview' : 'home', 'sm')}<span>${esc(n)}</span></button>`).join('')}
+                <h4>Your account</h4><div style="display:flex;gap:10px;align-items:center;padding:6px 10px 8px"><span class="avatar">${u.initials}</span><span style="flex:1;min-width:0"><b class="ink">${esc(u.name)}</b><small>${esc(u.note)} · two-step sign-in on</small></span><span class="rung">${esc(rungOf(u).toUpperCase())}</span></div>
+                <hr><h4>Sign in as (mock only)</h4>${Object.values(M.staff).map((x) => `<button type="button" data-role="${x.id}" aria-pressed="${x.id === state.role}"><span class="avatar">${x.initials}</span><span style="flex:1"><b class="ink">${x.name}</b><small>${x.rung}${x.rights.length ? ' · ' + x.rights.join(', ') : ''}</small></span></button>`).join('')}
+                <hr><h4>Workspace</h4>${[['real', state.setup.workspace, 'Live database'], ['sandbox', state.sandboxName, 'Demo workspace, simulated'], ['example', 'Example data', 'Five invented organisations']].map(([k, n, d2]) => `<button type="button" data-ws="${k}" aria-pressed="${(k === 'example' ? demo() : !demo() && state.ws === k)}">${icon(k === 'sandbox' ? 'flask' : k === 'example' ? 'overview' : 'home', 'sm')}<span><b class="ink">${esc(n)}</b><small>${d2}</small></span></button>`).join('')}
+                <hr><a href="#guide">${icon('insight', 'sm')}<span>AXLE guide</span></a>
                 <button type="button" data-act="signout">${icon('logout', 'sm')}<span>Sign out</span></button>
               </div></div>
           </div>
-        </header>
-        ${sandbox() ? `<div class="ws-banner">${icon('flask', 'sm')}<span><b>${esc(state.sandboxName)}.</b> Every client and figure here is simulated. Nothing is sent to clients or counted in real totals.</span><button type="button" class="btn sm" data-act="studio">Demo studio</button></div>` : ''}
-        <main class="content" id="view" tabindex="-1">${inner}</main>
+        </header></div>
+        ${banner}${banner2}
+        <main class="content" id="view" tabindex="-1"><p class="mobile-title" aria-hidden="true">${esc(curTitle || TITLES[parse()[0]] || 'Overview')}</p>${inner}</main>
+        <footer class="ax-footer">Authorised REKA staff · every action is recorded</footer>
       </div>
     </div>
     ${!demo() && state.studio ? studioHtml() : ''}
@@ -587,18 +880,19 @@
     <div id="palette" hidden></div>`;
   }
 
+
   // ------------------------------------------------------------------ HOME
   pages.home = () => demo() ? homeDemo() : homeMine();
   function setupSteps() {
     const s = firstSim(), st = s ? s.stage : null;
     return [
       { t: 'Set up your workspace', d: 'Name, time zone and team.', done: true },
-      { t: 'Add your first client', d: 'The client, and their data agreement.', done: state.orgs.length > 0, href: '#new-client', cta: 'Add client' },
-      { t: 'Create a project', d: 'What the solution is for, in the client’s words.', done: !!s, href: '#new-project', cta: 'Create project' },
+      { t: 'Add your first organisation', d: 'The organisation, and their data agreement.', done: state.orgs.length > 0, href: '#new-organisation', cta: 'New organisation' },
+      { t: 'Create a project', d: 'What the solution is for, in the organisation’s words.', done: !!s, href: '#new-project', cta: 'Create project' },
       { t: 'Connect the solution', d: 'Check its data, choose KPIs and record the baseline.', done: !!s && st !== 'draft', href: '#connect', cta: 'Connect' },
       { t: 'Get the KPIs approved', d: 'Someone else checks every KPI and baseline.', done: st === 'approved' || st === 'collecting', href: s ? '#sim-' + s.id : '#approvals', cta: 'Check status' },
       { t: 'See your first results', d: 'Figures arrive after the first nightly collection.', done: st === 'collecting', href: s ? '#sim-' + s.id : '#home', cta: 'Open solution' },
-      { t: 'Schedule the client report', d: 'Drafted for you. Nothing goes out until you check it.', done: !!s && s.reportScheduled, href: '#reports', cta: 'Schedule' },
+      { t: 'Schedule the organisation report', d: 'Drafted for you. Nothing goes out until you check it.', done: !!s && s.reportScheduled, href: '#reports', cta: 'Schedule' },
     ];
   }
   function checklistCard(compact) {
@@ -611,40 +905,76 @@
   }
   function homeMine() {
     const collecting = state.sims.filter((s) => s.stage === 'collecting');
-    const greet = head({ title: `Good morning, ${me().name.split(' ')[0]}`, lead: `${dayLong(today())} · ${esc(wsName())}`, actions: collecting.length ? rangeSeg() : '' });
+    const greet = head({ title: 'Overview', lead: collecting.length ? 'What needs a person, and what each organisation’s solutions delivered.' : 'Outcomes is new here. Seven first steps take your first project from nothing to its first report.', actions: collecting.length ? rangeSeg() : '' });
     if (!collecting.length) {
       return `${greet}
       <section class="grid g-side">${checklistCard(false)}
         <div class="grid" style="gap:16px;align-content:start">
           <div class="card"><h3>How it works</h3><div class="list" style="margin-top:10px">
-            ${[['connect-ai', 'Connect', 'The solution shares a few daily totals through a small read-only link. Its own code and data stay as they are.'], ['target', 'Agree', 'Choose KPIs and baselines with the client. Someone else approves them.'], ['savings', 'Measure', 'Each KPI is worked out every night. You can always see what is measured and what is estimated.'], ['reports', 'Report', 'A report is drafted for you. You check it before the client sees it.']].map(([ic, t, d]) => `<div class="row" style="grid-template-columns:36px minmax(0,1fr)"><span class="ico info">${icon(ic, 'sm')}</span><div><div class="what">${t}</div><div class="meta">${d}</div></div></div>`).join('')}</div></div>
-          <div class="card"><h3>Want to see it working first?</h3><p class="small muted" style="margin:6px 0 12px">Watch a new project go from nothing to its first report, or open a workspace with five example clients.</p><div class="head-actions"><button type="button" class="btn primary sm" data-act="tour-start">Watch the guided demo</button><button type="button" class="btn sm" data-act="switch-mode">Example workspace</button></div></div>
+            ${[['connect-ai', 'Connect', 'The solution shares a few daily totals through a small read-only link. Its own code and data stay as they are.'], ['target', 'Agree', 'Choose KPIs and baselines with the organisation. Someone else approves them.'], ['savings', 'Measure', 'Each KPI is worked out every night. You can always see what is measured and what is estimated.'], ['reports', 'Report', 'A report is drafted for you. You check it before the organisation sees it.']].map(([ic, t, d]) => `<div class="row" style="grid-template-columns:36px minmax(0,1fr)"><span class="ico info">${icon(ic, 'sm')}</span><div><div class="what">${t}</div><div class="meta">${d}</div></div></div>`).join('')}</div></div>
+          <div class="card"><h3>Want to see it working first?</h3><p class="small muted" style="margin:6px 0 12px">Watch a new project go from nothing to its first report, or open a workspace with five example organisations.</p><div class="head-actions"><button type="button" class="btn primary sm" data-act="tour-start">Watch the guided demo</button><button type="button" class="btn sm" data-act="switch-mode">Example workspace</button></div></div>
         </div>
       </section>
       ${state.orgs.length ? clientGrid(aWindow(state.range)) : ''}`;
     }
-    const days = simWindow(state.range), withBase = collecting.filter(hasBase);
-    const tot = withBase.reduce((a, s) => { const r = simSum(s, days); return { mid: a.mid + r.mid, low: a.low + r.low, high: a.high + r.high }; }, { mid: 0, low: 0, high: 0 });
-    const handled = collecting.reduce((a, s) => a + simSum(s, days).vol, 0);
-    const onTime = collecting.filter((s) => simStatus(s) === 'fresh').length;
-    const live = state.sims.reduce((a, s) => a + (s.stage === 'collecting' ? s.kpis.filter((k) => k !== 'impact' || hasBase(s)).length : 0), 0), total = state.sims.reduce((a, s) => a + (s.kpis.length || 0), 0);
-    const att = needsYou();
-    return `${greet}
-    ${checklistCard(true)}
-    <section class="grid g4 stats">
-      <div class="card stat"><span class="label">Hours saved ${q('estimated')}</span><span class="value">${withBase.length ? nf(tot.mid) : '–'}<small>${withBase.length ? 'h' : ''}</small></span><span class="hint">${withBase.length ? `Likely ${nf(tot.low)} to ${nf(tot.high)}` : 'Needs a baseline'}</span></div>
-      <div class="card stat"><span class="label">Work handled ${q('measured')}</span><span class="value">${nf(handled)}</span><span class="hint">Across ${collecting.length} solution${collecting.length === 1 ? '' : 's'}</span></div>
-      <div class="card stat"><span class="label">Solutions sending data</span><span class="value">${onTime}<small>of ${state.sims.length}</small></span><span class="hint">${state.sims.length - collecting.length ? `${state.sims.length - collecting.length} not collecting yet` : 'All connected'}</span></div>
-      <div class="card stat"><span class="label">KPIs live</span><span class="value">${live}<small>of ${total}</small></span><span class="hint">${state.myApprovals.filter((a) => a.status === 'waiting').length} waiting for approval</span></div>
+    return overviewHtml(greet);
+  }
+  // ---------- Overview (AXLE SPEC §8): header, health strip, needs a person, platform figures, organisations at a glance, trend, recent actions, product block
+  function readiness(c) {
+    const sols = coSolutions(c);
+    return [['Data agreement signed', c.signed], ['Project agreed', c.projects.length > 0], ['Solution connected', sols.some((x) => x.status !== 'not_connected')],
+      ['KPIs approved', sols.some((x) => x.kpis[0] > 0)], ['Baseline recorded', mByKey('hours').calc(coTotals(c, aWindow(30))) !== null], ['First report sent', c.projects.some((p) => /sent|approved/i.test(p.report[1]))]];
+  }
+  function overviewHtml(header) {
+    const days = aWindow(state.range), prevDays = windowDays(state.range, M.addDays(days[0], -1)), all = companies(), R = r8Model();
+    const ps = all.flatMap(coProjs), T = mergeTotals(ps.map((p) => totals(p, days))), P = mergeTotals(ps.map((p) => totals(p, prevDays))), cmp = comparable(T, P);
+    const hm = mByKey('hours'), vm = mByKey('value'), h = hm.calc(T), rg = hm.range(T);
+    const att = demo() ? demoAtt() : needsYou();
+    const sols = all.flatMap(coSolutions), sending = sols.filter((x) => x.status === 'fresh').length;
+    const kp = sols.reduce((a, x) => [a[0] + x.kpis[0], a[1] + x.kpis[1]], [0, 0]);
+    const waiting = (demo() ? state.approvals : state.myApprovals).filter((a) => a.status === 'waiting').length;
+    const collect = R.jobs[0];
+    const lvl = { fault: ['Urgent', 'var(--fault-tint)', 'var(--fault-ink)'], warn: ['Soon', 'var(--warn-tint)', 'var(--warn-ink)'], info: ['To do', 'var(--axle-info-chip)', 'var(--ink)'] };
+    const tile = (name, st, word, detail, href) => `<a class="htile ${st}" href="${href}"><span class="n"><span class="hd"></span>${esc(name)}</span><span class="w">${esc(word)}</span><span class="d mono">${esc(detail)}</span></a>`;
+    const fig = (label, value, hint, href, tag = '') => `<a class="card fig" href="${href}"><span class="label">${label} ${tag}</span><span class="value mono">${value}</span><span class="hint">${hint}</span></a>`;
+    const stages = [['planning', 'Planning', 'var(--axle-text-disabled)'], ['onboarding', 'Onboarding', 'var(--s4)'], ['pilot', 'Pilot', 'var(--s2)'], ['live', 'Live', 'var(--s1)']].map(([k, l, c]) => [k, l, c, all.filter((x) => x.stage === k).length]).filter((x) => x[3]);
+    const rows = all.map((c) => ({ c, r: readiness(c), needs: coNeeds(c), t: coTotals(c, days) })).sort((a, b) => (needSeverity(a.needs) - needSeverity(b.needs)) || (b.needs.length - a.needs.length));
+    return `${header}
+    <section class="hstrip" aria-label="Health">
+      ${tile('App', 'ok', 'Working', 'v0.5.0 · 3e1f2a9', '#services')}${tile('Database', 'ok', 'Working', 'Singapore · 12 ms', '#services')}${tile('Sign-in', 'ok', 'Working', 'Two-step on for all staff', '#services')}
+      ${tile('Email', 'ok', 'Working', 'Resend · 37 sent', '#providers')}${tile('AI provider', 'ok', 'Working', 'Anthropic · 99.8%', '#providers')}
+      ${tile('Nightly collection', collect.st, collect.st === 'ok' ? 'Ran' : collect.st === 'fault' ? 'Failed for ' + collect.failed : 'Late for ' + collect.failed, collect.last + ' MYT', '#jobs')}
+      ${tile('Measurement links', R.bad ? 'fault' : R.late ? 'warn' : 'ok', `${R.live - R.bad - R.late} of ${R.live} answering`, R.bad ? `${R.bad} not answering` : R.late ? `${R.late} late` : 'All on time', '#links')}
+      ${tile('Last backup', 'ok', 'Done', dayShort(today()) + ', 03:10', '#services')}
     </section>
-    <section class="grid g-main">
-      <div class="card"><div class="card-head"><div><h2>Hours saved</h2><p class="sub">${rangeLabel()} · every project with an approved baseline</p></div></div><div class="chart" id="ch-mine-home"></div>
-        <div class="legend"><span><i style="background:var(--s1)"></i>Hours saved</span><span><i style="background:repeating-linear-gradient(135deg,var(--s1) 0 2px,var(--s1-soft) 2px 5px)"></i>Likely range</span><span><i style="box-shadow:inset 0 0 0 1.5px var(--warn)"></i>No data that day, not zero</span></div></div>
-      <div class="card"><div class="card-head"><h2>Needs you</h2><span class="pill idle">${att.length}</span></div>
-        ${att.length ? `<div class="list">${att.slice(0, 6).map(([sev, ic, t, m, h, a]) => `<div class="row"><span class="ico ${sev}">${icon(ic, 'sm')}</span><div><div class="what">${esc(t)}</div><div class="meta">${esc(m)}</div></div><a class="btn sm" href="${h}">${a}</a></div>`).join('')}</div>` : `<div class="empty" style="padding:16px"><p>Nothing needs you. Every solution sent its figures on time.</p></div>`}</div>
+    <div class="ov-row">
+      <section class="card ov-needs" aria-labelledby="needs-h"><div class="card-head"><h2 id="needs-h" class="diamond">Needs a person</h2><span class="mono xs muted">${att.length} open · worst first</span></div>
+        ${att.length ? `<ul class="needs-list">${att.map(([sev, ic, t, m, href, a]) => `<li><span class="lvl" style="background:${(lvl[sev] || lvl.info)[1]};color:${(lvl[sev] || lvl.info)[2]}">${(lvl[sev] || lvl.info)[0]}</span><span class="w"><b>${esc(t)}</b><small>${esc(m)}</small></span><a class="btn sm" href="${href}">${a}</a></li>`).join('')}</ul>`
+          : '<p class="small muted">Nothing needs a person. Every solution sent its figures and every job ran.</p>'}</section>
+      <section class="card ov-block" aria-labelledby="col-h"><h2 id="col-h">Nightly collection</h2><p class="mono xs muted">${collect.last} MYT · took ${collect.took}</p>
+        <dl class="mini"><div><dt>Links read</dt><dd class="mono">${collect.processed} of ${collect.eligible}</dd></div><div><dt>Days missing</dt><dd class="mono" style="color:var(--${collect.failed ? 'warn-ink' : 'ok-ink'})">${collect.failed}</dd></div><div><dt>Next run</dt><dd class="mono" style="font-size:1rem">${collect.next}</dd></div><div><dt>Contract tests</dt><dd class="mono">${R.links.filter((l) => l.tests[0] === l.tests[1]).length} of ${R.links.length}</dd></div></dl>
+        ${collect.why.length ? `<p class="small">${esc(collect.why[0])}</p>` : '<p class="small">Every link answered and every figure passed its checks.</p>'}<a class="small" href="#jobs">Open the job</a></section>
+    </div>
+    <section class="figs" aria-label="Figures">
+      ${fig(`Hours saved`, h === null ? '–' : nf(h) + '<small>h</small>', h === null ? 'No baseline approved yet' : `Likely ${nf(rg[0])} to ${nf(rg[1])}${cmp ? ' · ' + chgHtml(chgPct(h, hm.calc(P))) : ''}`, '#analytics', q('estimated'))}
+      ${fig(`Value of time freed`, fmtM(vm, vm.calc(T)) || '–', 'At RM45 an hour, an estimate', '#analytics', q('estimated'))}
+      ${fig(`Work handled`, T.n ? nf(T.vol) : '–', `${ps.length} solution${ps.length === 1 ? '' : 's'} collecting`, '#analytics', q('measured'))}
+      ${fig('Solutions sending data', `${sending}<small>of ${sols.length}</small>`, `${R.bad} not answering · ${R.late} late`, '#links')}
+      ${fig('KPIs live', `${kp[0]}<small>of ${kp[1]}</small>`, `${waiting} waiting for approval`, '#approvals')}
+      ${fig('Organisations', String(all.length), `${all.filter((x) => x.stage === 'live').length} live`, '#organisations')}
     </section>
-    ${clientGrid(aWindow(state.range))}
-    <section class="card"><div class="card-head"><h2>Recent activity</h2><a class="btn sm ghost" href="#settings">Audit trail${icon('chev', 'sm')}</a></div>${activityList(6)}</section>`;
+    <section class="card" aria-labelledby="stage-h"><div class="card-head"><h2 id="stage-h">Organisations by stage</h2><span class="mono xs muted">${all.length} in total</span></div>
+      <div class="stackbar" role="img" aria-label="${stages.map((x) => `${x[1]} ${x[3]}`).join(', ')}">${stages.map(([k, l, c, n]) => `<a href="#organisations" data-cfshow-go="${k === 'live' ? 'live' : 'early'}" title="${l}: ${n}" style="flex:${n} 1 0;background:${c}"></a>`).join('')}</div>
+      <div class="legend">${stages.map(([, l, c, n]) => `<span><i style="background:${c}"></i>${l} <b class="mono ink">${n}</b></span>`).join('')}</div></section>
+    <section class="card" aria-labelledby="glance-h"><div class="card-head"><h2 id="glance-h">Organisations at a glance</h2><a class="small" href="#organisations">All ${all.length} organisations</a></div>
+      <div class="table-wrap"><table><thead><tr><th>Organisation</th><th>Stage</th><th>Solutions</th><th>Readiness</th><th>Problems</th><th class="num">Projects</th><th class="num">Hours saved</th></tr></thead><tbody>
+      ${rows.map(({ c, r, needs, t }) => { const done = r.filter((x) => x[1]).length, hv = hm.calc(t); return `<tr class="link" data-go="${c.href.slice(1)}" tabindex="0"><td><span class="name">${esc(c.name)}</span><span class="sub mono">${slug(c.short)}</span></td><td><span class="pill idle">${cap(c.stage)}</span></td><td>${statusPill(coStatus(c))}</td>
+        <td><span class="ready"><span class="bar-track"><span class="bar-fill" style="width:${100 * done / r.length}%"></span></span><span class="mono xs">${done} of ${r.length}</span></span></td>
+        <td style="color:var(--${needs.length ? (needSeverity(needs) === 0 ? 'fault-ink' : 'warn-ink') : 'muted'})">${needs.length ? `${needs.length} open` : 'None'}</td><td class="num">${c.projects.length}</td><td class="num">${hv === null ? '<span class="dash">–</span>' : nf(hv) + ' h'}</td></tr>`; }).join('')}
+      </tbody></table></div></section>
+    <section class="card"><div class="card-head"><div><h2>Hours saved</h2><p class="sub">${rangeLabel()} · every project with an approved baseline</p></div></div><div class="chart" id="${demo() ? 'ch-home' : 'ch-mine-home'}"></div>
+      <div class="legend"><span><i style="background:var(--s1)"></i>Hours saved</span><span><i style="background:repeating-linear-gradient(135deg,var(--s1) 0 2px,var(--s1-soft) 2px 5px)"></i>Likely range</span><span><i style="box-shadow:inset 0 0 0 1.5px var(--warn)"></i>No data that day, not zero</span></div></section>
+    <section class="card"><div class="card-head"><h2>Recent actions</h2><a class="small" href="#audit">Audit</a></div>${activityList(6)}</section>`;
   }
   function activityList(n) {
     const list = auditList().slice(0, n);
@@ -658,7 +988,7 @@
         if (!ok.length) return { d, gap: parts.some((p) => p.gap), before: parts.every((p) => p.before) };
         return { d, mid: ok.reduce((a, p) => a + p.mid, 0), low: ok.reduce((a, p) => a + p.low, 0), high: ok.reduce((a, p) => a + p.high, 0) };
       });
-      drawChart($('#ch-home'), bucket(daily, state.range > 30), { id: 'home', kind: 'band', label: 'Hours saved across clients', height: 240, tip: bandTip });
+      drawChart($('#ch-home'), bucket(daily, state.range > 30), { id: 'home', kind: 'band', label: 'Hours saved across organisations', height: 240, tip: bandTip });
       return;
     }
     const el = $('#ch-mine-home'); if (!el) return;
@@ -673,30 +1003,10 @@
 
   // example workspace home
   function homeDemo() {
-    const days = windowDays(state.range);
-    const imp = portfolioImpact(days), prev = portfolioImpact(windowDays(state.range, M.addDays(M.LAST_DAY, -state.range)));
-    const items = [['doc-workflow', 'documents.generated'], ['invoice-triage', 'invoices.triaged'], ['quote-drafter', 'quotes.drafted'], ['shift-planner', 'plans.generated'], ['enquiry-triage', 'enquiries.received']].reduce((a, [s, k]) => a + sumMetric(s, k, days).sum, 0);
-    const waiting = state.approvals.filter((a) => a.status === 'waiting').length;
-    const change = prev.mid > 0 && state.range < 90 ? Math.round(100 * (imp.mid - prev.mid) / prev.mid) : null;
-    const att = demoAtt();
-    return `
-    ${head({ title: `Good morning, ${me().name.split(' ')[0]}`, lead: 'Here’s what your clients’ solutions delivered, and what needs you.', actions: rangeSeg() })}
-    <section class="grid g4 stats">
-      <div class="card stat"><span class="label">Hours saved ${q('estimated')}</span><span class="value">${nf(imp.mid)}<small>h</small></span><span class="hint">${change !== null ? `<span class="delta">${change >= 0 ? '▲' : '▼'} ${Math.abs(change)}%</span> vs previous · ` : ''}likely ${nf(imp.low)} to ${nf(imp.high)}</span></div>
-      <div class="card stat"><span class="label">Work handled ${q('measured')}</span><span class="value">${nf(items)}</span><span class="hint">Documents, invoices, plans, enquiries, quotes</span></div>
-      <div class="card stat"><span class="label">Solutions sending data</span><span class="value">3<small>of 6</small></span><span class="hint">1 late · 1 not answering · 1 not connected</span></div>
-      <div class="card stat"><span class="label">KPIs live</span><span class="value">12<small>of 16</small></span><span class="hint">${waiting} waiting for approval</span></div>
-    </section>
-    <section class="grid g-main">
-      <div class="card"><div class="card-head"><div><h2>Hours saved</h2><p class="sub">${rangeLabel()} · every client with an approved baseline</p></div></div><div class="chart" id="ch-home"></div>
-        <div class="legend"><span><i style="background:var(--s1)"></i>Hours saved</span><span><i style="background:repeating-linear-gradient(135deg,var(--s1) 0 2px,var(--s1-soft) 2px 5px)"></i>Likely range</span><span><i style="box-shadow:inset 0 0 0 1.5px var(--warn)"></i>No data that day, not zero</span></div></div>
-      <div class="card"><div class="card-head"><h2>Needs you</h2><span class="pill idle">${att.length}</span></div>
-        <div class="list">${att.map(([sev, ic, t, m, h, a]) => `<div class="row"><span class="ico ${sev}">${icon(ic, 'sm')}</span><div><div class="what">${esc(t)}</div><div class="meta">${esc(m)}</div></div><a class="btn sm" href="${h}">${a}</a></div>`).join('')}</div></div>
-    </section>
-    ${clientGrid(windowDays(state.range))}
-    <section class="card"><div class="card-head"><h2>Recent activity</h2><a class="btn sm ghost" href="#settings">Audit trail${icon('chev', 'sm')}</a></div>${activityList(5)}</section>`;
+    return overviewHtml(head({ title: 'Overview', lead: 'What needs a person, and what each organisation’s solutions delivered.', actions: rangeSeg() }));
   }
-  // ------------------------------------------------------------------ CLIENTS: one model for every workspace (client → project → solution)
+
+  // ------------------------------------------------------------------ CLIENTS: one model for every workspace (organisation → project → solution)
   const EX_INDUSTRY = { 'contoh-logistik': 'Logistics', 'acme-plastics': 'Manufacturing', 'sampel-medik': 'Healthcare', 'bina-jaya': 'Engineering and construction', 'teladan-properties': 'Property and real estate' };
   const EX_REPORT = { 'contoh-logistik': () => state.reportApproved ? ['ok', 'September approved', '#report'] : ['warn', 'September ready to review', '#report'], 'acme-plastics': () => ['ok', 'September sent 3 Oct', null], 'bina-jaya': () => ['ok', 'Q3 sent 7 Oct', null], 'sampel-medik': () => ['idle', 'Drafts 1 Nov', null], 'teladan-properties': () => ['idle', 'Not scheduled', null] };
   const STATUS_ORDER = ['failing', 'stale', 'review', 'approved', 'not_connected', 'fresh', 'collecting'];
@@ -704,7 +1014,7 @@
   function companies() {
     if (demo()) {
       const dp = demoProjects();
-      return M.orgs.map((o) => ({ id: o.id, name: o.name, short: o.short, industry: EX_INDUSTRY[o.id], stage: o.stage, href: '#client-' + o.id, signed: true, agreement: o.agreement, renewal: o.renewal, renewalRisk: o.renewalRisk, contract: o.contract, runCost: o.runCost, contact: 'Client contact on file', example: true,
+      return M.orgs.map((o) => ({ id: o.id, name: o.name, short: o.short, industry: EX_INDUSTRY[o.id], stage: o.stage, href: '#organisation-' + o.id, signed: true, agreement: o.agreement, renewal: o.renewal, renewalRisk: o.renewalRisk, contract: o.contract, runCost: o.runCost, contact: 'Organisation contact on file', example: true,
         projects: o.projects.map((p) => ({ id: p.id, name: p.name, objective: p.objective, kind: M.solutions[p.solutions[0]].kind, cadence: o.id === 'bina-jaya' ? 'Quarterly' : 'Monthly', report: EX_REPORT[o.id](),
           solutions: p.solutions.map((sid) => { const s = M.solutions[sid]; return { id: sid, name: s.name, status: solStatus(sid), href: s.status === 'not_connected' ? null : '#solution-' + sid, proj: dp.find((x) => x.id === sid) || null, kpis: [s.kpis.approved, s.kpis.total] }; }) })) }));
     }
@@ -714,7 +1024,7 @@
         report: r.st === 'ready' ? ['warn', `${monthName(r.ym)} ready to review`, '#report-' + s.id] : r.st === 'approved' ? ['ok', `${monthName(r.ym)} approved`, '#report-' + s.id] : r.st === 'waiting' ? ['info', `First draft ${nextMonthStart()}`, null] : ['idle', s.stage === 'collecting' ? 'Not scheduled' : 'Waiting for data', null],
         solutions: [{ id: s.id, name: s.name, status: simStatus(s), href: s.stage === 'draft' ? '#connect-' + s.id : '#sim-' + s.id, proj: s.stage === 'collecting' ? projOfSim(s) : null, kpis: [s.stage === 'collecting' ? s.kpis.filter((k) => k !== 'impact' || hasBase(s)).length : 0, s.kpis.length] }] }; });
       const stage = sims.some((s) => s.stage === 'collecting') ? 'live' : sims.some((s) => s.stage !== 'draft') ? 'onboarding' : 'planning';
-      return { id: o.id, name: o.name, short: o.name, industry: o.industry, stage, href: '#client-' + o.id, signed: o.signed, agreement: o.signed ? 'Signed' : 'Not signed', renewal: '–', renewalRisk: '–', contract: null, runCost: null, contact: 'Farah Idris · farah@client.example', projects };
+      return { id: o.id, name: o.name, short: o.name, industry: o.industry, stage, href: '#organisation-' + o.id, signed: o.signed, agreement: o.signed ? 'Signed' : 'Not signed', renewal: '–', renewalRisk: '–', contract: null, runCost: null, contact: 'Farah Idris · farah@organisation.example', projects };
     });
   }
   const coById = (id) => companies().find((c) => c.id === id);
@@ -767,16 +1077,16 @@
     const all = companies(), ex = demo();
     const list = all.map((c) => ({ c, sev: needSeverity(coNeeds(c)), st: STATUS_ORDER.indexOf(coStatus(c)) })).sort((a, b) => (a.sev - b.sev) || (a.st - b.st)).map((x) => x.c);
     const add = ex ? `<a class="card proj" href="#connect" style="border-style:dashed;place-content:center;justify-items:center;text-align:center;min-height:200px;box-shadow:none"><span class="ico info" style="width:44px;height:44px;border-radius:12px;display:grid;place-items:center">${icon('plus')}</span><b class="ink">Connect another solution</b><span class="small muted">About a day of developer time</span></a>`
-      : `<a class="card proj" href="#new-client" style="border-style:dashed;place-content:center;justify-items:center;text-align:center;min-height:200px;box-shadow:none"><span class="ico info" style="width:44px;height:44px;border-radius:12px;display:grid;place-items:center">${icon('plus')}</span><b class="ink">Add a client</b><span class="small muted">Or simulate one in Demo studio</span></a>`;
-    return `<section class="grid" style="gap:12px"><div class="card-head" style="margin:0"><div><h2>Clients</h2><p class="sub">${all.length} client${all.length === 1 ? '' : 's'} · ${all.reduce((a, c) => a + c.projects.length, 0)} projects · those needing you first</p></div><a class="btn sm ghost" href="#clients">All clients${icon('chev', 'sm')}</a></div>
+      : `<a class="card proj" href="#new-organisation" style="border-style:dashed;place-content:center;justify-items:center;text-align:center;min-height:200px;box-shadow:none"><span class="ico info" style="width:44px;height:44px;border-radius:12px;display:grid;place-items:center">${icon('plus')}</span><b class="ink">Add an organisation</b><span class="small muted">Or simulate one in Demo studio</span></a>`;
+    return `<section class="grid" style="gap:12px"><div class="card-head" style="margin:0"><div><h2>Organisations</h2><p class="sub">${all.length} organisation${all.length === 1 ? '' : 's'} · ${all.reduce((a, c) => a + c.projects.length, 0)} projects · those needing you first</p></div><a class="btn sm ghost" href="#organisations">All organisations${icon('chev', 'sm')}</a></div>
       <div class="grid g3">${list.map((c) => clientCard(c, days)).join('')}${add}</div></section>`;
   }
 
-  // ---------- the client list
-  pages.clients = () => {
+  // ---------- the organisation list
+  pages.organisations = () => {
     const all = companies();
-    const lead = 'Every client, how their solutions are doing, and what each needs from you.';
-    if (!all.length) return `${head({ title: 'Clients', lead, actions: `<a class="btn primary" href="#new-client">${icon('plus', 'sm')}Add client</a>` })}<section class="card"><div class="empty">${emptyArt}<h3>No clients yet</h3><p>Start with the client. You record their data agreement here, because nothing is collected until it is signed.</p><div class="head-actions" style="justify-content:center"><a class="btn primary" href="#new-client">${icon('plus', 'sm')}Add client</a><button type="button" class="btn" data-act="studio">Try a demo workspace</button></div></div></section>`;
+    const lead = 'Every organisation, how its solutions are doing, and what each needs from a person.';
+    if (!all.length) return `${head({ title: 'Organisations', lead, actions: `<a class="btn primary" href="#new-organisation">${icon('plus', 'sm')}New organisation</a>` })}<section class="card"><div class="empty">${emptyArt}<h3>No organisations yet</h3><p>Start with the organisation. You record their data agreement here, because nothing is collected until it is signed.</p><div class="head-actions" style="justify-content:center"><a class="btn primary" href="#new-organisation">${icon('plus', 'sm')}Add organisation</a><button type="button" class="btn" data-act="studio">Try a demo workspace</button></div></div></section>`;
     const f = state.cf = state.cf || { show: 'all', sort: 'needs', q: '' };
     const days = aWindow(state.range), prevDays = windowDays(state.range, M.addDays(days[0], -1)), hm = mByKey('hours'), vm = mByKey('value');
     let rows = all.map((c) => { const t = coTotals(c, days), tp = coTotals(c, prevDays); return { c, t, h: hm.calc(t), hc: comparable(t, tp) ? chgPct(hm.calc(t), hm.calc(tp)) : null, v: vm.calc(t), needs: coNeeds(c).length, sev: needSeverity(coNeeds(c)), st: coStatus(c) }; });
@@ -787,57 +1097,65 @@
     if (f.q) rows = rows.filter((r) => (r.c.name + ' ' + r.c.industry + ' ' + r.c.projects.map((p) => p.name).join(' ')).toLowerCase().includes(f.q.toLowerCase()));
     const sorters = { needs: (a, b) => (a.sev - b.sev) || (b.needs - a.needs) || (STATUS_ORDER.indexOf(a.st) - STATUS_ORDER.indexOf(b.st)) || ((b.h || 0) - (a.h || 0)), hours: (a, b) => (b.h === null ? -1 : b.h) - (a.h === null ? -1 : a.h), change: (a, b) => (b.hc === null ? -1e9 : b.hc) - (a.hc === null ? -1e9 : a.hc), name: (a, b) => a.c.short.localeCompare(b.c.short) };
     rows.sort(sorters[f.sort]);
+    if (f.group === 'stage' || f.group === 'industry') { const key = (r) => f.group === 'stage' ? ['live', 'pilot', 'onboarding', 'planning'].indexOf(r.c.stage) : r.c.industry; rows = rows.map((r, i) => [r, i]).sort((a, b) => (key(a[0]) < key(b[0]) ? -1 : key(a[0]) > key(b[0]) ? 1 : a[1] - b[1])).map((x) => x[0]); }
     const wk = weeksOf(aWindow(84));
-    return `${head({ title: 'Clients', lead, actions: `${rangeSeg()}${demo() ? '' : `<a class="btn primary" href="#new-client">${icon('plus', 'sm')}Add client</a>`}` })}
-    <section class="grid g4 stats">
-      <div class="card stat"><span class="label">Clients</span><span class="value">${all.length}</span><span class="hint">${counts.live} live · ${all.length - counts.live} getting started</span></div>
-      <div class="card stat"><span class="label">Need you</span><span class="value" style="color:var(--${counts.needs ? 'warn-ink' : 'ink'})">${counts.needs}</span><span class="hint">Clients with something to fix or decide</span></div>
-      <div class="card stat"><span class="label">Hours saved ${q('estimated')}</span><span class="value">${hm.calc(totH) === null ? '–' : nf(hm.calc(totH))}<small>${hm.calc(totH) === null ? '' : 'h'}</small></span><span class="hint">${rangeLabel()}, all clients</span></div>
-      <div class="card stat"><span class="label">Value of time freed ${q('estimated')}</span><span class="value">${fmtM(vm, vm.calc(totH)) || '–'}</span><span class="hint">At RM45 an hour</span></div>
-    </section>
+    const strip = [['all', 'All', all.length], ['needs', 'Need a person', counts.needs], ['live', 'Live', counts.live], ['early', 'Getting started', all.length - counts.live]];
+    return `${head({ title: 'Organisations', lead, actions: `${rangeSeg()}<button type="button" class="btn" data-act="export">Export CSV</button>${demo() ? '' : `<a class="btn primary" href="#new-organisation">${icon('plus', 'sm')}New organisation</a>`}` })}
+    <section class="strip" aria-label="Organisations by state">${strip.map(([k, l, n]) => `<button type="button" class="strip-b" data-cfshow="${k}" aria-pressed="${f.show === k}"><span>${l}</span><b class="mono">${n}</b></button>`).join('')}
+      <div class="strip-b static"><span>Hours saved ${q('estimated')}</span><b class="mono">${hm.calc(totH) === null ? '–' : nf(hm.calc(totH)) + ' h'}</b></div></section>
     <section class="card" style="padding:14px 18px"><div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
-      <div class="seg" role="group" aria-label="Show">${[['all', 'All'], ['needs', `Need you (${counts.needs})`], ['live', 'Live'], ['early', 'Getting started']].map(([k, l]) => `<button type="button" data-cfshow="${k}" aria-pressed="${f.show === k}">${l}</button>`).join('')}</div>
-      <div class="field" style="flex:1;min-width:180px"><input id="cf-q" placeholder="Search clients or projects" aria-label="Search clients" value="${esc(f.q)}" autocomplete="off"></div>
-      <div class="field"><select id="cf-sort" aria-label="Sort">${[['needs', 'Needs you first'], ['hours', 'Most hours saved'], ['change', 'Biggest improvement'], ['name', 'A to Z']].map(([k, l]) => `<option value="${k}" ${f.sort === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+      <div class="field" style="flex:1;min-width:180px"><input id="cf-q" placeholder="Search organisations or projects" aria-label="Search organisations" value="${esc(f.q)}" autocomplete="off"></div>
+      <div class="field"><select id="cf-sort" aria-label="Sort">${[['needs', 'Needs a person first'], ['hours', 'Most hours saved'], ['change', 'Biggest improvement'], ['name', 'A to Z']].map(([k, l]) => `<option value="${k}" ${f.sort === k ? 'selected' : ''}>Sort: ${l}</option>`).join('')}</select></div>
+      <div class="field"><select id="cf-group" aria-label="Group">${[['none', 'No grouping'], ['stage', 'Stage'], ['industry', 'Industry']].map(([k, l]) => `<option value="${k}" ${(f.group || 'none') === k ? 'selected' : ''}>Group: ${l}</option>`).join('')}</select></div>
     </div></section>
-    <section class="card"><div class="table-wrap"><table class="client-table"><thead><tr><th>Client</th><th>Projects</th><th class="num">Hours saved</th><th class="num">Change</th><th>12 weeks</th><th>Next report</th>${has('Commercial') ? '<th class="num">Fee</th>' : ''}<th>Renewal</th></tr></thead><tbody>
-    ${rows.length ? rows.map((r) => { const c = r.c, ps = coProjs(c); return `<tr class="link" data-go="${c.href.slice(1)}" tabindex="0">
-      <td><div style="display:flex;gap:10px;align-items:center"><span class="avatar" style="border-radius:10px">${initials(c.short)}</span><div><span class="name">${esc(c.name)}</span><span class="sub">${esc(c.industry)} · ${cap(c.stage)}</span></div></div>${r.needs ? `<span class="pill warn" style="margin-top:6px"><span class="dot"></span>${r.needs} need${r.needs === 1 ? 's' : ''} you</span>` : ''}</td>
+    <section class="card"><div class="table-wrap"><table class="client-table"><thead><tr><th>Organisation</th><th>Projects</th><th class="num">Hours saved</th><th class="num">Change</th><th>12 weeks</th><th>Next report</th>${has('Commercial') ? '<th class="num">Fee</th>' : ''}<th>Renewal</th></tr></thead><tbody>
+    ${rows.length ? rows.map((r, i) => { const c = r.c, ps = coProjs(c), gk = f.group === 'stage' ? cap(c.stage) : f.group === 'industry' ? c.industry : null, gh = gk && (i === 0 || (f.group === 'stage' ? cap(rows[i - 1].c.stage) : rows[i - 1].c.industry) !== gk) ? `<tr class="grp-row"><td colspan="8">${esc(gk)} <span class="mono">${rows.filter((x) => (f.group === 'stage' ? cap(x.c.stage) : x.c.industry) === gk).length}</span></td></tr>` : ''; return `${gh}<tr class="link" data-go="${c.href.slice(1)}" tabindex="0">
+      <td><div style="display:flex;gap:10px;align-items:center"><span class="avatar" style="border-radius:10px">${initials(c.short)}</span><div><span class="name">${esc(c.name)}</span><span class="sub">${esc(c.industry)} · ${cap(c.stage)}</span></div></div>${r.needs ? `<span class="pill warn" style="margin-top:6px"><span class="dot"></span>${r.needs} need${r.needs === 1 ? 's' : ''} a person</span>` : ''}</td>
       <td>${c.projects.length ? c.projects.map((p) => `<div class="small" style="display:flex;gap:6px;align-items:center;white-space:nowrap">${p.solutions.map((s) => `<span class="dot" title="${esc(s.name)}: ${STATUS[s.status][1]}" style="color:var(--${STATUS[s.status][0] === 'idle' ? 'faint' : STATUS[s.status][0] === 'info' ? 'primary' : STATUS[s.status][0]})"></span>`).join('')}${esc(p.name)}</div>`).join('') : '<span class="muted">None yet</span>'}</td>
       <td class="num">${r.h === null ? `<span class="dash">–</span>` : `<span class="ink">${nf(r.h)} h</span><div class="sub">${fmtM(mByKey('value'), r.v)}</div>`}</td>
       <td class="num">${chgHtml(r.hc)}</td>
       <td>${ps.length ? sparkline(wk.map((w) => hm.calc(mergeTotals(ps.map((p) => totals(p, w))))), 90, 26) : ''}</td>
       <td>${c.projects.length ? (() => { const rep = c.projects.find((p) => p.report[0] === 'warn') || c.projects[0]; return `<span class="pill ${rep.report[0]}">${esc(rep.report[1])}</span>`; })() : '<span class="muted">–</span>'}</td>
       ${has('Commercial') ? `<td class="num">${c.contract ? money(c.contract.amount, c.contract.currency) : '–'}</td>` : ''}
-      <td class="mono">${esc(c.renewal)}</td></tr>`; }).join('') : `<tr><td colspan="8"><div class="empty" style="padding:16px"><p>No clients match. <button type="button" class="btn sm ghost" data-act="cf-reset">Show all</button></p></div></td></tr>`}
+      <td class="mono">${esc(c.renewal)}</td></tr>`; }).join('') : `<tr><td colspan="8"><div class="empty" style="padding:16px"><p>No organisations match. <button type="button" class="btn sm ghost" data-act="cf-reset">Show all</button></p></div></td></tr>`}
     </tbody></table></div></section>`;
   };
-  pages.clients.after = () => {
+  pages.organisations.after = () => {
     const qi = $('#cf-q'); if (qi) qi.addEventListener('input', (e) => { state.cf.q = e.target.value; clearTimeout(state.cfT); state.cfT = setTimeout(() => { render(); const el = $('#cf-q'); if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); } }, 250); });
     const so = $('#cf-sort'); if (so) so.addEventListener('change', (e) => { state.cf.sort = e.target.value; render(); });
+    const gr = $('#cf-group'); if (gr) gr.addEventListener('change', (e) => { state.cf.group = e.target.value; render(); });
   };
 
-  // ---------- the client page: one template for every workspace
-  function contohNarrative(client, canNarr) {
+  // ---------- the organisation page: one template for every workspace
+  function contohNarrative(organisation, canNarr) {
     const sep = contohMonth('2026-09'), aug = contohMonth('2026-08');
-    if (client && !state.narrativeApproved) return `<section class="card"><div class="empty" style="padding:20px"><h3>Summary not shared yet</h3><p>The September summary is still a draft. The client sees it once it’s approved.</p></div></section>`;
+    if (organisation && !state.narrativeApproved) return `<section class="card"><div class="empty" style="padding:20px"><h3>Summary not shared yet</h3><p>The September summary is still a draft. The organisation sees it once it’s approved.</p></div></section>`;
     return `<section class="card ai-card"><div class="card-head"><span class="eyebrow"><img src="${SPARK}" alt="">September 2026 in brief</span>${state.narrativeApproved ? '<span class="pill ok"><span class="dot"></span>Approved</span>' : '<span class="pill warn"><span class="dot"></span>Draft</span>'}</div>
       <div class="narrative">
         <p>The document workflow finished <b class="mono">${nf(sep.docs)}</b> documents in September, up from <span class="mono">${nf(aug.docs)}</span> in August <span class="cite">Documents processed</span>. Against the timed baseline, that freed an estimated <b class="mono">${nf(sep.imp.mid)} hours</b> of preparation time, likely between <span class="mono">${nf(sep.imp.low)}</span> and <span class="mono">${nf(sep.imp.high)}</span> <span class="cite">Hours saved</span>.</p>
         <p>Fewer documents came back for correction: <span class="mono">${nf(sep.rate, 1)}%</span>, from <span class="mono">${nf(aug.rate, 1)}%</span> in August and <span class="mono">7.4%</span> before go-live. Invoices took <span class="mono">${nf(sep.ct, 1)} days</span> by month end, from <span class="mono">4.5</span> before.</p>
         <p class="small muted">21 and 22 September are missing and aren’t counted. These figures compare with the baseline. They don’t prove what caused the change.</p>
       </div>
-      <div class="wfoot" style="margin-top:14px">${aiMark('Drafted by AI from the calculated figures. Every number checked.')}${state.narrativeApproved || client ? '' : gate(canNarr, 'Approve summary', state.role === 'nurul' ? 'You edited this, so someone else approves.' : 'Needs approval rights', 'data-act="approve-narrative"', 'btn primary sm')}</div>
+      <div class="wfoot" style="margin-top:14px">${aiMark('Drafted by AI from the calculated figures. Every number checked.')}${state.narrativeApproved || organisation ? '' : gate(canNarr, 'Approve summary', state.role === 'nurul' ? 'You edited this, so someone else approves.' : 'Needs approval rights', 'data-act="approve-narrative"', 'btn primary sm')}</div>
     </section>`;
+  }
+  // Organisation 360 opens on what is missing (SPEC §10.3): a readiness checklist and the stage.
+  function readinessBlock(c) {
+    const r = readiness(c), left = r.filter((x) => !x[1]).length, st = ['planning', 'onboarding', 'pilot', 'live'], at = Math.max(0, st.indexOf(c.stage));
+    return `<div class="ov-row">
+      <section class="card" style="flex:2 1 460px;min-width:0"><h3>${left ? `Before ${esc(c.short)} is fully set up: ${left} thing${left === 1 ? '' : 's'} left` : `${esc(c.short)} is fully set up`}</h3>
+        <ul class="ready-list">${r.map(([l, ok]) => `<li><span class="rk ${ok ? 'ok' : ''}" aria-hidden="true">${ok ? '✓' : ''}</span><span>${esc(l)}</span></li>`).join('')}</ul></section>
+      <section class="card" style="flex:1 1 280px;min-width:0"><h3>Stage</h3><ol class="stepper">${st.map((x, i) => `<li class="${i < at ? 'done' : i === at ? 'now' : ''}"><span class="dotc"></span><span>${cap(x)}</span></li>`).join('')}</ol></section>
+    </div>`;
   }
   function companyPage(c) {
     rememberClient(c);
     if (state.coFor !== c.id) { state.coFor = c.id; state.coTab = 'overview'; }
-    const client = state.audience === 'client', tab = state.coTab || 'overview';
+    const organisation = state.audience === 'client', tab = state.coTab || 'overview';
     const days = aWindow(state.range), prevDays = windowDays(state.range, M.addDays(days[0], -1));
     const T = coTotals(c, days), P = coTotals(c, prevDays), cmp = comparable(T, P);
-    const needs = client ? [] : coNeeds(c);
-    const tabs = [['overview', 'Overview'], ['projects', `Projects (${c.projects.length})`], ['reports', 'Reports']].concat(client ? [] : [['activity', 'Activity']]);
+    const needs = organisation ? [] : coNeeds(c);
+    const tabs = [['overview', 'Summary'], ['projects', `Projects and solutions (${c.projects.length})`], ['reports', 'Reports']].concat(organisation ? [] : [['notes', 'Notes'], ['activity', 'Audit']]);
     const stat = (key, alt) => { let m = mByKey(key), v = m.calc(T); if (v === null && alt) { m = mByKey(alt); v = m.calc(T); } const pv = cmp ? m.calc(P) : null, rg = m.range ? m.range(T) : null; return `<div class="card stat"><span class="label">${esc(m.name)} ${q(m.quality)}</span><span class="value">${fmtM(m, v) || '–'}</span><span class="hint">${v === null ? 'Not shared by these solutions yet' : `${rg ? `Likely ${fmtM(m, rg[0])} to ${fmtM(m, rg[1])} · ` : ''}${cmp ? chgHtml(chgPct(v, pv), m.better) + ' vs before' : 'Too few days before to compare'}`}</span></div>`; };
     let body = '';
     if (tab === 'overview') {
@@ -848,15 +1166,15 @@
       ${coProjs(c).length ? `<section class="grid g4 stats">${stat('hours', 'volume')}${stat('value', 'straight')}${stat('volume')}${stat('sla', 'quality')}</section>
       <section class="card"><div class="card-head"><div><h2>${mByKey('hours').calc(T) !== null ? 'Hours saved' : 'Work handled'} by project</h2><p class="sub">By week, last 12 weeks · each project on its own line</p></div><details class="more"><summary>How totals are counted</summary><div class="small" style="max-width:52ch">${c.id === 'contoh-logistik' ? 'Only Document workflow’s hours count: Invoice triage touches the same work, so adding it would count hours twice. ' : ''}Hours and work handled add up across projects. Rates are worked out from the combined totals, never averaged. People are never added across days.</div></details></div>
         <div class="chart" id="ch-co"></div><div class="legend" id="lg-co"></div></section>` : `<section class="card"><div class="empty">${emptyArt}<h3>${c.projects.length ? 'No figures yet' : 'No projects yet'}</h3><p>${c.projects.length ? 'Figures appear here once a solution is collecting.' : `Create the project you agreed with ${esc(c.short)}. You’ll connect its solution next.`}</p>${c.example ? '' : c.projects.length ? `<a class="btn primary" href="${c.projects[0].solutions[0].href}">Open ${esc(c.projects[0].name)}</a>` : `<button type="button" class="btn primary" data-act="proj-for" data-org="${c.id}">${icon('plus', 'sm')}Create project</button>`}</div></section>`}
-      ${c.id === 'contoh-logistik' ? contohNarrative(client, canNarr) : ''}
+      ${c.id === 'contoh-logistik' ? contohNarrative(organisation, canNarr) : ''}
       ${c.projects.length ? `<section class="card"><div class="card-head"><h2>Projects</h2>${c.example ? '' : `<button type="button" class="btn sm" data-act="proj-for" data-org="${c.id}">${icon('plus', 'sm')}New project</button>`}</div><div class="table-wrap"><table><thead><tr><th>Project</th><th>Solutions</th><th class="num">Hours saved</th><th class="num">Work handled</th><th class="num">Change</th><th>12 weeks</th><th>Report</th></tr></thead><tbody>
         ${c.projects.map((p) => { const ps = p.solutions.filter((s) => s.proj).map((s) => s.proj), t = mergeTotals(ps.map((x) => totals(x, days))), tp = mergeTotals(ps.map((x) => totals(x, prevDays))), h = mByKey('hours').calc(t), ch = comparable(t, tp) ? chgPct(h !== null ? h : t.vol, h !== null ? mByKey('hours').calc(tp) : tp.vol) : null, first = p.solutions.find((s) => s.href);
           return `<tr ${first ? `class="link" data-go="${first.href.slice(1)}" tabindex="0"` : ''}><td><span class="name">${esc(p.name)}</span><span class="sub">${esc(p.kind)}</span></td><td>${p.solutions.map((s) => `<div style="display:flex;gap:6px;align-items:center;white-space:nowrap" class="small">${statusPill(s.status)} ${esc(s.name)}</div>`).join('')}</td><td class="num">${h === null ? '<span class="dash">–</span>' : nf(h) + ' h'}</td><td class="num">${t.n ? nf(t.vol) : '<span class="dash">–</span>'}</td><td class="num">${chgHtml(ch)}</td><td>${ps.length ? sparkline(wk.map((w) => { const tt = mergeTotals(ps.map((x) => totals(x, w))); return h !== null ? mByKey('hours').calc(tt) : (tt.n ? tt.vol : null); }), 90, 26) : ''}</td><td><span class="pill ${p.report[0]}">${esc(p.report[1])}</span></td></tr>`; }).join('')}
       </tbody></table></div></section>` : ''}
-      ${client ? '' : `<section class="grid g2">
+      ${organisation ? '' : `<section class="grid g2">
         <div class="card"><div class="card-head"><h2>Contract</h2><span class="pill idle">${icon('lock', 'sm')}REKA only</span></div>
           ${!c.contract ? '<p class="small muted">No contract recorded yet.</p>' : has('Commercial') ? `<div class="grid g2"><div class="stat"><span class="label">Monthly fee</span><span class="value" style="font-size:1.375rem">${money(c.contract.amount, c.contract.currency)}</span></div><div class="stat"><span class="label">Running cost, September</span><span class="value" style="font-size:1.375rem">${c.runCost ? money(c.runCost.amount, c.runCost.currency) : '–'}</span><span class="hint">From AX Frame</span></div><div class="stat"><span class="label">Renewal</span><span class="value" style="font-size:1.125rem">${esc(c.renewal)}</span><span class="hint">Risk: ${esc(c.renewalRisk)}</span></div></div>` : `<div class="callout info">${icon('lock')}<span>Only people with the commercial right see fees. Switch to Aisyah Rahman from your profile menu to try it.</span></div>`}</div>
-        <div class="card"><div class="card-head"><h2>People and agreement</h2><span class="pill idle">${icon('lock', 'sm')}REKA only</span></div>${kv([['Client contact', esc(c.contact)], ['REKA owner', 'Daniel Lim'], ['Data agreement', c.signed ? `<span class="pill ok">${icon('check', 'sm')}${esc(c.agreement)}</span>` : '<span class="pill warn">Not signed: nothing is collected</span>'], ['Notes', c.id === 'contoh-logistik' ? 'Finance director asked for a split by document type from October.' : 'None yet']], 120)}</div>
+        <div class="card"><div class="card-head"><h2>People and agreement</h2><span class="pill idle">${icon('lock', 'sm')}REKA only</span></div>${kv([['Organisation contact', esc(c.contact)], ['REKA owner', 'Daniel Lim'], ['Data agreement', c.signed ? `<span class="pill ok">${icon('check', 'sm')}${esc(c.agreement)}</span>` : '<span class="pill warn">Not signed: nothing is collected</span>'], ['Notes', c.id === 'contoh-logistik' ? 'Finance director asked for a split by document type from October.' : 'None yet']], 120)}</div>
       </section>`}`;
     } else if (tab === 'projects') {
       body = `<div class="grid" style="gap:16px">${c.projects.map((p) => `<section class="card">
@@ -868,15 +1186,22 @@
       ${c.example ? '' : `<button type="button" class="card proj" data-act="proj-for" data-org="${c.id}" style="border-style:dashed;place-content:center;justify-items:center;text-align:center;min-height:120px;box-shadow:none;cursor:pointer"><span class="ico info" style="width:40px;height:40px;border-radius:12px;display:grid;place-items:center">${icon('plus')}</span><b class="ink">New project for ${esc(c.short)}</b></button>`}</div>`;
     } else if (tab === 'reports') {
       body = `<section class="card"><div class="card-head"><div><h2>Reports</h2><p class="sub">One per project, on its own schedule</p></div><button type="button" class="btn sm ghost" data-act="reports-for" data-org="${c.id}">All reports for ${esc(c.short)}${icon('chev', 'sm')}</button></div><div class="table-wrap"><table><thead><tr><th>Project</th><th>Cadence</th><th>Status</th><th></th></tr></thead><tbody>${c.projects.length ? c.projects.map((p) => `<tr><td><span class="name">${esc(p.name)}</span></td><td>${esc(p.cadence)}</td><td><span class="pill ${p.report[0]}">${esc(p.report[1])}</span></td><td>${p.report[2] ? `<a class="btn sm" href="${p.report[2]}">Open</a>` : ''}</td></tr>`).join('') : '<tr><td colspan="4" class="muted">No projects yet.</td></tr>'}</tbody></table></div></section>`;
+    } else if (tab === 'notes') {
+      state.notes = state.notes || {};
+      const notes = state.notes[c.id] = state.notes[c.id] || (c.id === 'contoh-logistik' ? [['Daniel Lim', '2 Oct 2026, 10:12', 'Finance director asked for a split by document type from October. The new “reason” detail in the data makes that possible.']] : []);
+      body = `<section class="card"><div class="card-head"><div><h2>Internal notes</h2><p class="sub">Never visible to ${esc(c.short)}</p></div><span class="pill idle">${icon('lock', 'sm')}REKA only</span></div>
+        ${notes.length ? `<div class="list">${notes.map(([w, t, x]) => `<div class="row"><span class="avatar">${initials(w)}</span><div><div class="what" style="font-weight:400">${esc(x)}</div><div class="meta"><b class="ink">${esc(w)}</b><span class="mono">${esc(t)}</span></div></div><span></span></div>`).join('')}</div>` : '<p class="small muted">No notes yet.</p>'}
+        ${atLeast('Support') ? `<form id="f-note" class="grid" style="gap:10px;margin-top:14px" data-org="${c.id}"><div class="field"><label for="note-t">Add a note</label><textarea id="note-t" placeholder="What the team should know about ${esc(c.short)}"></textarea></div><div><button type="submit" class="btn">Add note</button></div></form>` : '<p class="needs">Needs Support to add notes</p>'}</section>`;
     } else {
       const names = [c.name, c.short].concat(c.projects.map((p) => p.name), coSolutions(c).map((s) => s.name));
       const list = auditList().filter(([, , what]) => names.some((n) => what.includes(n)));
-      body = `<section class="card">${list.length ? `<div class="list">${list.slice(0, 20).map(([t, w, what]) => `<div class="row"><span class="avatar">${w === 'Collector' ? icon('live', 'sm') : initials(w.split(' · ')[0])}</span><div class="small"><b class="ink">${esc(w.split(' · ')[0])}</b> ${esc(what)}</div><span class="xs muted mono">${esc(t.replace(' 2026,', ''))}</span></div>`).join('')}</div>` : '<p class="small muted">Nothing recorded for this client yet.</p>'}</section>`;
+      body = `<section class="card">${list.length ? `<div class="list">${list.slice(0, 20).map(([t, w, what]) => `<div class="row"><span class="avatar">${w === 'Collector' ? icon('live', 'sm') : initials(w.split(' · ')[0])}</span><div class="small"><b class="ink">${esc(w.split(' · ')[0])}</b> ${esc(what)}</div><span class="xs muted mono">${esc(t.replace(' 2026,', ''))}</span></div>`).join('')}</div>` : '<p class="small muted">Nothing recorded for this organisation yet.</p>'}</section>`;
     }
-    return `${head({ crumbs: crumbs(['Clients', '#clients'], [c.short]), title: orgTitle(c.name),
-      meta: `<span>${esc(c.industry)}</span><span class="pill ${c.stage === 'live' ? 'info' : 'idle'}">${cap(c.stage)}</span>${statusPill(coStatus(c))}${c.renewal !== '–' ? `<span>Renews ${esc(c.renewal)}</span>` : ''}`,
-      actions: `<button type="button" class="btn sm" data-act="ask-client" data-name="${esc(c.short)}"><img src="${SPARK}" alt="" style="width:16px">Ask about ${esc(c.short)}</button>${coProjs(c).length ? `<div class="seg" role="group" aria-label="View as"><button type="button" data-aud="staff" aria-pressed="${!client}">Team view</button><button type="button" data-aud="client" aria-pressed="${client}">Client view</button></div>${rangeSeg()}` : ''}` })}
-    ${client ? `<div class="callout info">${icon('client-view')}<span><b>You’re seeing what ${esc(c.short)} sees.</b> Fees, notes, activity and anything not yet approved are hidden.</span></div>` : ''}
+    return `${head({ crumbs: crumbs(['Organisations', '#organisations'], [c.short]), title: orgTitle(c.name),
+      meta: `<span class="mono">${slug(c.short)}</span><span>${esc(c.industry)}</span><span class="pill ${c.stage === 'live' ? 'info' : 'idle'}">${cap(c.stage)}</span>${statusPill(coStatus(c))}${c.renewal !== '–' ? `<span>Renews ${esc(c.renewal)}</span>` : ''}`,
+      actions: `<button type="button" class="btn sm" data-act="ask-client" data-name="${esc(c.short)}"><img src="${SPARK}" alt="" style="width:16px">Ask about ${esc(c.short)}</button>${coProjs(c).length ? `<div class="seg" role="group" aria-label="View as"><button type="button" data-aud="staff" aria-pressed="${!organisation}">Staff view</button><button type="button" data-aud="client" aria-pressed="${organisation}">Organisation view</button></div>${rangeSeg()}` : ''}` })}
+    ${organisation ? `<div class="callout info">${icon('client-view')}<span><b>You’re seeing what ${esc(c.short)} sees.</b> Fees, notes, activity and anything not yet approved are hidden.</span></div>` : ''}
+    ${organisation ? '' : readinessBlock(c)}
     <div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button type="button" role="tab" data-cotab="${k}" aria-selected="${tab === k}">${l}</button>`).join('')}</div>
     ${body}`;
   }
@@ -891,57 +1216,57 @@
     drawLines(el, wk.map((w) => dayShort(w[0])), series, { label: 'By project', height: 220, fmt: (v) => useH ? nf(v) + ' h' : nf(v), tipLabel: (i) => 'Week of ' + day(wk[i][0]) });
     $('#lg-co').innerHTML = series.map((s) => `<span><i style="background:${s.color}"></i>${esc(s.name)}</span>`).join('');
   }
-  pages.client = (id) => companyPage(coById(id));
-  pages.client.after = (id) => companyAfter(coById(id));
+  pages.organisation = (id) => companyPage(coById(id));
+  pages.organisation.after = (id) => companyAfter(coById(id));
 
-  pages['new-client'] = () => `
-    ${head({ crumbs: crumbs(['Clients', '#clients'], ['Add client']), title: 'Add a client', lead: 'The client whose solution you’ll measure.' })}
+  pages['new-organisation'] = () => `
+    ${head({ crumbs: crumbs(['Organisations', '#organisations'], ['New organisation']), title: 'Add an organisation', lead: 'The organisation whose solution you’ll measure.' })}
     <form id="f-org" class="card narrow grid" style="gap:24px" novalidate>
       <div class="form-grid">
-        <div class="field full"><label for="o-name">Client name</label><input id="o-name" placeholder="e.g. Teladan Properties" value="${esc(state.draftOrg || (state.orgs.length ? '' : 'Teladan Properties'))}" required><span class="help" id="o-name-help">As it appears on their contract.</span></div>
+        <div class="field full"><label for="o-name">Organisation name</label><input id="o-name" placeholder="e.g. Teladan Properties" value="${esc(state.draftOrg || (state.orgs.length ? '' : 'Teladan Properties'))}" required><span class="help" id="o-name-help">As it appears on their contract.</span></div>
         <div class="field"><label for="o-ind">Industry</label><select id="o-ind">${['Property and real estate', 'Food and beverage', 'Logistics', 'Manufacturing', 'Healthcare', 'Engineering and construction', 'Retail', 'Other'].map((x) => `<option>${x}</option>`).join('')}</select></div>
         <div class="field"><label for="o-tz">Time zone</label><select id="o-tz"><option>Asia/Kuala_Lumpur (MYT)</option><option>Asia/Singapore (SGT)</option></select><span class="help">Their reports use this.</span></div>
         <div class="field"><label for="o-contact">Main contact</label><input id="o-contact" value="Farah Idris"></div>
-        <div class="field"><label for="o-email">Contact email</label><input id="o-email" type="email" value="farah@client.example"></div>
+        <div class="field"><label for="o-email">Contact email</label><input id="o-email" type="email" value="farah@organisation.example"></div>
       </div>
       <div class="grid" style="gap:10px;border-top:1px solid var(--line);padding-top:20px"><h3>Data agreement</h3>
-        <p class="small muted">Outcomes only collects totals, and only after the client agrees in writing.</p>
-        <label class="check"><input type="checkbox" id="o-signed" checked><span><b class="ink">The client has signed the data agreement</b><br><span class="small muted">Totals only · kept in Singapore · for the contract plus 24 months</span></span></label>
+        <p class="small muted">Outcomes only collects totals, and only after the organisation agrees in writing.</p>
+        <label class="check"><input type="checkbox" id="o-signed" checked><span><b class="ink">The organisation has signed the data agreement</b><br><span class="small muted">Totals only · kept in Singapore · for the contract plus 24 months</span></span></label>
       </div>
-      <div class="wfoot"><a class="btn ghost" href="#clients">Cancel</a><button type="submit" class="btn primary lg">Add client</button></div>
+      <div class="wfoot"><a class="btn ghost" href="#organisations">Cancel</a><button type="submit" class="btn primary lg">Add organisation</button></div>
     </form>`;
-  pages['new-client'].after = () => {
+  pages['new-organisation'].after = () => {
     $('#o-name').addEventListener('input', (e) => { state.draftOrg = e.target.value; });
     $('#f-org').addEventListener('submit', (e) => {
       e.preventDefault();
       const name = $('#o-name').value.trim();
-      if (!name) { $('#o-name').setAttribute('aria-invalid', 'true'); const h = $('#o-name-help'); h.textContent = 'Add the client’s name to continue.'; h.style.color = 'var(--fault-ink)'; $('#o-name').focus(); return; }
+      if (!name) { $('#o-name').setAttribute('aria-invalid', 'true'); const h = $('#o-name-help'); h.textContent = 'Add the organisation’s name to continue.'; h.style.color = 'var(--fault-ink)'; $('#o-name').focus(); return; }
       state.mode = 'new';
       const o = newOrg(name, $('#o-ind').value, $('#o-signed').checked);
       state.draftOrg = null;
-      log(`Added client ${name}`);
-      go('client-' + o.id); toast(`${name} added.`);
+      log(`Added organisation ${name}`);
+      go('organisation-' + o.id); toast(`${name} added.`);
     });
   };
 
   pages['new-project'] = () => {
-    if (!state.orgs.length) return `${head({ title: 'Create a project' })}<section class="card"><div class="empty">${emptyArt}<h3>Add a client first</h3><p>A project belongs to a client.</p><a class="btn primary" href="#new-client">Add client</a></div></section>`;
+    if (!state.orgs.length) return `${head({ title: 'Create a project' })}<section class="card"><div class="empty">${emptyArt}<h3>Add an organisation first</h3><p>A project belongs to an organisation.</p><a class="btn primary" href="#new-organisation">Add organisation</a></div></section>`;
     const K = KINDS[state.newKind], orgId = state.newProjOrg || state.orgs[state.orgs.length - 1].id;
     return `
-    ${head({ crumbs: crumbs(['Clients', '#clients'], ['New project']), title: 'Create a project', lead: 'What you agreed to deliver for the client. Its solution is measured against it.' })}
+    ${head({ crumbs: crumbs(['Organisations', '#organisations'], ['New project']), title: 'Create a project', lead: 'What you agreed to deliver for the organisation. Its solution is measured against it.' })}
     <form id="f-proj" class="card narrow grid" style="gap:24px" novalidate>
       <div class="form-grid">
-        <div class="field"><label for="p-org">Client</label><select id="p-org">${state.orgs.map((o) => `<option value="${o.id}" ${o.id === orgId ? 'selected' : ''}>${esc(o.name)}</option>`).join('')}</select></div>
-        <div class="field"><label for="p-name">Project name</label><input id="p-name" value="${esc(state.draftProj || (state.sims.length ? '' : 'Lease abstraction'))}" placeholder="e.g. Lease abstraction" required><span class="help" id="p-name-help">Use the name the client uses.</span></div>
+        <div class="field"><label for="p-org">Organisation</label><select id="p-org">${state.orgs.map((o) => `<option value="${o.id}" ${o.id === orgId ? 'selected' : ''}>${esc(o.name)}</option>`).join('')}</select></div>
+        <div class="field"><label for="p-name">Project name</label><input id="p-name" value="${esc(state.draftProj || (state.sims.length ? '' : 'Lease abstraction'))}" placeholder="e.g. Lease abstraction" required><span class="help" id="p-name-help">Use the name the organisation uses.</span></div>
       </div>
       <div class="grid" style="gap:10px"><span class="ink" style="font-weight:500">What kind of work does it take on?</span><p class="small muted" style="margin-top:-6px">We use this to suggest KPIs that fit. You can change any of them.</p>
         <div class="grid g2" style="gap:10px">${Object.entries(KINDS).map(([k, x]) => `<button type="button" class="choice" style="grid-template-columns:44px minmax(0,1fr)" data-kind="${k}" aria-pressed="${state.newKind === k}"><span class="ic">${icon(x.icon)}</span><span><b>${x.label}</b><span class="d">${x.d}</span></span></button>`).join('')}</div></div>
       <div class="form-grid">
-        <div class="field full"><label for="p-obj">The outcome the client wants, in their words</label><textarea id="p-obj">${esc(K.objective)}</textarea><span class="help">This goes at the top of every report.</span></div>
+        <div class="field full"><label for="p-obj">The outcome the organisation wants, in their words</label><textarea id="p-obj">${esc(K.objective)}</textarea><span class="help">This goes at the top of every report.</span></div>
         <div class="field"><label for="p-live">Planned go-live</label><input id="p-live" value="${day(M.addDays(today(), 19))}"></div>
-        <div class="field"><label for="p-cad">Client report</label><select id="p-cad"><option>Monthly</option><option>Quarterly</option></select></div>
+        <div class="field"><label for="p-cad">Organisation report</label><select id="p-cad"><option>Monthly</option><option>Quarterly</option></select></div>
       </div>
-      <div class="wfoot"><a class="btn ghost" href="#clients">Cancel</a><button type="submit" class="btn primary lg">Create project</button></div>
+      <div class="wfoot"><a class="btn ghost" href="#organisations">Cancel</a><button type="submit" class="btn primary lg">Create project</button></div>
     </form>`;
   };
   pages['new-project'].after = () => {
@@ -956,7 +1281,7 @@
       const sim = newSim(org, { kind: state.newKind, project: name, objective: $('#p-obj').value.trim(), live: $('#p-live').value, cadence: $('#p-cad').value, sol: state.sims.length ? KINDS[state.newKind].sol : 'Lease reader' });
       state.focusSim = sim.id; state.draftProj = null; state.wiz = freshWizard();
       log(`Created project ${name} for ${org.name}`);
-      go('client-' + org.id); toast('Project created.');
+      go('organisation-' + org.id); toast('Project created.');
     });
   };
 
@@ -1011,7 +1336,7 @@
   const VOLUME = { 'doc-workflow': ['documents.generated', 'Documents processed'], 'invoice-triage': ['invoices.triaged', 'Invoices triaged'], 'shift-planner': ['plans.generated', 'Shift plans made'], 'enquiry-triage': ['enquiries.received', 'Enquiries received'], 'quote-drafter': ['quotes.drafted', 'Quotations drafted'] };
   pages.solution = (id) => {
     const s = M.solutions[id], o = orgById(s.org), st = solStatus(id), days = windowDays(state.range);
-    const tabs = [['outcomes', 'Outcomes'], ['measures', 'Measures'], ['usage', 'Usage'], ['health', 'Health'], ['data', 'Data and connection']];
+    const tabs = [['outcomes', 'Outcomes'], ['measures', 'Measures'], ['explore', 'Explore'], ['usage', 'Usage'], ['health', 'Health'], ['data', 'Data and connection']];
     let banner = '';
     if (st === 'stale') banner = `<div class="callout warn">${icon('clock')}<span><b>No new data since ${(s.since || '14 Oct 2026, 06:00').replace(' 2026,', '')}.</b> ${s.missed || 2} nightly collections were missed. You’re seeing the last good figures, faded. Nothing is filled in as zero.</span></div>`;
     if (st === 'failing') banner = `<div class="callout fault">${icon('alerts')}<span style="flex:1"><b>The solution isn’t answering since ${(s.since || '14 Oct 2026, 06:00').replace(' 2026,', '')}.</b> Its health check returned an error. We retry every 15 minutes and have told the project owner.</span>${gate(atLeast('Operator'), 'Retry now', 'Needs operator rights', 'data-act="retry"', 'btn sm')}</div>`;
@@ -1033,6 +1358,8 @@
         <div class="legend"><span><i style="background:var(--s1)"></i>Measured</span><span><i style="box-shadow:inset 0 0 0 1.5px var(--warn)"></i>No data, not zero</span></div></section>`;
     } else if (state.solTab === 'measures') {
       body = measuresTab(projById(id));
+    } else if (state.solTab === 'explore') {
+      body = exploreTab(projById(id));
     } else if (state.solTab === 'usage') {
       if (id !== 'doc-workflow') body = `<section class="card"><div class="empty"><h3>Usage detail</h3><p>This mock shows usage for Contoh Logistik’s Document workflow.</p><a class="btn sm" href="#solution-doc-workflow">Open Document workflow</a></div></section>`;
       else {
@@ -1064,7 +1391,7 @@
       </tbody></table></div></section>`;
     }
     return `
-    ${head({ crumbs: crumbs(['Clients', '#clients'], [o.short, '#client-' + o.id], [o.projects.find((x) => x.solutions.includes(s.id)).name], [s.name]), title: esc(s.name), meta: `${statusPill(st)}<span>${esc(o.projects[0].name)}</span><span>Live since ${day(s.live)}</span>`, actions: rangeSeg() })}
+    ${head({ crumbs: crumbs(['Organisations', '#organisations'], [o.short, '#organisation-' + o.id], [o.projects.find((x) => x.solutions.includes(s.id)).name], [s.name]), title: esc(s.name), meta: `${statusPill(st)}<span>${esc(o.projects[0].name)}</span><span>Live since ${day(s.live)}</span>`, actions: rangeSeg() })}
     ${banner}
     <div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button type="button" role="tab" data-tab="${k}" aria-selected="${state.solTab === k}">${l}</button>`).join('')}</div>
     ${body}
@@ -1103,17 +1430,18 @@
         return hasBase(s) ? { name: p.name, quality: 'estimated', value: nf(r.mid), unit: 'h', cmp: [['Likely', `${nf(r.low)} to ${nf(r.high)} h`], ['Baseline', `${s.base.mid} min per ${K.noun}`]], src: `${r.missing ? `${r.missing} day${r.missing > 1 ? 's' : ''} missing, not filled in · ` : ''}review time is an estimate`, staleNote: fade } : { name: p.name, quality: 'unavailable', value: null, why: 'Needs a baseline before it can be shown.', cmp: [], src: 'Add one in Approvals' };
       });
       const rs = simReportState(s);
-      const simTabs = `<div class="tabs" role="tablist">${[['outcomes', 'Overview'], ['measures', 'Measures']].map(([k, l]) => `<button type="button" role="tab" data-tab="${k}" aria-selected="${(state.solTab === 'measures' ? 'measures' : 'outcomes') === k}">${l}</button>`).join('')}</div>`;
+      const simTabs = `<div class="tabs" role="tablist">${[['outcomes', 'Overview'], ['measures', 'Measures'], ['explore', 'Explore']].map(([k, l]) => `<button type="button" role="tab" data-tab="${k}" aria-selected="${(['measures', 'explore'].includes(state.solTab) ? state.solTab : 'outcomes') === k}">${l}</button>`).join('')}</div>`;
       if (state.solTab === 'measures') body = `${banner}${simTabs}${measuresTab(projOfSim(s))}`;
+      else if (state.solTab === 'explore') body = `${banner}${simTabs}${exploreTab(projOfSim(s))}`;
       else body = `${banner}${simTabs}
-        ${hasBase(s) && s.kpis.includes('impact') && r.vol ? breakdownHtml(s.base, r.machine, K.review, K.noun, ({ sample: `timed on ${s.base.n} ${K.nouns}`, history: 'from past records', estimate: 'the client’s estimate' })[s.base.method], '') : ''}
+        ${hasBase(s) && s.kpis.includes('impact') && r.vol ? breakdownHtml(s.base, r.machine, K.review, K.noun, ({ sample: `timed on ${s.base.n} ${K.nouns}`, history: 'from past records', estimate: 'the organisation’s estimate' })[s.base.method], '') : ''}
         <div class="grid ${gridFor(cards.length)}">${cards.map(kpiCardHtml).join('')}</div>
         <section class="card"><div class="card-head"><div><h2>${cap(K.nouns)} handled</h2><p class="sub">${state.range > 30 ? 'By week' : 'By day'} · measured · simulated</p></div></div><div class="chart" id="ch-sim"></div>
           <div class="legend"><span><i style="background:var(--s1)"></i>Measured</span><span><i style="box-shadow:inset 0 0 0 1.5px var(--warn)"></i>No data, not zero</span></div></section>
-        ${!s.reportScheduled ? `<section class="card"><div class="row" style="border:0;padding:0"><span class="ico info">${icon('reports', 'sm')}</span><div><div class="what">Schedule the client report</div><div class="meta">${esc(s.project.cadence)} · drafted for you, sent only after you check it</div></div><button type="button" class="btn primary sm" data-act="schedule-report" data-sim="${s.id}">Schedule report</button></div></section>`
+        ${!s.reportScheduled ? `<section class="card"><div class="row" style="border:0;padding:0"><span class="ico info">${icon('reports', 'sm')}</span><div><div class="what">Schedule the organisation report</div><div class="meta">${esc(s.project.cadence)} · drafted for you, sent only after you check it</div></div><button type="button" class="btn primary sm" data-act="schedule-report" data-sim="${s.id}">Schedule report</button></div></section>`
         : `<section class="card"><div class="row" style="border:0;padding:0"><span class="ico ${rs.st === 'ready' ? 'warn' : 'ok'}">${icon('reports', 'sm')}</span><div><div class="what">${rs.st === 'ready' ? `${monthName(rs.ym)} report is ready to review` : rs.st === 'approved' ? `${monthName(rs.ym)} report approved` : `${esc(s.project.cadence)} report scheduled`}</div><div class="meta">${rs.st === 'waiting' ? `First draft on ${nextMonthStart()}, once a full month of figures is in. Move the date forward in Demo studio to see it.` : 'Drafted from the figures above'}</div></div>${rs.st !== 'waiting' ? `<a class="btn sm ${rs.st === 'ready' ? 'primary' : ''}" href="#report-${s.id}">Open report</a>` : ''}</div></section>`}`;
     }
-    return `${head({ crumbs: crumbs(['Clients', '#clients'], [o.name, '#client-' + o.id], [s.project.name], [s.name]), title: esc(s.name), meta: `${statusPill(st)}<span>${esc(s.project.name)}</span><span>${K.label}</span>`, actions: s.stage === 'collecting' ? rangeSeg() : '' })}
+    return `${head({ crumbs: crumbs(['Organisations', '#organisations'], [o.name, '#organisation-' + o.id], [s.project.name], [s.name]), title: esc(s.name), meta: `${statusPill(st)}<span>${esc(s.project.name)}</span><span>${K.label}</span>`, actions: s.stage === 'collecting' ? rangeSeg() : '' })}
       ${strip}${body}`;
   };
   pages.sim.after = (id) => {
@@ -1139,7 +1467,7 @@
 - Read-only GET endpoints under /internal/measure/v1: manifest, metrics, observations, health, openapi.json.
 - TypeScript: use the kit in the pack. Other languages: follow the pack's signature and test vectors.
 - Don't change the app's own data model or API.
-- Daily totals for finished days in the client's time zone: ${K.nouns} handled, processing time (with sum and count), ${K.nouns} ${K.qual.label}, people reviewing (each counted once). A missing day is left out, never sent as zero.
+- Daily totals for finished days in the organisation's time zone: ${K.nouns} handled, processing time (with sum and count), ${K.nouns} ${K.qual.label}, people reviewing (each counted once). A missing day is left out, never sent as zero.
 - No document text, names or personal data. Dimension values are short codes, like invoice.
 - Check every call is signed with the key in AX_MEASURE_KEY (ax_msr_…). Outcomes shows it once, when the solution is connected.
 - Before you finish, run the contract test: AX_MEASURE_KEY=… node contract-test/cli.mjs --base <url>
@@ -1149,16 +1477,16 @@
     if (id) state.focusSim = id;
     let s = wizSim();
     if (!s || s.stage !== 'draft') { s = state.sims.find((x) => x.stage === 'draft'); if (s) { state.focusSim = s.id; state.wiz = freshWizard(); } }
-    if (!s) return `${head({ title: 'Connect a solution' })}<section class="card"><div class="empty">${emptyArt}<h3>${state.orgs.length ? 'Create a project first' : 'Add the client and project first'}</h3><p>A solution is measured against a project’s outcome, so we need both before connecting.</p><a class="btn primary" href="${state.orgs.length ? '#new-project' : '#new-client'}">${state.orgs.length ? 'Create project' : 'Add client'}</a></div></section>`;
+    if (!s) return `${head({ title: 'Connect a solution' })}<section class="card"><div class="empty">${emptyArt}<h3>${state.orgs.length ? 'Create a project first' : 'Add the organisation and project first'}</h3><p>A solution is measured against a project’s outcome, so we need both before connecting.</p><a class="btn primary" href="${state.orgs.length ? '#new-project' : '#new-organisation'}">${state.orgs.length ? 'Create project' : 'New organisation'}</a></div></section>`;
     const w = state.wiz, o = orgOf(s), K = kindOf(s), solName = w.solName || s.name;
     if (!w.baseline) w.baseline = { method: 'sample', mid: K.base.mid, low: K.base.low, high: K.base.high, n: 20, period: `${day(M.addDays(today(), 5))} to ${day(M.addDays(today(), 9))}`, note: '' };
     const nav = `<ol class="wsteps">${WSTEPS.map((l, i) => `<li class="${i + 1 < w.step ? 'done' : i + 1 === w.step ? 'now' : ''}" ${i + 1 === w.step ? 'aria-current="step"' : ''}><b>${i + 1 < w.step ? '✓' : i + 1}</b><span>${l}</span></li>`).join('')}</ol>`;
-    const foot = (label, disabled) => `<div class="wfoot">${w.step > 1 ? `<button type="button" class="btn ghost" data-act="w-back">${icon('back', 'sm')}Back</button>` : `<a class="btn ghost" href="#client-${o.id}">Cancel</a>`}<button type="button" class="btn primary lg" data-act="w-next" ${disabled ? 'disabled' : ''}>${label}</button></div>`;
+    const foot = (label, disabled) => `<div class="wfoot">${w.step > 1 ? `<button type="button" class="btn ghost" data-act="w-back">${icon('back', 'sm')}Back</button>` : `<a class="btn ghost" href="#organisation-${o.id}">Cancel</a>`}<button type="button" class="btn primary lg" data-act="w-next" ${disabled ? 'disabled' : ''}>${label}</button></div>`;
     const props = kpiProposals(s);
     let panel = '';
     if (w.step === 1) panel = `<div><h2>Which solution are you connecting?</h2><p class="small muted" style="margin-top:4px">For ${esc(o.name)} · ${esc(s.project.name)}</p></div>
         <div class="form-grid"><div class="field full"><label for="w-sol">Solution name</label><input id="w-sol" value="${esc(solName)}"><span class="help">What your team calls it.</span></div>
-        <div class="field"><label for="w-env">Environment</label><select id="w-env"><option>Production</option><option>Staging, for testing</option></select><span class="help">Only production feeds client reports.</span></div>
+        <div class="field"><label for="w-env">Environment</label><select id="w-env"><option>Production</option><option>Staging, for testing</option></select><span class="help">Only production feeds organisation reports.</span></div>
         <div class="field"><label for="w-ver">Version</label><input id="w-ver" value="1.0.0"></div></div>${foot('Continue')}`;
     if (w.step === 2) panel = `<div><h2>How will it share its figures?</h2><p class="small muted" style="margin-top:4px">Outcomes only reads daily totals. It never changes anything in the solution.</p></div>
         <div class="choice-grid">${[['link', 'link', 'Measurement link', 'The solution serves a small read-only link that we call each night. Best for anything REKA builds.', 'Recommended'], ['axle', 'box', 'An AntaraX product', 'Yara, Janka and others already share totals with AXLE. Nothing to build.', ''], ['sheet', 'sheet', 'Spreadsheet upload', 'For systems that can’t serve a link. Someone uploads a CSV each week.', '']].map(([k, ic, t, d, tag]) => `<button type="button" class="choice" data-method="${k}" aria-pressed="${w.method === k}"><span class="ic">${icon(ic)}</span><span><b>${t}</b><span class="d">${d}</span></span>${tag ? `<span class="pill info tag">${tag}</span>` : '<span class="radio"></span>'}</button>`).join('')}</div>
@@ -1185,7 +1513,7 @@
     if (w.step === 7) {
       const b = w.baseline;
       panel = `<div><h2>How long does a ${K.noun} take by hand?</h2><p class="small muted" style="margin-top:4px">Hours saved compares today with before. Agree this with ${esc(o.name)}: it appears in every report.</p></div>
-        ${w.keep.impact ? `<div class="grid g2" style="gap:10px">${[['sample', 'clock', 'Time a sample', `Someone times 20 or more ${K.nouns} by hand. Most trusted.`], ['history', 'documents', 'Use past records', 'From the client’s own system, if it logged the time.'], ['estimate', 'people', 'The client’s estimate', 'Quickest. Reports label it as an estimate.'], ['none', 'target', 'Not available yet', 'Hours saved shows “needs a baseline” until you add one.']].map(([k, ic, t, d]) => `<button type="button" class="choice" style="grid-template-columns:44px minmax(0,1fr)" data-bmethod="${k}" aria-pressed="${b.method === k}"><span class="ic">${icon(ic)}</span><span><b>${t}</b><span class="d">${d}</span></span></button>`).join('')}</div>
+        ${w.keep.impact ? `<div class="grid g2" style="gap:10px">${[['sample', 'clock', 'Time a sample', `Someone times 20 or more ${K.nouns} by hand. Most trusted.`], ['history', 'documents', 'Use past records', 'From the organisation’s own system, if it logged the time.'], ['estimate', 'people', 'The organisation’s estimate', 'Quickest. Reports label it as an estimate.'], ['none', 'target', 'Not available yet', 'Hours saved shows “needs a baseline” until you add one.']].map(([k, ic, t, d]) => `<button type="button" class="choice" style="grid-template-columns:44px minmax(0,1fr)" data-bmethod="${k}" aria-pressed="${b.method === k}"><span class="ic">${icon(ic)}</span><span><b>${t}</b><span class="d">${d}</span></span></button>`).join('')}</div>
         ${b.method !== 'none' ? `<div class="form-grid">
           <div class="field"><label for="b-mid">Typical minutes per ${K.noun}</label><input id="b-mid" type="number" inputmode="decimal" value="${b.mid}"></div>
           <div class="field"><label for="b-low">Fastest and slowest</label><div class="with-btn"><input id="b-low" type="number" aria-label="Fastest, minutes" value="${b.low}"><input id="b-high" type="number" aria-label="Slowest, minutes" value="${b.high}"></div><span class="help">Reports show hours saved as a range from these.</span></div>
@@ -1196,11 +1524,11 @@
     if (w.step === 8) {
       const kept = props.filter((p) => w.keep[p.id]), b = w.baseline;
       panel = `<div><h2>Review and send for approval</h2><p class="small muted" style="margin-top:4px">Someone other than you approves the KPIs and baseline. Collection starts once they do.</p></div>
-        ${kv([['Solution', `${esc(solName)} · ${esc(o.name)}`], ['Shares by', 'Measurement link, read-only key'], ['Collects', 'Every night at 06:00 MYT · health every 15 minutes'], ['KPIs', kept.map((p) => esc(p.name)).join('<br>')], ['Baseline', w.keep.impact ? (b.method === 'none' ? 'Not available yet' : `${b.mid} min per ${K.noun}, ${b.low} to ${b.high} · ${({ sample: `timed sample of ${b.n} ${K.nouns}`, history: 'past records', estimate: 'client estimate' })[b.method]}`) : '–'], ['Held back', `${cap(K.nouns)} by customer name`]], 120)}
+        ${kv([['Solution', `${esc(solName)} · ${esc(o.name)}`], ['Shares by', 'Measurement link, read-only key'], ['Collects', 'Every night at 06:00 MYT · health every 15 minutes'], ['KPIs', kept.map((p) => esc(p.name)).join('<br>')], ['Baseline', w.keep.impact ? (b.method === 'none' ? 'Not available yet' : `${b.mid} min per ${K.noun}, ${b.low} to ${b.high} · ${({ sample: `timed sample of ${b.n} ${K.nouns}`, history: 'past records', estimate: 'organisation estimate' })[b.method]}`) : '–'], ['Held back', `${cap(K.nouns)} by customer name`]], 120)}
         <div class="field"><label for="w-appr">Who approves</label><select id="w-appr"><option>Aisyah Rahman · Admin</option></select><span class="help">You can’t approve what you set up yourself.</span></div>
         ${foot('Send for approval')}`;
     }
-    return `${head({ crumbs: crumbs(['Clients', '#clients'], [o.name, '#client-' + o.id], [s.project.name], ['Connect a solution']), title: 'Connect a solution', lead: `${esc(s.project.name)} · step ${w.step} of ${WSTEPS.length}` })}
+    return `${head({ crumbs: crumbs(['Organisations', '#organisations'], [o.name, '#organisation-' + o.id], [s.project.name], ['Connect a solution']), title: 'Connect a solution', lead: `${esc(s.project.name)} · step ${w.step} of ${WSTEPS.length}` })}
       <div class="wizard">${nav}<div class="card wpanel" id="wpanel">${panel}</div></div>`;
   };
   pages.connect.after = () => {
@@ -1248,7 +1576,7 @@
     const why = sel.status === 'blocked' ? 'Needs a baseline first' : mine ? 'You set this up, so someone else approves it.' : !has('Approve') ? 'You can comment, but not approve.' : '';
     const sp = (a) => ({ waiting: '<span class="pill warn"><span class="dot"></span>Waiting</span>', blocked: '<span class="pill fault"><span class="dot"></span>Blocked</span>', approved: '<span class="pill ok"><span class="dot"></span>Approved</span>', changes: '<span class="pill info">Changes asked</span>', declined: '<span class="pill idle">Declined</span>' })[a.status];
     const who = (id) => id === 'ai' ? `<span class="ai-mark"><img src="${SPARK}" alt="">Suggested by AI</span>` : id === 'collector' ? 'Spotted automatically' : M.staff[id].name;
-    return `${head({ title: 'Approvals', lead: 'Nothing is measured or shown to a client until someone other than the proposer approves it.', meta: `<span>${list.filter((a) => a.status === 'waiting').length} waiting</span><span>${list.filter((a) => a.status === 'blocked').length} blocked</span>` })}
+    return `${head({ title: 'Approvals', lead: 'Nothing is measured or shown to an organisation until someone other than the proposer approves it.', meta: `<span>${list.filter((a) => a.status === 'waiting').length} waiting</span><span>${list.filter((a) => a.status === 'blocked').length} blocked</span>` })}
     ${!demo() && state.role === 'daniel' && list.some((a) => a.status === 'waiting' && a.editedBy === 'daniel') ? `<div class="callout info">${icon('people')}<span>You set these up, so Aisyah Rahman approves them. To try it, switch to Aisyah from your profile menu.</span></div>` : ''}
     <div class="grid ap-split" id="ap-split">
       <div class="grid" style="gap:8px;align-content:start">${list.map((a) => `<button type="button" class="choice" style="grid-template-columns:minmax(0,1fr);gap:6px" data-sel="${a.id}" aria-pressed="${a.id === sel.id}"><span class="meta-line" style="margin:0">${sp(a)}<span class="pill idle">${a.type}</span></span><b>${esc(a.title)}</b><span class="d">${esc(orgName(a))} · ${esc(a.since.replace(' 2026,', ''))}</span></button>`).join('')}</div>
@@ -1286,7 +1614,7 @@
   };
 
   // ------------------------------------------------------------------ REPORTS
-  // One row per project report, tagged with its client, in every workspace.
+  // One row per project report, tagged with its organisation, in every workspace.
   function reportRows() {
     const pill = (c, t, dot = true) => `<span class="pill ${c}">${dot ? '<span class="dot"></span>' : ''}${t}</span>`;
     if (!demo()) return state.sims.map((s) => { const r = simReportState(s), open = r.st === 'ready' || r.st === 'approved';
@@ -1303,7 +1631,7 @@
   const repKey = () => demo() ? 'example' : state.ws;
   const repFor = () => { const f = state.repFor; return f && f.k === repKey() && coById(f.id) ? coById(f.id) : null; };
   pages.reports = () => {
-    const lead = 'Each client gets a report on their schedule. It’s drafted for you and goes out only after you check it.';
+    const lead = 'Each organisation gets a report on their schedule. It’s drafted for you and goes out only after you check it.';
     if (!demo() && !state.sims.length) return `${head({ title: 'Reports', lead })}<section class="card"><div class="empty">${emptyArt}<h3>No reports yet</h3><p>Once a solution is collecting data, you can schedule its report here.</p></div></section>`;
     const all = reportRows(), one = repFor();
     const opts = companies().filter((c) => all.some((r) => r.cid === c.id) || (one && one.id === c.id));
@@ -1311,16 +1639,16 @@
     const rows = (one ? all.filter((r) => r.cid === one.id) : all).map((r, i) => ({ r, i, c: coById(r.cid) })).sort((a, b) => opts.indexOf(a.c) - opts.indexOf(b.c) || a.i - b.i);
     const due = rows.filter((x) => x.r.due).length, cur = one ? one.id : 'all';
     const pick = opts.length <= 5
-      ? `<div class="seg" role="group" aria-label="Client">${[['all', 'All clients']].concat(opts.map((c) => [c.id, c.short])).map(([k, l]) => `<button type="button" data-repfor="${k}" aria-pressed="${cur === k}">${esc(l)}</button>`).join('')}</div>`
-      : `<div class="field" style="min-width:200px"><select id="rep-for" aria-label="Client"><option value="all">All clients (${all.length})</option>${opts.map((c) => `<option value="${c.id}" ${cur === c.id ? 'selected' : ''}>${esc(c.short)} (${count(c.id)})</option>`).join('')}</select></div>`;
+      ? `<div class="seg" role="group" aria-label="Organisation">${[['all', 'All organisations']].concat(opts.map((c) => [c.id, c.short])).map(([k, l]) => `<button type="button" data-repfor="${k}" aria-pressed="${cur === k}">${esc(l)}</button>`).join('')}</div>`
+      : `<div class="field" style="min-width:200px"><select id="rep-for" aria-label="Organisation"><option value="all">All organisations (${all.length})</option>${opts.map((c) => `<option value="${c.id}" ${cur === c.id ? 'selected' : ''}>${esc(c.short)} (${count(c.id)})</option>`).join('')}</select></div>`;
     const cols = one ? 4 : 5;
     const ghost = !demo() && all.some((r) => /First draft/.test(r.status));
     return `${head({ title: 'Reports', lead })}
     <section class="card" style="padding:14px 18px"><div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">${pick}<span class="small muted">${rows.length} report${rows.length === 1 ? '' : 's'}${due ? ` · ${due} ready to review` : ''}</span></div></section>
-    <section class="card">${one ? `<div class="card-head"><div><h2>Reports for ${esc(one.short)}</h2><p class="sub">${esc(one.industry)} · ${one.projects.length} project${one.projects.length === 1 ? '' : 's'}</p></div><a class="btn sm ghost" href="${one.href}">Open client${icon('chev', 'sm')}</a></div>` : ''}
-      <div class="table-wrap"><table class="report-table"><thead><tr><th>Report</th>${one ? '' : '<th class="rt-client">Client</th>'}<th>Period</th><th>Status</th><th></th></tr></thead><tbody>
+    <section class="card">${one ? `<div class="card-head"><div><h2>Reports for ${esc(one.short)}</h2><p class="sub">${esc(one.industry)} · ${one.projects.length} project${one.projects.length === 1 ? '' : 's'}</p></div><a class="btn sm ghost" href="${one.href}">Open organisation${icon('chev', 'sm')}</a></div>` : ''}
+      <div class="table-wrap"><table class="report-table"><thead><tr><th>Report</th>${one ? '' : '<th class="rt-client">Organisation</th>'}<th>Period</th><th>Status</th><th></th></tr></thead><tbody>
       ${rows.length ? rows.map(({ r, c }) => `<tr ${r.go ? `class="link" data-go="${r.go}" tabindex="0"` : ''}><td><span class="name">${esc(r.name)}</span><span class="sub">${esc(r.cadence)}</span>${one ? '' : `<span class="sub rt-co">${esc(c.short)}</span>`}</td>${one ? '' : `<td class="rt-client"><span class="name">${esc(c.short)}</span><span class="sub">${esc(c.industry)}</span></td>`}<td class="mono">${esc(r.period)}</td><td>${r.status}</td><td>${r.action}</td></tr>`).join('')
-        : `<tr><td colspan="${cols}"><div class="empty" style="padding:16px"><p>No reports for ${esc(one.short)} yet. The first is drafted once a solution has a month of figures. <button type="button" class="btn sm ghost" data-repfor="all">Show all clients</button></p></div></td></tr>`}
+        : `<tr><td colspan="${cols}"><div class="empty" style="padding:16px"><p>No reports for ${esc(one.short)} yet. The first is drafted once a solution has a month of figures. <button type="button" class="btn sm ghost" data-repfor="all">Show all organisations</button></p></div></td></tr>`}
     </tbody></table></div></section>${ghost ? `<div class="demo-bar"><span class="tag">MOCK CONTROLS</span><span>Reports draft on the 1st of each month.</span><button type="button" class="btn sm" data-act="to-month-end">Jump to ${nextMonthStart()}</button></div>` : ''}`;
   };
   pages.reports.after = () => { const sel = $('#rep-for'); if (sel) sel.addEventListener('change', (e) => { state.repFor = e.target.value === 'all' ? null : { k: repKey(), id: e.target.value }; render(); }); };
@@ -1370,9 +1698,9 @@
       headline: [[`${cap(K.nouns)} handled`, nf(cur.vol), hasPrev ? `${delta(cur.vol, prev.vol)} on ${MONTHS[+pm.slice(5) - 1]} · measured<sup>1</sup>` : 'first month · measured<sup>1</sup>'], ['Hours freed', s.kpis.includes('impact') && hasBase(s) ? nf(cur.mid) : '–', s.kpis.includes('impact') && hasBase(s) ? `likely ${nf(cur.low)} to ${nf(cur.high)} · estimated<sup>2</sup>` : 'needs a baseline'], [cap(K.qual.label), pct(cur.rate), `${nf(K.qual.from, 1)}% at the start · derived<sup>3</sup>`]],
       rows,
       changed: [firstMonth ? `This is the first full month of figures from ${esc(s.name)}.` : `${cap(K.nouns)} handled ${cur.vol >= prev.vol ? 'rose' : 'fell'} by ${nf(Math.abs(100 * (cur.vol - prev.vol) / prev.vol), 0)}% on the month before.`, cur.rate !== null && hasPrev && prev.rate !== null ? `The share ${K.qual.label} ${cur.rate <= prev.rate ? 'fell' : 'rose'} from ${pct(prev.rate)} to ${pct(cur.rate)}.` : `The share ${K.qual.label} was ${pct(cur.rate)}.`, cur.missing ? `${cur.missing} day${cur.missing > 1 ? 's are' : ' is'} missing and not counted.` : 'Every day of the month was collected.'],
-      notes: [`Counted by ${esc(s.name)}, collected nightly.${cur.missing ? ` ${cur.missing} missing day${cur.missing > 1 ? 's' : ''} not counted.` : ''}`, hasBase(s) ? `${cap(K.nouns)} × (${B.mid} minutes by hand − ${nf(cur.machine, 1)} machine minutes − ${K.review.mid} review minutes) ÷ 60. By-hand time: ${({ sample: `a timed sample of ${B.n} ${K.nouns}`, history: 'the client’s past records', estimate: 'the client’s estimate' })[B.method]}. The range uses the fastest and slowest times. Machine time is never counted as time saved.` : 'No baseline has been agreed, so hours freed are not reported.', `${cap(K.nouns)} ${K.qual.label} ÷ ${K.nouns} handled.`],
+      notes: [`Counted by ${esc(s.name)}, collected nightly.${cur.missing ? ` ${cur.missing} missing day${cur.missing > 1 ? 's' : ''} not counted.` : ''}`, hasBase(s) ? `${cap(K.nouns)} × (${B.mid} minutes by hand − ${nf(cur.machine, 1)} machine minutes − ${K.review.mid} review minutes) ÷ 60. By-hand time: ${({ sample: `a timed sample of ${B.n} ${K.nouns}`, history: 'the organisation’s past records', estimate: 'the organisation’s estimate' })[B.method]}. The range uses the fastest and slowest times. Machine time is never counted as time saved.` : 'No baseline has been agreed, so hours freed are not reported.', `${cap(K.nouns)} ${K.qual.label} ÷ ${K.nouns} handled.`],
       caveat: 'These figures compare this month with the baseline. They don’t show what caused every change. Hours freed are an estimate, not hours removed from anyone’s week.',
-      next: [`Re-time a fresh sample of ${K.nouns} to confirm the baseline.`, `Look at the ${K.nouns} ${K.qual.label} to see what the AI finds hard.`, 'Agree the next quarter’s target with the client.'] })}`;
+      next: [`Re-time a fresh sample of ${K.nouns} to confirm the baseline.`, `Look at the ${K.nouns} ${K.qual.label} to see what the AI finds hard.`, 'Agree the next quarter’s target with the organisation.'] })}`;
   }
 
   // ------------------------------------------------------------------ MEASURES tab: the standard library and your own
@@ -1385,18 +1713,18 @@
       ${extra || ''}<p class="src">${esc(how)}</p></article>`;
     const cmpOk = comparable(T, P);
     const chgTxt = (v, pv, better) => { if (!cmpOk) return 'Too few days before to compare'; if (v === null || pv === null || pv === undefined || !isFinite(pv) || pv === 0) return null; const c = 100 * (v - pv) / Math.abs(pv); const good = better === 'up' ? c >= 0 : c <= 0; return `<span class="delta" style="color:var(--${Math.abs(c) < 1 ? 'muted' : good ? 'ok-ink' : 'fault-ink'})">${c >= 0 ? '▲' : '▼'} ${nf(Math.abs(c), 0)}%</span> vs before`; };
-    let html = `<section class="grid" style="gap:6px"><div class="card-head" style="margin:0"><div><h2>Measures</h2><p class="sub">Last 30 days · the same library for every project, worked out from the solution’s daily figures</p></div><span class="head-actions"><a class="btn sm" href="#analytics" data-an-proj="${proj.id}">Open in analytics</a><button type="button" class="btn sm primary" data-act="bld-open" data-proj="${proj.id}">${icon('plus', 'sm')}Add a measure</button></span></div></section>`;
+    let html = `<section class="grid" style="gap:6px"><div class="card-head" style="margin:0"><div><h2>Measures</h2><p class="sub">Last 30 days · the same library for every project, worked out from the solution’s daily figures</p></div><span class="head-actions"><a class="btn sm" href="#analytics" data-an-proj="${proj.id}">Open in analytics</a><button type="button" class="btn sm" data-tab="explore"><img src="${SPARK}" alt="" style="width:16px">Explore other measures</button><button type="button" class="btn sm primary" data-act="bld-open" data-proj="${proj.id}">${icon('plus', 'sm')}Add a measure</button></span></div></section>`;
     if (state.bld && state.bld.proj === proj.id) html += builderHtml(proj);
     const cms = proj.custom();
     html += `<section class="grid" style="gap:12px"><h3 class="muted" style="font-weight:500">Your measures</h3>${cms.length ? `<div class="grid ${gridFor(Math.min(3, cms.length))}">${cms.map((cm) => {
       const meta = customMeta(cm), v = evalCustom(proj, cm, days), pv = evalCustom(proj, cm, prevDays);
       const pill = cm.status === 'live' ? '' : `<div class="meta-line" style="margin:0">${cm.status === 'waiting' ? '<span class="pill warn"><span class="dot"></span>Waiting for approval</span>' : cm.status === 'changes' ? '<span class="pill info">Changes asked</span>' : '<span class="pill idle">Declined</span>'}${cm.status === 'waiting' && cm.by === state.role && cm.by !== 'aisyah' ? `<button type="button" class="btn sm ghost" data-act="cm-approve" data-proj="${proj.id}" data-cm="${cm.id}">Mock: Aisyah approves</button>` : ''}</div>`;
-      return tile(cm.name, meta.quality, fmtM(meta, v), null, chgTxt(v, pv, 'up'), sparkline(weeksOf(aWindow(84)).map((w) => evalCustom(proj, cm, w))), `${customFormula(cm)} · ${cm.aud === 'client' ? 'team and client' : 'team only'}${cm.target ? ` · target ${cm.target}` : ''}`, pill);
+      return tile(cm.name, meta.quality, fmtM(meta, v), null, chgTxt(v, pv, 'up'), sparkline(weeksOf(aWindow(84)).map((w) => evalCustom(proj, cm, w))), `${customFormula(cm)} · ${cm.aud === 'client' ? 'staff and organisation' : 'staff only'}${cm.target ? ` · target ${cm.target}` : ''}`, pill);
     }).join('')}</div>` : `<div class="card"><div class="empty" style="padding:16px"><p>Add a measure of your own from the figures this solution shares, for example “hours saved per person”. It goes for approval like any KPI.</p></div></div>`}</section>`;
     DOMAINS.forEach((dm) => {
       const ms = MEASURES.filter((m) => m.domain === dm);
       if (dm === 'Commercial' && !has('Commercial')) { html += `<section class="grid" style="gap:12px"><h3 class="muted" style="font-weight:500">${dm}</h3><div class="callout info">${icon('lock')}<span>Running cost per item is REKA only, for people with the commercial right. Switch to Aisyah Rahman from your profile menu to see it.</span></div></section>`; return; }
-      html += `<section class="grid" style="gap:12px"><h3 class="muted" style="font-weight:500">${dm}${dm === 'Commercial' ? ' · REKA only, never in client output' : ''}</h3><div class="grid ${ms.length === 1 ? 'g2' : gridFor(Math.min(4, ms.length))}">${ms.map((m) => {
+      html += `<section class="grid" style="gap:12px"><h3 class="muted" style="font-weight:500">${dm}${dm === 'Commercial' ? ' · REKA only, never in organisation output' : ''}</h3><div class="grid ${ms.length === 1 ? 'g2' : gridFor(Math.min(4, ms.length))}">${ms.map((m) => {
         const v = m.calc(T), pv = m.calc(P), rg = m.range ? m.range(T) : null;
         return tile(m.name, m.quality, fmtM(m, v), rg ? `${fmtM(m, rg[0])} to ${fmtM(m, rg[1])}` : null, chgTxt(v, pv, m.better), sparkline(wt.map((t) => m.calc(t))), m.how);
       }).join('')}</div></section>`;
@@ -1412,9 +1740,9 @@
         <div class="field full"><label for="bld-name">Name</label><input id="bld-name" value="${esc(b.name)}" placeholder="e.g. Hours saved per person"></div>
         <div class="field full"><span class="lab">Worked out as</span><div class="chips">${Object.entries(OPS).map(([k, l]) => `<button type="button" class="chip" data-bop="${k}" aria-pressed="${b.op === k}">${l}</button>`).join('')}</div></div>
         <div class="field"><label for="bld-a">${b.op === 'ratio' ? 'Part' : b.op === 'per' ? 'This' : 'Figure'}</label><select id="bld-a">${fieldOpts(b.a)}</select></div>
-        ${b.op === 'ratio' || b.op === 'per' ? `<div class="field"><label for="bld-b">${b.op === 'ratio' ? 'Out of' : 'Per'}</label><select id="bld-b">${fieldOpts(b.b)}</select></div>` : b.op === 'value' ? `<div class="field"><label for="bld-rate">Rate, RM each</label><input id="bld-rate" type="number" value="${esc(b.rate)}"><span class="help">Agree the rate with the client. Shown as an estimate.</span></div>` : '<div></div>'}
+        ${b.op === 'ratio' || b.op === 'per' ? `<div class="field"><label for="bld-b">${b.op === 'ratio' ? 'Out of' : 'Per'}</label><select id="bld-b">${fieldOpts(b.b)}</select></div>` : b.op === 'value' ? `<div class="field"><label for="bld-rate">Rate, RM each</label><input id="bld-rate" type="number" value="${esc(b.rate)}"><span class="help">Agree the rate with the organisation. Shown as an estimate.</span></div>` : '<div></div>'}
         <div class="field"><label for="bld-target">Target, optional</label><input id="bld-target" value="${esc(b.target)}" placeholder="e.g. 40"></div>
-        <div class="field"><span class="lab">Who sees it</span><div class="seg"><button type="button" data-baud="team" aria-pressed="${b.aud !== 'client'}">Team only</button><button type="button" data-baud="client" aria-pressed="${b.aud === 'client'}">Team and client</button></div></div>
+        <div class="field"><span class="lab">Who sees it</span><div class="seg"><button type="button" data-baud="team" aria-pressed="${b.aud !== 'client'}">Staff only</button><button type="button" data-baud="client" aria-pressed="${b.aud === 'client'}">Staff and organisation</button></div></div>
       </div>
       <div class="callout ai" style="margin-top:16px;align-items:center;flex-wrap:wrap"><img src="${SPARK}" alt="" style="width:18px"><span style="flex:1;min-width:200px"><b>Preview, last 30 days:</b> <span class="mono">${fmtM(meta, v) || '– not enough data'}</span>${pv !== null && v !== null ? ` · previous 30 days <span class="mono">${fmtM(meta, pv)}</span>` : ''} · ${q(meta.quality)}<br><span class="small muted">${esc(customFormula(b))}</span></span>${sparkline(weeksOf(aWindow(84)).map((w) => evalCustom(proj, b, w)), 120, 36)}</div>
       <div class="wfoot" style="margin-top:14px"><button type="button" class="btn ghost" data-act="bld-close">Cancel</button><button type="button" class="btn primary" data-act="bld-save" data-proj="${proj.id}">Send for approval</button></div>
@@ -1426,8 +1754,484 @@
     bind('bld-name', 'name'); bind('bld-a', 'a'); bind('bld-b', 'b'); bind('bld-rate', 'rate', true); bind('bld-target', 'target');
   }
 
+  // ------------------------------------------------------------------ EXPLORE IMPACT
+  // Re-prompt and explore other measures of business impact, for any project collecting data, in every workspace.
+  // Suggestions come from a fixed catalog (XP_CATALOG), chosen and ranked by the kind of work, the words in the brief,
+  // the focus chips and the figures the solution already shares. Nothing is invented: previews come only from the
+  // project's own daily figures, and a figure the solution doesn't share turns the idea into a request or a record.
+  const XP_FOCUS = [['money', 'Money'], ['time', 'Time'], ['quality', 'Quality'], ['risk', 'Risk'], ['cx', 'Customer experience'], ['adoption', 'Adoption']];
+  const XP_WORDS = {
+    money: /money|cost|spend|revenue|cash|ringgit|\brm\b|price|penalt|fee|margin|profit|discount|saving|paid|pay/,
+    time: /time|hour|fast|slow|quick|wait|late|delay|turnaround|backlog|overdue|deadline|same day|sooner/,
+    quality: /quality|error|mistake|wrong|correct|accura|rework|\bfix|sent back|revis|better/,
+    risk: /risk|complian|audit|penalt|breach|late|overdue|fraud|fail|miss|duplicate|unfilled/,
+    cx: /customer|patient|supplier|guest|wait|satisf|complain|experience|respon|rating|answer/,
+    adoption: /adopt|staff|team|people|using|usage|train|freed|higher.value|morale|per person|spend/,
+  };
+  const XP_TYPE = { a: 'Ready now', b: 'Needs a new figure', c: 'Needs a baseline or their number' };
+  const XP_CAVEAT = { a: 'Shows what changed alongside the solution, not proof that it caused it.', b: 'Counts only from the day the solution starts sharing it. Earlier days stay empty, never zero.', c: 'Only as good as the organisation’s own records. Check how they were counted.' };
+  const XP_STD_NEEDS = { tat: ['tat'], sla: ['sla'], quality: ['corrected'], straight: ['corrected'], hours: ['hours'], people: ['people'], perPerson: ['people'], fails: ['fails'] };
+  // What a solution would add to its Measurement Link to share one of the standard figures (PRD §10.6).
+  const XP_FIELD_FIG = {
+    corrected: { key: '{nk}.corrected', type: 'counter', unit: 'item', desc: '{Nouns} a person sent back or corrected, counted on the day.', dims: ['reason'], label: '{Nouns} corrected' },
+    straight: { key: '{nk}.corrected', type: 'counter', unit: 'item', desc: '{Nouns} a person sent back or corrected, counted on the day.', dims: ['reason'], label: '{Nouns} corrected' },
+    machine: { key: '{nk}.processing_time', type: 'duration', unit: 'second', agg: 'mean', desc: 'Average machine seconds per {noun}, sent with the sum and count.', dims: [], label: 'Machine time' },
+    tat: { key: '{nk}.turnaround', type: 'duration', unit: 'hour', agg: 'median', desc: 'Median hours from a {noun} arriving to it being done.', dims: [], label: 'Turnaround' },
+    sla: { key: '{nk}.within_agreed_time', type: 'counter', unit: 'item', desc: '{Nouns} done inside the time agreed with the organisation.', dims: [], label: '{Nouns} within agreed time' },
+    people: { key: 'operators.active', type: 'distinct', unit: 'person', desc: 'Distinct people who used it that day, each counted once by a pseudonymous id.', dims: [], label: 'People using it' },
+    fails: { key: 'runs.failed', type: 'counter', unit: 'run', desc: 'Runs the solution reported as failed.', dims: ['reason'], label: 'Failed runs' },
+  };
+  const X = (id, k, t, name, why, tags, words, more) => Object.assign({ id, k, t, name, why, tags, words }, more || {});
+  // a: ready now (cm over FIELDS), b: needs a new figure (fig in the Measurement Link contract's shape), c: needs a baseline or their number (rec).
+  // std: the idea is a standard measure, so it is "Already measured" when the solution shares what it needs.
+  const XP_CATALOG = [
+    // ---- any kind of work
+    X('g-hrs-person', ['*'], 'a', 'Hours freed per person', 'Shows how much time each person using it gets back, the time that can move to other work.', ['time', 'adoption'], /freed|higher.value|per person|capacity|team|staff/, { cm: { op: 'per', a: 'hours', b: 'people' }, better: 'up', caveat: 'Freed time is an estimate. It shows time made available, not what people did with it.' }),
+    X('g-machine', ['*'], 'a', 'Machine minutes per {noun}', 'Shows whether the solution is getting quicker or slower at the part it does itself.', ['time', 'quality'], /machine|speed|slow|process/, { cm: { op: 'per', a: 'machine', b: 'handled' }, better: 'down', caveat: 'Machine time is never a person’s time, so it never counts as hours saved.' }),
+    X('g-fails', ['*'], 'a', 'Share of runs that failed', 'Failed runs are work a person has to pick up, which eats into the time saved.', ['risk', 'quality'], /fail|break|outage|reliab/, { cm: { op: 'ratio', a: 'fails', b: 'handled' }, better: 'down', caveat: 'A failed run may be retried and succeed, so this can overstate lost work.' }),
+    X('g-per-day', ['*'], 'a', '{Nouns} handled a day', 'A steady daily volume shows the team relies on it, and every other result depends on it.', ['adoption'], /volume|adopt|\buse\b|busy|how many/, { cm: { op: 'avg', a: 'handled' }, better: 'up', caveat: 'Volume shows use, not value on its own.' }),
+    X('g-tat', ['*'], 'a', 'Turnaround time', '', ['time', 'cx'], /turnaround|how long|fast|slow|wait|quick|sooner/, { std: 'tat' }),
+    X('g-sla', ['*'], 'a', 'Within agreed time', '', ['time', 'cx', 'risk'], /agreed time|deadline|on time|\bsla\b|late/, { std: 'sla' }),
+    X('g-quality', ['*'], 'a', 'Needed a person to fix', '', ['quality', 'risk'], /error|mistake|correct|\bfix|quality|rework|accura/, { std: 'quality' }),
+    X('g-hours', ['*'], 'a', 'Hours saved', '', ['time', 'money'], /hours|time saved|sav(e|ed|ing)|freed/, { std: 'hours' }),
+    X('g-people', ['*'], 'a', 'People using it, a day', '', ['adoption'], /people|staff|using|adopt|team/, { std: 'people' }),
+    X('g-exceptions', ['*'], 'b', 'Minutes a person spends on each exception', 'Shows where the remaining manual work is, so the team can see what to improve next.', ['time', 'adoption', 'quality'], /exception|manual|remaining|higher.value|freed|spend/, { fig: { key: '{nk}.exception_time', type: 'duration', unit: 'minute', agg: 'mean', desc: 'Average minutes a person spends on a {noun} the solution could not finish, for that day.', dims: ['reason'], label: 'Exception minutes', weighted: true, as: { op: 'avg' }, gen: (p, r) => +(6 + 5 * r).toFixed(1) }, better: 'down' }),
+    X('g-complaints', ['*'], 'b', 'Complaints about the result', 'Shows whether faster work is costing goodwill, which hours saved can’t show.', ['cx', 'quality', 'risk'], /complain|unhappy|escalat|goodwill/, { fig: { key: 'complaints.received', type: 'counter', unit: 'item', desc: 'Complaints logged about work the solution handled, counted on the day received.', dims: ['channel'], label: 'Complaints', as: { op: 'ratio', b: 'handled', name: 'Complaints per 100 {nouns}' }, gen: (p, r) => Math.round(p.v * 0.006 * r) }, better: 'down' }),
+    X('g-reopened', ['*'], 'b', '{Nouns} reopened after done', 'Work that comes back is hidden rework. It shows whether done really means done.', ['quality', 'risk'], /reopen|come back|rework|again|redo/, { fig: { key: '{nk}.reopened', type: 'counter', unit: 'item', desc: '{Nouns} reopened after being marked done, counted on the day reopened.', dims: ['reason'], label: '{Nouns} reopened', as: { op: 'ratio', b: 'handled', name: 'Share of {nouns} reopened' }, gen: (p, r) => Math.round(p.v * (0.01 + 0.02 * r)) }, better: 'down' }),
+    X('g-before-tat', ['*'], 'c', 'Turnaround against before go-live', 'Puts today’s turnaround next to the organisation’s own figure from before.', ['time', 'cx'], /before|go.live|used to|baseline/, { rec: { label: 'Turnaround before go-live', unit: 'hours', base: true, use: { kind: 'vs', cm: { op: 'avg', a: 'tat' }, unit: 'h', dp: 1, better: 'down' } } }),
+    X('g-redeploy', ['*'], 'c', 'Time moved to higher-value work', 'Answers what the team did with the time it got back, in the organisation’s own words.', ['adoption', 'time'], /higher.value|freed|spend|redeploy|instead/, { rec: { label: 'Hours a week spent on higher-value work', unit: 'hours a week' }, caveat: 'Usually from a survey or time sheets, so it is an estimate. Ask how it was collected.' }),
+    // ---- documents
+    X('d-hrs-each', ['documents'], 'a', 'Hours saved per {noun}', 'Shows whether each {noun} takes less people time as the team trusts the solution more.', ['time', 'money'], /per (document|invoice|item)|each/, { cm: { op: 'per', a: 'hours', b: 'handled' }, better: 'up' }),
+    X('d-corr-person', ['documents'], 'a', 'Corrections per person a day', 'Shows how much checking each person still does, the work the solution should keep shrinking.', ['quality', 'adoption'], /check|correct|review|team|staff/, { cm: { op: 'per', a: 'corrected', b: 'people' }, better: 'down' }),
+    X('d-corrected', ['documents'], 'a', '{Nouns} a person corrected', 'The count behind the correction rate, useful when volume swings.', ['quality', 'risk'], /correct|error|mistake|wrong/, { cm: { op: 'sum', a: 'corrected' }, better: 'down' }),
+    X('d-straight', ['documents'], 'a', 'Straight-through rate', '', ['quality'], /straight|no (fix|touch)|automat/, { std: 'straight' }),
+    X('d-paid-late', ['documents'], 'b', 'Invoices paid after their due date', 'Late payment is what suppliers feel. It shows whether faster processing reaches them.', ['money', 'risk', 'time', 'cx'], /late pay|paid late|due date|overdue|supplier|on time|\blate\b/, { fig: { key: 'invoices.paid_late', type: 'counter', unit: 'document', desc: 'Invoices paid after the due date on the invoice, counted on the day they are paid.', dims: ['supplier_size'], label: 'Invoices paid late', as: { op: 'ratio', b: 'handled', name: 'Share of invoices paid late' }, gen: (p, r) => Math.round(p.v * (0.03 + 0.04 * r)) }, better: 'down' }),
+    X('d-cycle', ['documents'], 'b', 'Days from receipt to payment', 'The end-to-end time the business cares about, not only the part the solution does.', ['time', 'cx', 'money'], /cycle|receipt|end.to.end|days to pay|payment/, { fig: { key: 'invoices.receipt_to_payment', type: 'duration', unit: 'day', agg: 'median', desc: 'Median days from an invoice arriving to it being paid, for invoices paid that day.', dims: [], label: 'Days from receipt to payment', weighted: true, as: { op: 'avg' }, gen: (p, r) => +(5 + 4 * r).toFixed(1) }, better: 'down' }),
+    X('d-dupes', ['documents'], 'b', 'Duplicate invoices caught', 'Each duplicate caught is money not paid twice, a saving the organisation can check.', ['money', 'risk'], /duplicate|double|overpa|fraud/, { fig: { key: 'invoices.duplicates_caught', type: 'counter', unit: 'document', desc: 'Invoices flagged as duplicates and stopped before payment.', dims: [], label: 'Duplicates caught', as: { op: 'sum' }, gen: (p, r) => Math.round(p.v * 0.008 * r) }, better: 'up' }),
+    X('d-discount', ['documents'], 'b', 'Early-payment discounts taken', 'Paying on time can earn discounts, cash the organisation can see in its accounts.', ['money'], /discount|early pay|cash/, { fig: { key: 'invoices.discount_taken', type: 'money', unit: 'MYR', desc: 'Early-payment discounts taken on invoices paid that day, in ringgit.', dims: [], label: 'Discounts taken, RM', as: { op: 'sum' }, gen: (p, r) => Math.round(p.v * (1.2 + 1.6 * r)) }, better: 'up' }),
+    X('d-penalty', ['documents'], 'c', 'Cost of late-payment penalties', 'Turns late payments into ringgit, using the penalty the organisation actually pays.', ['money', 'risk'], /penalt|late pay|interest|fine/, { rec: { label: 'Penalty per late invoice', unit: 'RM', use: { kind: 'mul', fig: 'd-paid-late', unit: 'RM', dp: 0, label: 'Penalties this period' } } }),
+    X('d-corr-cost', ['documents'], 'c', 'Cost of corrections', 'Puts a ringgit figure on the checking still done, using the organisation’s own cost of one correction.', ['money', 'quality'], /cost|rework|correct/, { rec: { label: 'Cost of one correction', unit: 'RM', use: { kind: 'mul', cm: { op: 'sum', a: 'corrected' }, unit: 'RM', dp: 0, label: 'Corrections cost this period' } } }),
+    X('d-err-before', ['documents'], 'c', 'Corrections against before go-live', 'Shows whether the work is more accurate than when people typed it, not only faster.', ['quality'], /before|used to|go.live|accura/, { rec: { label: 'Share corrected before go-live', unit: '%', base: true, use: { kind: 'vs', cm: { op: 'ratio', a: 'corrected', b: 'handled' }, unit: '%', dp: 1, better: 'down' } } }),
+    // ---- triage
+    X('t-auto', ['triage'], 'a', '{Nouns} answered without a person', 'The routine work the solution takes off the desk, as a count the team recognises.', ['adoption', 'cx', 'time'], /without a person|automat|routine|answered|desk/, { cm: { op: 'sum', a: 'straight' }, better: 'up' }),
+    X('t-handoff-person', ['triage'], 'a', 'Hand-offs per person a day', 'Shows how much each person still picks up, and whether that is shrinking.', ['adoption', 'quality'], /hand.?off|team|staff|per person|workload/, { cm: { op: 'per', a: 'corrected', b: 'people' }, better: 'down' }),
+    X('t-hrs-each', ['triage'], 'a', 'Hours saved per {noun}', 'Shows whether each {noun} costs less people time as the solution improves.', ['time', 'money'], /per (enquiry|ticket|item)|each/, { cm: { op: 'per', a: 'hours', b: 'handled' }, better: 'up' }),
+    X('t-per-person', ['triage'], 'a', 'Handled per person, a day', '', ['adoption'], /per person|productiv/, { std: 'perPerson' }),
+    X('t-first', ['triage'], 'b', 'Time to first response', 'What the customer feels first. It shows whether they get an answer sooner.', ['cx', 'time'], /first (response|reply|answer)|wait|respon|reply|quick|fast|sooner/, { fig: { key: '{nk}.first_response', type: 'duration', unit: 'hour', agg: 'median', desc: 'Median hours from a {noun} arriving to its first useful answer, for {nouns} answered that day.', dims: ['channel'], label: 'Hours to first response', weighted: true, as: { op: 'avg' }, gen: (p, r) => +(0.4 + 1.2 * r).toFixed(2) }, better: 'down' }),
+    X('t-misrouted', ['triage'], 'b', '{Nouns} sent to the wrong desk', 'A wrong route costs a second hand-off and a slower answer.', ['quality', 'risk', 'cx'], /wrong desk|rout|transfer|misdirect/, { fig: { key: '{nk}.misrouted', type: 'counter', unit: 'item', desc: '{Nouns} a person moved to a different desk after the solution routed them.', dims: ['desk'], label: '{Nouns} misrouted', as: { op: 'ratio', b: 'handled', name: 'Share of {nouns} misrouted' }, gen: (p, r) => Math.round(p.v * (0.02 + 0.03 * r)) }, better: 'down' }),
+    X('t-abandoned', ['triage'], 'b', '{Nouns} abandoned before an answer', 'People who give up are lost goodwill or business. It shows whether faster answers keep them.', ['cx', 'risk', 'money'], /abandon|give up|gave up|\blost\b|drop/, { fig: { key: '{nk}.abandoned', type: 'counter', unit: 'item', desc: '{Nouns} closed by the sender, or timed out, before any answer.', dims: ['channel'], label: '{Nouns} abandoned', as: { op: 'ratio', b: 'handled', name: 'Share of {nouns} abandoned' }, gen: (p, r) => Math.round(p.v * (0.01 + 0.03 * r)) }, better: 'down' }),
+    X('t-rating', ['triage'], 'b', 'Rating after an answer', 'The customer’s own view of the answer, next to how fast it came.', ['cx', 'quality'], /satisf|rating|happy|experience|csat|feedback/, { fig: { key: '{nk}.rating', type: 'gauge', unit: 'x.score', agg: 'mean', desc: 'Average rating out of 5 given after an answer, for ratings given that day.', dims: ['channel'], label: 'Average rating', weighted: true, as: { op: 'avg' }, gen: (p, r) => +(3.9 + 0.8 * r).toFixed(2) }, better: 'up' }),
+    X('t-wait-before', ['triage'], 'c', 'Customer wait time before go-live', 'Compares today’s turnaround with how long people waited before, from the organisation’s records.', ['cx', 'time'], /wait|before|go.live|used to/, { rec: { label: 'Average wait before go-live', unit: 'hours', base: true, use: { kind: 'vs', cm: { op: 'avg', a: 'tat' }, unit: 'h', dp: 1, better: 'down' } } }),
+    X('t-handoff-cost', ['triage'], 'c', 'Cost of hand-offs', 'Turns the hand-offs that remain into ringgit, using the organisation’s own cost of one.', ['money'], /cost|money|spend/, { rec: { label: 'Cost of one hand-off', unit: 'RM', use: { kind: 'mul', cm: { op: 'sum', a: 'corrected' }, unit: 'RM', dp: 0, label: 'Hand-offs cost this period' } } }),
+    X('t-complaints-before', ['triage'], 'c', 'Complaints a month before go-live', 'A before figure to set any change in complaints against, once they are counted.', ['cx', 'risk'], /complain|before/, { rec: { label: 'Complaints a month before go-live', unit: 'complaints', base: true } }),
+    // ---- planning
+    X('p-hrs-plan', ['planning'], 'a', 'Supervisor hours saved per plan', 'Shows whether each plan takes less of a supervisor’s time as the solution learns.', ['time', 'money'], /per plan|supervisor|each/, { cm: { op: 'per', a: 'hours', b: 'handled' }, better: 'up' }),
+    X('p-changes-person', ['planning'], 'a', 'Heavy changes per supervisor a day', 'Shows how much supervisors still rework, the effort the solution should take away.', ['quality', 'adoption'], /change|rework|supervisor|edit/, { cm: { op: 'per', a: 'corrected', b: 'people' }, better: 'down' }),
+    X('p-used', ['planning'], 'a', 'Plans used without heavy changes', 'Counts the plans supervisors trusted enough to use as made.', ['quality', 'adoption'], /trust|used|as made|accept/, { cm: { op: 'sum', a: 'straight' }, better: 'up' }),
+    X('p-straight', ['planning'], 'a', 'Straight-through rate', '', ['quality'], /straight|as made/, { std: 'straight' }),
+    X('p-overtime', ['planning'], 'b', 'Overtime hours in each plan', 'Overtime is a direct cost. Better plans should need less of it.', ['money', 'time', 'risk'], /overtime|labou?r cost|wage|cost/, { fig: { key: 'plans.overtime_hours', type: 'duration', unit: 'hour', agg: 'mean', desc: 'Average overtime hours scheduled in each plan made that day.', dims: ['site'], label: 'Overtime hours per plan', weighted: true, as: { op: 'avg' }, gen: (p, r) => +(6 + 6 * r).toFixed(1) }, better: 'down' }),
+    X('p-unfilled', ['planning'], 'b', 'Shifts left unfilled', 'An unfilled shift is a risk to output or service, whatever the plan saved.', ['risk', 'cx'], /unfilled|cover|short.?staff|understaff|gap/, { fig: { key: 'shifts.unfilled', type: 'counter', unit: 'x.shift', desc: 'Shifts in published plans with nobody assigned, counted on the day of the shift.', dims: ['site'], label: 'Unfilled shifts', as: { op: 'sum' }, gen: (p, r) => Math.round(p.v * 1.5 * r) }, better: 'down' }),
+    X('p-late-change', ['planning'], 'b', 'Changes after a plan is published', 'Late changes upset staff. Fewer of them means the first plan was right.', ['quality', 'adoption', 'risk'], /late change|after publish|last.minute|morale/, { fig: { key: 'plans.changed_after_publish', type: 'counter', unit: 'x.plan', desc: 'Plans changed after they were sent to staff, counted on the day changed.', dims: ['reason'], label: 'Plans changed after publishing', as: { op: 'ratio', b: 'handled', name: 'Share of plans changed after publishing' }, gen: (p, r) => Math.round(p.v * 0.4 * r) }, better: 'down' }),
+    X('p-fair', ['planning'], 'b', 'Weekend shifts per person', 'A fair spread of weekend work keeps people. It shows the plans are fair, not only fast.', ['adoption', 'risk'], /fair|weekend|morale|retention|turnover/, { fig: { key: 'shifts.weekend_per_person', type: 'gauge', unit: 'x.shift', agg: 'mean', desc: 'Average weekend shifts per person in the plans made that day.', dims: ['site'], label: 'Weekend shifts per person', weighted: true, as: { op: 'avg' }, gen: (p, r) => +(1.2 + 0.8 * r).toFixed(2) }, better: 'down' }),
+    X('p-before-hours', ['planning'], 'c', 'Time to build a plan, against before', 'Compares today’s turnaround with the hours a plan took before, from the organisation’s records.', ['time'], /before|used to|go.live|how long/, { rec: { label: 'Hours to build a plan before go-live', unit: 'hours', base: true, use: { kind: 'vs', cm: { op: 'avg', a: 'tat' }, unit: 'h', dp: 1, better: 'down' } } }),
+    X('p-ot-cost', ['planning'], 'c', 'Overtime cost per hour', 'Needed to turn any change in overtime into ringgit.', ['money'], /overtime|cost/, { rec: { label: 'Overtime cost per hour', unit: 'RM' } }),
+    X('p-unfilled-before', ['planning'], 'c', 'Unfilled shifts a month before go-live', 'A before figure for unfilled shifts, so any change has something to be set against.', ['risk'], /unfilled|before/, { rec: { label: 'Unfilled shifts a month before go-live', unit: 'shifts', base: true } }),
+    // ---- quotations and proposals
+    X('q-hrs', ['quotes'], 'a', 'Estimator hours saved per {noun}', 'Shows whether each {noun} takes less of an estimator’s time as the solution improves.', ['time', 'money'], /per (quote|quotation|proposal)|estimator|each/, { cm: { op: 'per', a: 'hours', b: 'handled' }, better: 'up' }),
+    X('q-clean', ['quotes'], 'a', '{Nouns} sent with no revision', 'Counts first drafts good enough to send as they were.', ['quality', 'cx'], /revision|first draft|as drafted|accura/, { cm: { op: 'sum', a: 'straight' }, better: 'up' }),
+    X('q-rev-person', ['quotes'], 'a', 'Revisions per estimator a day', 'Shows how much estimators still rework, and whether it is shrinking.', ['quality', 'adoption'], /revis|rework|estimator|team/, { cm: { op: 'per', a: 'corrected', b: 'people' }, better: 'down' }),
+    X('q-per-person', ['quotes'], 'a', 'Handled per person, a day', '', ['adoption'], /per person|productiv/, { std: 'perPerson' }),
+    X('q-won', ['quotes'], 'b', 'Quotations won', 'Winning work is the result the business wants, beyond quoting faster.', ['money', 'cx'], /\bwin|\bwon\b|revenue|sales|convert|order/, { fig: { key: 'quotations.won', type: 'counter', unit: 'item', desc: 'Quotations the customer accepted, counted on the day accepted.', dims: ['customer_type'], label: 'Quotations won', as: { op: 'ratio', b: 'handled', name: 'Win rate' }, gen: (p, r) => Math.round(p.v * (0.2 + 0.15 * r)) }, better: 'up' }),
+    X('q-value', ['quotes'], 'b', 'Value of quotations sent', 'Shows the size of the work being quoted, not only the count.', ['money'], /value|revenue|pipeline|sales/, { fig: { key: 'quotations.value_sent', type: 'money', unit: 'MYR', desc: 'Total value of quotations sent that day, in ringgit.', dims: ['customer_type'], label: 'Value quoted, RM', as: { op: 'sum' }, gen: (p, r) => Math.round(p.v * (9000 + 6000 * r)) }, better: 'up' }),
+    X('q-first', ['quotes'], 'b', 'Hours from drawing to first quotation', 'The wait the customer sees. Same-day quotations win more work.', ['time', 'cx'], /same day|drawing|response|fast|sooner/, { fig: { key: 'quotations.first_draft_time', type: 'duration', unit: 'hour', agg: 'median', desc: 'Median hours from a customer’s drawing arriving to the first quotation being sent.', dims: [], label: 'Hours to first quotation', weighted: true, as: { op: 'avg' }, gen: (p, r) => +(3 + 5 * r).toFixed(1) }, better: 'down' }),
+    X('q-expired', ['quotes'], 'b', 'Quotations expired without an answer', 'Expired quotations are effort with no result. Fewer means better follow-up.', ['money', 'risk'], /expire|no answer|follow.up|lost/, { fig: { key: 'quotations.expired', type: 'counter', unit: 'item', desc: 'Quotations that passed their validity date with no answer.', dims: [], label: 'Quotations expired', as: { op: 'ratio', b: 'handled', name: 'Share of quotations expired' }, gen: (p, r) => Math.round(p.v * 0.15 * r) }, better: 'down' }),
+    X('q-order', ['quotes'], 'c', 'Value of work won', 'Turns quotations won into ringgit, using the organisation’s average order value.', ['money'], /revenue|order value|won|sales/, { rec: { label: 'Average order value', unit: 'RM', use: { kind: 'mul', fig: 'q-won', unit: 'RM', dp: 0, label: 'Value of work won this period' } } }),
+    X('q-win-before', ['quotes'], 'c', 'Win rate against before go-live', 'Shows whether faster quotations win more work than before.', ['money', 'cx'], /before|win rate|go.live/, { rec: { label: 'Win rate before go-live', unit: '%', base: true, use: { kind: 'vs', cm: { op: 'ratio', a: 'fig:q-won', b: 'handled' }, unit: '%', dp: 1, better: 'up' } } }),
+    // ---- other work
+    X('o-hrs-each', ['other'], 'a', 'Hours saved per {noun}', 'Shows whether each {noun} takes less people time as the solution improves.', ['time', 'money'], /per item|each/, { cm: { op: 'per', a: 'hours', b: 'handled' }, better: 'up' }),
+    X('o-fix-person', ['other'], 'a', 'Fixes per person a day', 'Shows how much each person still corrects, and whether that is shrinking.', ['quality', 'adoption'], /fix|correct|team|staff/, { cm: { op: 'per', a: 'corrected', b: 'people' }, better: 'down' }),
+    X('o-clean', ['other'], 'a', '{Nouns} done with no fix', 'Counts the work the solution finished with nobody touching it.', ['quality', 'adoption'], /no fix|automat|untouched/, { cm: { op: 'sum', a: 'straight' }, better: 'up' }),
+    X('o-per-person', ['other'], 'a', 'Handled per person, a day', '', ['adoption'], /per person|productiv/, { std: 'perPerson' }),
+    X('o-backlog', ['other'], 'b', 'Work waiting at the end of the day', 'A shrinking backlog shows the team is keeping up, not just working faster.', ['time', 'risk', 'cx'], /backlog|queue|waiting|pile/, { fig: { key: '{nk}.backlog', type: 'gauge', unit: 'item', agg: 'last', desc: '{Nouns} waiting to be handled at the end of the day.', dims: [], label: '{Nouns} waiting', weighted: true, as: { op: 'avg' }, gen: (p, r) => Math.round(p.v * (0.2 + 0.3 * r)) }, better: 'down' }),
+    X('o-escalated', ['other'], 'b', '{Nouns} escalated to a manager', 'Escalations are the hard cases. Fewer of them means the routine is handled well.', ['quality', 'risk'], /escalat|manager|hard case/, { fig: { key: '{nk}.escalated', type: 'counter', unit: 'item', desc: '{Nouns} passed to a manager, counted on the day escalated.', dims: ['reason'], label: '{Nouns} escalated', as: { op: 'ratio', b: 'handled', name: 'Share of {nouns} escalated' }, gen: (p, r) => Math.round(p.v * 0.02 * r) }, better: 'down' }),
+    X('o-mistake-cost', ['other'], 'c', 'Cost of fixes', 'Puts a ringgit figure on the fixing still done, using the organisation’s own cost of one fix.', ['money', 'quality'], /cost|mistake|rework/, { rec: { label: 'Cost of one fix', unit: 'RM', use: { kind: 'mul', cm: { op: 'sum', a: 'corrected' }, unit: 'RM', dp: 0, label: 'Fixes cost this period' } } }),
+    X('o-before-vol', ['other'], 'c', 'Work handled a month before go-live', 'A before figure for volume, so any growth has something to be set against.', ['adoption'], /before|volume|go.live/, { rec: { label: 'Work handled a month before go-live', unit: 'items', base: true } }),
+  ];
+  const XP_EX = { 'doc-workflow': ['documents', 'document', 'documents'], 'invoice-triage': ['triage', 'invoice', 'invoices'], 'shift-planner': ['planning', 'plan', 'plans'], 'enquiry-triage': ['triage', 'enquiry', 'enquiries'], 'quote-drafter': ['quotes', 'quotation', 'quotations'] };
+  const XP_EXAMPLES = { documents: 'Has it reduced late payments to suppliers?', triage: 'Are customers waiting less for an answer?', planning: 'Has overtime gone down since the plans got faster?', quotes: 'Are we winning more of the work we quote for?', other: 'Is the work more accurate than before?' };
+  const xpKindLabel = (k) => KINDS[k] ? KINDS[k].label : 'Other work';
+  let XP_CUR = null;
+  function xpInfo(proj) {
+    const s = !demo() && simById(proj.id);
+    if (s) { const K = kindOf(s) || {}; return { kind: KINDS[s.kind] ? s.kind : 'other', noun: K.noun || 'item', nouns: K.nouns || 'items', objective: s.project.objective || '', url: '<url>', sim: s }; }
+    const e = XP_EX[proj.id] || ['other', 'item', 'items'], sol = M.solutions[proj.id], o = sol && orgById(sol.org), pr = o && o.projects.find((x) => x.solutions.includes(proj.id));
+    return { kind: e[0], noun: e[1], nouns: e[2], objective: pr ? pr.objective : '', url: (sol && sol.base) || '<url>', sim: null };
+  }
+  const xpFill = (s, info) => String(s || '').replace(/\{nk\}/g, info.nouns.toLowerCase().replace(/[^a-z0-9]+/g, '_')).replace(/\{Nouns\}/g, cap(info.nouns)).replace(/\{nouns\}/g, info.nouns).replace(/\{noun\}/g, info.noun);
+  function xpStore(proj, info) {
+    const s = !demo() && simById(proj.id);
+    const fresh = () => ({ brief: { outcome: info.objective, kind: info.kind, q: '', focus: [] }, runs: [], cur: null, picks: [], reqs: {}, recs: {}, thinking: false, recOpen: null, recDraft: null, open: null });
+    if (s) return (s.xp = s.xp || fresh());
+    state.xpDemo = state.xpDemo || {};
+    return (state.xpDemo[proj.id] = state.xpDemo[proj.id] || fresh());
+  }
+  function xpShares(proj) {
+    const pts = aWindow(84).map((d) => proj.point(d)).filter((p) => !p.before && !p.gap), out = {};
+    Object.keys(FIELDS).forEach((k) => { out[k] = pts.some((p) => { const v = FIELDS[k].get(p); return v !== undefined && v !== null && !isNaN(v); }); });
+    return out;
+  }
+  const xpCatById = (id) => XP_CATALOG.find((x) => x.id === id);
+  const xpFieldKey = (proj, id) => 'xf:' + proj.id + ':' + id;
+  // A figure the developer shipped: a hidden field (left out of the builder's lists) that reads from the day after it shipped.
+  function xpEnsureField(proj, it, req, info) {
+    const k = xpFieldKey(proj, it.id);
+    if (!Object.prototype.hasOwnProperty.call(FIELDS, k)) Object.defineProperty(FIELDS, k, { enumerable: false, configurable: true, value: { label: xpFill(it.fig.label, info), weighted: !!it.fig.weighted, get: (p) => (req.shipped && p.d > req.shipped && p.v !== undefined && p.v !== null) ? it.fig.gen(p, hash(proj.id + p.d + it.id)) : undefined } });
+    return k;
+  }
+  function xpFigReady(proj, xs, id) {
+    const req = xs.reqs[id], k = xpFieldKey(proj, id);
+    if (!req || !req.shipped || !FIELDS[k]) return null;
+    return evalCustom(proj, { op: 'sum', a: k }, aWindow(84)) === null ? null : k;
+  }
+  const xpSameCm = (x, cm) => x.op === cm.op && x.a === cm.a && (x.b || null) === (cm.b || null) && x.status !== 'declined';
+  function xpFig(spec, info) {
+    return { key: xpFill(spec.key, info), type: spec.type, unit: spec.unit, agg: spec.agg || null, desc: xpFill(spec.desc, info), dims: spec.dims || [], label: xpFill(spec.label, info), weighted: !!spec.weighted, gen: spec.gen || null };
+  }
+  function xpConvert(proj, info, idea, miss) {
+    if (miss === 'hours') return Object.assign(idea, { t: 'c', conv: 'hours', needs: `Needs hours saved, and hours saved needs a baseline: how long a ${info.noun} took by hand.`, rec: { label: `Minutes by hand per ${info.noun}`, unit: 'minutes', base: true, use: { kind: 'mul', cm: { op: 'sum', a: 'handled' }, factor: 1 / 60, unit: 'h', dp: 0, label: 'Time the same work took by hand' } }, q: 'estimated', effort: 'A timed sample of 20 to 30 with the organisation', caveat: 'A baseline is an estimate. Its range carries into every figure built on it.' });
+    return Object.assign(idea, { t: 'b', conv: miss, fig: xpFig(XP_FIELD_FIG[miss], info), as: null, needs: `Needs ${FIELDS[miss].label.toLowerCase()}, which ${proj.sol} doesn’t share yet.`, effort: 'A small change by the developer, then approval', caveat: XP_CAVEAT.b });
+  }
+  function xpResolve(proj, info, it, sh, xs) {
+    const base = { id: it.id, it, name: xpFill(it.name, info), why: xpFill(it.why, info), better: it.better || 'up', caveat: it.caveat || XP_CAVEAT[it.t], effort: it.effort || null };
+    if (it.std) {
+      const m = mByKey(it.std); if (!m || (m.reka && !has('Commercial'))) return null;
+      const miss = (XP_STD_NEEDS[it.std] || []).filter((k) => !sh[k]);
+      if (!miss.length) return Object.assign(base, { t: 'a', already: true, name: m.name });
+      return xpConvert(proj, info, Object.assign(base, { name: m.name, why: `The standard measure every project gets. ${proj.sol} can’t show it yet.`, how: m.how, q: m.quality, better: m.better }), miss[0]);
+    }
+    if (it.t === 'a') {
+      const cm = Object.assign({}, it.cm), how = customFormula(cm), miss = [cm.a, cm.b].filter((k) => k && !sh[k]);
+      if (miss.length) return xpConvert(proj, info, Object.assign(base, { how, q: customMeta(cm).quality }), miss[0]);
+      return Object.assign(base, { t: 'a', cm, how, q: customMeta(cm).quality, effort: base.effort || 'None. Ready now.', dup: proj.custom().find((x) => xpSameCm(x, cm)) || null });
+    }
+    if (it.t === 'b') {
+      const fig = xpFig(it.fig, info), as = it.fig.as || { op: 'sum' };
+      const how = as.op === 'ratio' ? `${fig.label} ÷ ${FIELDS[as.b].label.toLowerCase()} × 100` : as.op === 'avg' ? `Average a day of ${fig.label.toLowerCase()}` : `Total of ${fig.label.toLowerCase()}`;
+      const fk = xpFigReady(proj, xs, it.id), mcm = fk ? { op: as.op, a: fk, b: as.b || null } : null;
+      return Object.assign(base, { t: 'b', fig, as, how, mname: xpFill(as.name, info) || base.name, q: as.op === 'ratio' ? 'derived' : 'measured', effort: base.effort || 'A small change by the developer, then approval', mcm, dup: mcm ? proj.custom().find((x) => xpSameCm(x, mcm)) || null : null });
+    }
+    const rec = Object.assign({}, it.rec, { label: xpFill(it.rec.label, info) });
+    const u = rec.use, how = !u ? `Recorded as ${rec.label.toLowerCase()}, with its source and evidence.` : u.kind === 'vs' ? `Now against ${rec.label.toLowerCase()}, from the organisation’s records.` : `${rec.label} × ${u.fig ? xpFill(xpCatById(u.fig).fig.label, info).toLowerCase() : FIELDS[u.cm.a].label.toLowerCase()}`;
+    return Object.assign(base, { t: 'c', rec, how, q: 'estimated', effort: base.effort || 'A short conversation with the organisation' });
+  }
+  function xpScore(it, kind, qt, ot, focus) {
+    let s;
+    if (it.k.includes(kind)) s = 3; else if (it.k.includes('*')) s = 1; else if (qt && it.words.test(qt)) s = -2; else return -1;
+    if (qt && it.words.test(qt)) s += 6;
+    if (ot && it.words.test(ot)) s += 2;
+    it.tags.forEach((tg) => { if (qt && XP_WORDS[tg].test(qt)) s += 2; if (ot && XP_WORDS[tg].test(ot)) s += 0.5; if (focus.includes(tg)) s += 3; });
+    return s + (it.t === 'a' ? 0.25 : 0);
+  }
+  // Chooses and ranks ideas for one brief. Deterministic: same brief and same figures, same answer.
+  function xpSuggest(proj, info, brief, xs) {
+    const sh = xpShares(proj), qt = (brief.q || '').toLowerCase(), ot = (brief.outcome || '').toLowerCase();
+    const ranked = XP_CATALOG.map((it, i) => ({ it, i, s: xpScore(it, brief.kind, qt, ot, brief.focus || []) })).filter((x) => x.s >= 0).sort((x, y) => y.s - x.s || x.i - y.i);
+    const ids = [], already = [], per = { a: 0, b: 0, c: 0 }, LIM = { a: 3, b: 2, c: 2 }, keys = new Set();
+    ranked.forEach(({ it, s }) => {
+      const idea = xpResolve(proj, info, it, sh, xs);
+      if (!idea) return;
+      if (idea.already || idea.dup) { if (s >= 3 && already.length < 4 && !already.includes(idea.name)) already.push(idea.name); return; }
+      if (per[idea.t] >= LIM[idea.t]) return;
+      const key = idea.t === 'b' ? idea.fig.key : idea.t === 'c' ? idea.rec.label : idea.id;
+      if (keys.has(key)) return;
+      keys.add(key); per[idea.t]++; ids.push(idea.id);
+    });
+    return { ids, already };
+  }
+  function xpRun(proj, xs) {
+    const info = xpInfo(proj), res = xpSuggest(proj, info, xs.brief, xs);
+    const run = { id: 'r' + state.seq++, at: now(), who: me().name, brief: JSON.parse(JSON.stringify(xs.brief)), ids: res.ids, already: res.already, count: res.ids.length };
+    xs.runs.unshift(run); xs.cur = run.id; xs.thinking = false;
+    log(`Asked AI for measure ideas for ${proj.sol}: “${xs.brief.q || 'from the outcome only'}”, ${run.count} suggestion${run.count === 1 ? '' : 's'}`);
+    return run;
+  }
+  const xpUnit = (u, v, dp) => u === 'RM' ? 'RM' + nf(v, dp) : u === '%' ? nf(v, dp) + '%' : u === 'h' ? nf(v, dp) + ' h' : nf(v, dp);
+  function xpChg(v, pv, better, ok) {
+    if (!ok) return 'Too few days before to compare';
+    if (v === null || pv === null || pv === undefined || !isFinite(pv) || pv === 0) return 'No earlier figures to compare';
+    const c = 100 * (v - pv) / Math.abs(pv), good = better === 'up' ? c >= 0 : c <= 0;
+    return `<span class="delta" style="color:var(--${Math.abs(c) < 1 ? 'muted' : good ? 'ok-ink' : 'fault-ink'})">${c >= 0 ? '▲' : '▼'} ${nf(Math.abs(c), 0)}%</span> vs before`;
+  }
+  function xpPreview(proj, cm, better) {
+    const days = aWindow(state.range), prev = windowDays(state.range, M.addDays(days[0], -1));
+    const meta = customMeta(cm), v = evalCustom(proj, cm, days), pv = evalCustom(proj, cm, prev);
+    return `<div class="xp-prev"><div class="stat"><span class="small muted">Preview, ${esc(RANGES[state.range].toLowerCase())}</span><span class="value" style="font-size:1.375rem">${fmtM(meta, v) || dash('no figures in this period')}</span><span class="hint">${xpChg(v, pv, better, comparable(totals(proj, days), totals(proj, prev)))}</span></div>${sparkline(weeksOf(aWindow(84)).map((w) => evalCustom(proj, cm, w)), 110, 32)}</div>`;
+  }
+  function xpUse(proj, idea, val, xs, info) {
+    const u = idea.rec.use; if (!u) return null;
+    const ref = (k) => { if (!k || !String(k).startsWith('fig:')) return k; return xpFigReady(proj, xs, k.slice(4)); };
+    let cm = u.fig ? { op: 'sum', a: 'fig:' + u.fig } : Object.assign({}, u.cm);
+    const figId = [u.fig, String(cm.a).startsWith('fig:') ? cm.a.slice(4) : null].find(Boolean);
+    cm = Object.assign(cm, { a: ref(cm.a), b: ref(cm.b) || null });
+    if (!cm.a) return `Shows once ${xpFill(xpCatById(figId).fig.label, info).toLowerCase()} arrives from the solution.`;
+    if (!FIELDS[cm.a] || (cm.b && !FIELDS[cm.b])) return null;
+    const days = aWindow(state.range), now2 = evalCustom(proj, cm, days);
+    if (now2 === null) return `${proj.sol} doesn’t share ${FIELDS[cm.a].label.toLowerCase()} for this period, so there is nothing to work out yet.`;
+    if (u.kind === 'mul') return `<b>${esc(u.label)}:</b> <span class="mono">${xpUnit(u.unit, now2 * val * (u.factor || 1), u.dp)}</span> ${q('estimated')} <span class="muted">· ${esc(RANGES[state.range].toLowerCase())}</span>`;
+    const c = val ? 100 * (now2 - val) / Math.abs(val) : null, good = c === null ? null : (u.better === 'up' ? c >= 0 : c <= 0);
+    return `<b>Now <span class="mono">${xpUnit(u.unit, now2, u.dp)}</span> against <span class="mono">${xpUnit(u.unit, val, u.dp)}</span> before.</b>${c === null ? '' : ` <span class="delta" style="color:var(--${good ? 'ok-ink' : 'fault-ink'})">${c >= 0 ? '▲' : '▼'} ${nf(Math.abs(c), 0)}%</span>`}`;
+  }
+  const xpReqOf = (xs, idea) => xs.reqs[idea.id] || Object.values(xs.reqs).find((r) => idea.fig && r.key === idea.fig.key) || null;
+  const xpRecOf = (xs, idea) => xs.recs[idea.id] || Object.values(xs.recs).find((r) => idea.rec && r.label === idea.rec.label) || null;
+  const xpAp = (proj, id) => id ? proj.approvals().find((a) => a.id === id) : null;
+  const XP_AP_PILL = { waiting: '<span class="pill warn"><span class="dot"></span>Waiting for approval</span>', approved: '<span class="pill ok"><span class="dot"></span>Approved</span>', changes: '<span class="pill info">Changes asked</span>', declined: '<span class="pill idle">Declined</span>', blocked: '<span class="pill fault">Blocked</span>' };
+  const xpMockApprove = (proj, a) => a && a.status === 'waiting' && a.proposer === state.role && state.role !== 'aisyah' ? `<button type="button" class="btn sm ghost" data-xp-act="mock-approve" data-xp-proj="${proj.id}" data-xp-ap="${a.id}">Mock: Aisyah approves</button>` : '';
+  function xpCmStatus(proj, cm) {
+    const a = proj.approvals().find((x) => x.cmId === cm.id);
+    const pill = cm.status === 'live' ? '<span class="pill ok"><span class="dot"></span>Measured</span>' : cm.status === 'waiting' ? '<span class="pill warn"><span class="dot"></span>Added · waiting for approval</span>' : cm.status === 'changes' ? '<span class="pill info">Changes asked</span>' : '<span class="pill idle">Declined</span>';
+    return `<div class="xp-acts">${pill}${cm.status === 'waiting' && cm.by === state.role && cm.by !== 'aisyah' && a ? `<button type="button" class="btn sm ghost" data-act="cm-approve" data-proj="${proj.id}" data-cm="${cm.id}">Mock: Aisyah approves</button>` : ''}</div>`;
+  }
+  const xpPickChip = (proj, xs, key) => `<button type="button" class="chip" data-xp-pick="${esc(key)}" data-xp-proj="${proj.id}" aria-pressed="${xs.picks.includes(key)}">${xs.picks.includes(key) ? icon('check', 'sm') : ''}Compare</button>`;
+  function xpDevBrief(proj, info, idea) {
+    const f = idea.fig, metric = `{ "key": "${f.key}", "type": "${f.type}", "unit": "${f.unit}",${f.agg ? ` "aggregation": "${f.agg}",` : ''} "description": "${f.desc}", "dimensions": [${f.dims.map((x) => `"${x}"`).join(', ')}] }`;
+    return `Add one figure to the Measurement Link of ${proj.sol} (${proj.org}). Nothing else changes.
+
+- Add this metric to the catalog that manifest and metrics return:
+  ${metric}
+- Report it in observations as a total for each finished day, in the organisation’s time zone. A day without it is left out, never sent as zero.
+- Bump metric_catalog_version, for example to "${M.addDays(endDay(), 1)}".
+- No names, document text or personal data. Dimension values are short codes.
+- Before you finish, re-run the contract test:
+  AX_MEASURE_KEY=… node contract-test/cli.mjs --base ${info.url}`;
+  }
+  function xpCard(proj, info, xs, idea) {
+    const parts = [`<div class="top"><h3>${esc(idea.t === 'b' && idea.mcm ? idea.mname : idea.name)}</h3>${q(idea.q)}</div>`];
+    if (idea.why) parts.push(`<p class="small ink">${esc(idea.why)}</p>`);
+    if (idea.needs) parts.push(`<p class="xp-needs">${esc(idea.needs)}</p>`);
+    let acts = '';
+    if (idea.t === 'a') {
+      parts.push(xpPreview(proj, idea.cm, idea.better));
+      acts = idea.dup ? xpCmStatus(proj, idea.dup) : `<div class="xp-acts"><button type="button" class="btn sm primary" data-xp-act="add" data-xp-proj="${proj.id}" data-xp-id="${idea.id}">${icon('plus', 'sm')}Add as a measure</button><button type="button" class="btn sm" data-xp-act="builder" data-xp-proj="${proj.id}" data-xp-id="${idea.id}">Open in builder</button>${xpPickChip(proj, xs, 'i:' + idea.id)}</div>`;
+    } else if (idea.t === 'b') {
+      const f = idea.fig, req = xpReqOf(xs, idea), a = req && xpAp(proj, req.apId);
+      parts.push(`<div class="xp-def">${kv([['Key', `<span class="mono">${esc(f.key)}</span>`], ['Type', esc(f.type + (f.agg ? ' · ' + f.agg : ''))], ['Unit', `<span class="mono">${esc(f.unit)}</span>`], ['Means', esc(f.desc)], ['Split by', esc(f.dims.length ? f.dims.join(', ') : 'Nothing. A daily total only.')]], 76)}</div>`);
+      if (idea.mcm) parts.push(xpPreview(proj, idea.mcm, idea.better));
+      if (!req) acts = `<div class="xp-acts"><button type="button" class="btn sm primary" data-xp-act="request" data-xp-proj="${proj.id}" data-xp-id="${idea.id}">${icon('connect-ai', 'sm')}Ask the developer for it</button></div>`;
+      else {
+        const st = req.shipped ? (idea.mcm ? '<span class="pill ok"><span class="dot"></span>Arriving</span>' : `<span class="pill ok"><span class="dot"></span>Shipped</span><span class="small muted">First figures from ${dayShort(M.addDays(req.shipped, 1))}</span>`) : '<span class="pill info"><span class="dot"></span>Requested</span>';
+        acts = `<div class="xp-acts">${st}${a ? `<span class="small muted">Request:</span>${XP_AP_PILL[a.status] || ''}${xpMockApprove(proj, a)}` : ''}</div>`;
+        acts += `<details class="xp-brief" ${xs.open === idea.id ? 'open' : ''}><summary>Developer brief</summary><div><div class="code-block" id="xp-dev-${idea.id}">${esc(xpDevBrief(proj, info, idea))}</div><div class="xp-acts"><button type="button" class="btn sm" data-xp-act="copy" data-xp-proj="${proj.id}" data-xp-id="${idea.id}">${icon('copy', 'sm')}Copy brief</button></div></div></details>`;
+        if (!req.shipped) acts += sandbox() && f.gen ? `<div class="demo-bar"><span class="tag">MOCK CONTROLS</span><button type="button" class="btn sm" data-xp-act="ship" data-xp-proj="${proj.id}" data-xp-id="${idea.id}">The developer shipped it</button></div>` : `<p class="xs muted">It arrives after the developer ships it and the next nightly collection runs.</p>`;
+        else if (!idea.mcm) acts += `<div class="demo-bar"><span class="tag">MOCK CONTROLS</span><span>Nothing has arrived yet.</span><button type="button" class="btn sm" data-adv="7">Move the date on a week</button></div>`;
+        else acts += idea.dup ? xpCmStatus(proj, idea.dup) : `<div class="xp-acts"><button type="button" class="btn sm primary" data-xp-act="add" data-xp-proj="${proj.id}" data-xp-id="${idea.id}">${icon('plus', 'sm')}Add as a measure</button>${xpPickChip(proj, xs, 'i:' + idea.id)}</div>`;
+      }
+    } else {
+      const rec = xpRecOf(xs, idea), a = rec && xpAp(proj, rec.apId);
+      parts.push(`<p class="small"><span class="muted">Needs:</span> <b class="ink">${esc(idea.rec.label)}</b>${idea.rec.base ? ' <span class="pill idle">Baseline</span>' : ''}</p>`);
+      if (rec) {
+        parts.push(`<div class="xp-prev"><span class="small">Recorded <span class="mono ink">${esc(nf(rec.value, rec.value % 1 ? 2 : 0))} ${esc(rec.unit)}</span> · ${esc(rec.source)}</span></div>`);
+        const use = a && a.status === 'approved' ? xpUse(proj, idea, rec.value, xs, info) : null;
+        if (use) parts.push(`<p class="small">${use}</p>`);
+        acts = `<div class="xp-acts">${a ? XP_AP_PILL[a.status] || '' : ''}${xpMockApprove(proj, a)}</div>`;
+      } else if (xs.recOpen === idea.id) {
+        const dr = xs.recDraft;
+        acts = `<div class="xp-rec" id="xp-rec"><div class="grid g2" style="gap:10px"><div class="field"><label for="xp-rv">Value</label><input id="xp-rv" type="number" step="any" inputmode="decimal" value="${esc(dr.v)}"></div><div class="field"><label for="xp-ru">Unit</label><input id="xp-ru" value="${esc(dr.u)}"></div></div>
+          <div class="field"><label for="xp-rs">Source</label><select id="xp-rs">${['The organisation’s records', 'A timed sample', 'The organisation’s estimate', 'A staff survey'].map((x) => `<option ${x === dr.s ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select></div>
+          <div class="field"><label for="xp-re">Evidence</label><input id="xp-re" value="${esc(dr.e)}" placeholder="e.g. Finance report, Jan to Jun 2026"><span class="help">Kept with the approval. A second person checks it.</span></div>
+          <div class="xp-acts"><button type="button" class="btn sm primary" data-xp-act="rec-save" data-xp-proj="${proj.id}" data-xp-id="${idea.id}">Send for approval</button><button type="button" class="btn sm ghost" data-xp-act="rec-cancel" data-xp-proj="${proj.id}">Cancel</button></div></div>`;
+      } else acts = `<div class="xp-acts"><button type="button" class="btn sm primary" data-xp-act="rec-open" data-xp-proj="${proj.id}" data-xp-id="${idea.id}">Record it</button></div>`;
+    }
+    parts.push(kv([['Worked out', esc(idea.how)], ['Effort', esc(idea.effort)]], 76));
+    parts.push(acts);
+    parts.push(`<p class="src">${icon('alerts', 'sm')} ${esc(idea.caveat)}</p>`);
+    return `<article class="card kpi xp-idea" id="xp-i-${idea.id}" data-type="${idea.t}">${parts.join('')}</article>`;
+  }
+  function xpResults(proj, info, xs, run) {
+    const sh = xpShares(proj), ideas = run.ids.map((id) => xpCatById(id)).filter(Boolean).map((it) => xpResolve(proj, info, it, sh, xs)).filter(Boolean);
+    const groups = [['a', 'Ready now', `Worked out from figures ${proj.sol} already shares. The preview uses its own history.`], ['b', 'Needs a new figure from the solution', 'The developer adds it to the Measurement Link. It counts from the day it arrives.'], ['c', 'Needs a baseline or the organisation’s own number', 'Someone records it with its source, and a second person approves it.']];
+    const fx = (run.brief.focus || []).map((k) => XP_FOCUS.find((x) => x[0] === k)[1]).join(', ');
+    return `<section class="grid" id="xp-results" style="gap:16px">
+      <div class="card-head" style="margin:0"><div><h2>Suggestions</h2><p class="sub">Run ${esc(run.at.replace(' 2026,', ''))} by ${esc(run.who)} · “${esc(run.brief.q || 'from the outcome only')}”${fx ? ' · focus: ' + esc(fx) : ''}</p></div>${aiMark('Suggested by AI from your figures. You decide.')}</div>
+      ${ideas.length ? groups.map(([t, h, sub]) => { const xs2 = ideas.filter((x) => x.t === t); return xs2.length ? `<div class="xp-group"><h3>${h} <span class="pill idle">${xs2.length}</span></h3><p class="small muted">${esc(sub)}</p><div class="grid ${xs2.length >= 3 ? 'g3' : 'g2'}">${xs2.map((x) => xpCard(proj, info, xs, x)).join('')}</div></div>` : ''; }).join('') : '<div class="card"><p class="small muted">Nothing in the catalog matched this brief. Try other words, or a focus.</p></div>'}
+      ${run.already.length ? `<div class="card flat xp-already"><span class="small muted">Already measured, so not suggested again:</span><div class="chips" style="margin-top:8px">${run.already.map((n) => `<span class="pill ok">${icon('check', 'sm')}${esc(n)}</span>`).join('')}</div></div>` : ''}
+    </section>`;
+  }
+  // Compare: ideas ready now (or a shipped figure with data) and measures that already exist, as an index.
+  function xpCompareItems(proj, info, xs) {
+    const sh = xpShares(proj), out = [];
+    xs.picks.forEach((key) => {
+      const [k, id] = [key.slice(0, 1), key.slice(2)];
+      if (k === 'i') { const it = xpCatById(id), idea = it && xpResolve(proj, info, it, sh, xs), cm = idea && (idea.t === 'a' ? idea.cm : idea.mcm); if (cm) out.push({ key, name: idea.t === 'b' ? idea.mname : idea.name, val: (w) => evalCustom(proj, cm, w) }); }
+      if (k === 'm') { const m = mByKey(id); if (m) out.push({ key, name: m.name, val: (w) => m.calc(totals(proj, w)) }); }
+      if (k === 'c') { const cm = proj.custom().find((x) => x.id === id); if (cm) out.push({ key, name: cm.name, val: (w) => evalCustom(proj, cm, w) }); }
+    });
+    return out;
+  }
+  function xpCompare(proj, info, xs) {
+    const wk = weeksOf(aWindow(84)), T84 = totals(proj, aWindow(84));
+    const std = MEASURES.filter((m) => (!m.reka || has('Commercial')) && m.calc(T84) !== null), cms = proj.custom().filter((x) => x.status !== 'declined');
+    const items = xpCompareItems(proj, info, xs), ideaPicks = items.filter((x) => x.key.startsWith('i:'));
+    const chip = (key, name) => `<button type="button" class="chip" data-xp-pick="${esc(key)}" data-xp-proj="${proj.id}" aria-pressed="${xs.picks.includes(key)}">${esc(name)}</button>`;
+    return `<section class="card" id="xp-compare"><div class="card-head"><div><h2>Compare</h2><p class="sub">Pick two or three: suggestions ready now, or measures you already have. Last 12 weeks, by week.</p></div>${xs.picks.length ? `<button type="button" class="btn sm ghost" data-xp-act="pick-clear" data-xp-proj="${proj.id}">Clear</button>` : ''}</div>
+      ${ideaPicks.length ? `<div class="chips" style="margin-bottom:8px">${ideaPicks.map((x) => chip(x.key, x.name)).join('')}</div>` : ''}
+      <div class="chips">${std.map((m) => chip('m:' + m.key, m.name)).concat(cms.map((c) => chip('c:' + c.id, c.name))).join('')}</div>
+      ${items.length >= 2 ? `<div class="chart" id="xp-cmp" style="margin-top:14px"></div><div class="legend">${items.map((x, i) => `<span><i style="background:var(--s${i + 1})"></i>${esc(x.name)}</span>`).join('')}</div><p class="xs muted" style="margin-top:8px">Shown as an index: each line’s first week with figures is 100, so measures in different units can share one chart. It shows direction, not size, and what moved together, not why.</p>` : `<p class="small muted" style="margin-top:12px">Tick Compare on two or three suggestions ready now, or pick measures above. ${wk.length} weeks of figures.</p>`}
+    </section>`;
+  }
+  function xpRuns(proj, xs) {
+    return `<section class="card" id="xp-runs"><div class="card-head"><div><h2>Runs</h2><p class="sub">Every brief is kept, with who ran it and when. Re-open one to see its suggestions, or run it again.</p></div><span class="pill idle">${xs.runs.length}</span></div>
+      ${xs.runs.length ? `<div class="list">${xs.runs.map((r) => `<div class="row"><span class="ico ai"><img src="${SPARK}" alt="" style="width:16px"></span><div><div class="what">“${esc(r.brief.q || 'From the outcome only')}”</div><div class="meta"><span>${esc(r.at.replace(' 2026,', ''))}</span><span>${esc(r.who)}</span><span>${r.count} suggestion${r.count === 1 ? '' : 's'}</span><span>${esc(xpKindLabel(r.brief.kind))}</span>${r.id === xs.cur ? '<span class="pill info">Showing</span>' : ''}</div></div><span class="head-actions"><button type="button" class="btn sm" data-xp-act="reopen" data-xp-proj="${proj.id}" data-xp-run="${r.id}">Re-open</button><button type="button" class="btn sm ghost" data-xp-act="rerun" data-xp-proj="${proj.id}" data-xp-run="${r.id}">Run again</button></span></div>`).join('')}</div>` : '<p class="small muted">No runs yet. Each time you press Suggest measures, the brief and its answer are kept here and in the audit trail.</p>'}
+    </section>`;
+  }
+  function exploreTab(proj) {
+    if (!proj) return '';
+    XP_CUR = proj;
+    const info = xpInfo(proj), xs = xpStore(proj, info), b = xs.brief, sh = xpShares(proj);
+    const run = xs.runs.find((r) => r.id === xs.cur);
+    const kinds = Object.keys(KINDS).concat(KINDS.other ? [] : ['other']);
+    const exs = [XP_EXAMPLES[b.kind] || XP_EXAMPLES.other, 'Is the team spending the freed time on higher-value work?'];
+    const shared = Object.keys(FIELDS).filter((k) => sh[k]).map((k) => FIELDS[k].label.toLowerCase());
+    return `<section class="grid xp" id="xp" style="gap:18px">
+      <div class="callout info xp-rules">${icon('shield')}<div><b>How this works</b><ul><li>AI suggests, people decide.</li><li>Nothing reaches the organisation or the report until a second person approves it.</li><li>A new figure from the solution also changes the solution’s catalog, so it goes through the developer and approval.</li></ul></div></div>
+      <section class="card ai-card" id="xp-brief">
+        <div class="card-head"><div><span class="eyebrow"><img src="${SPARK}" alt="">Explore impact</span><h2 style="margin-top:4px">What else could we measure for ${esc(proj.sol)}?</h2><p class="sub">The suggestions are based on this brief. Change it and run it again as often as you like.</p></div></div>
+        <div class="form-grid">
+          <div class="field full"><label for="xp-outcome">Outcome, in the organisation’s words</label><textarea id="xp-outcome" rows="2" style="min-height:64px">${esc(b.outcome)}</textarea><span class="help">From the project. Changing it here doesn’t change the project.</span></div>
+          <div class="field"><label for="xp-kind">Kind of work</label><select id="xp-kind">${kinds.map((k) => `<option value="${k}" ${k === b.kind ? 'selected' : ''}>${esc(xpKindLabel(k))}</option>`).join('')}</select></div>
+          <div class="field"><span class="lab">Focus, optional</span><div class="chips">${XP_FOCUS.map(([k, l]) => `<button type="button" class="chip" data-xp-focus="${k}" data-xp-proj="${proj.id}" aria-pressed="${b.focus.includes(k)}">${l}</button>`).join('')}</div></div>
+          <div class="field full"><label for="xp-q">What do you want to find out?</label><textarea id="xp-q" rows="2" style="min-height:64px" placeholder="For example: ${esc(exs[0])}">${esc(b.q)}</textarea><div class="chips">${exs.map((x) => `<button type="button" class="chip" data-xp-ex="${esc(x)}" data-xp-proj="${proj.id}">${esc(x)}</button>`).join('')}</div></div>
+        </div>
+        <div class="xp-run"><button type="button" class="btn primary" data-xp-act="run" data-xp-proj="${proj.id}" ${xs.thinking ? 'disabled' : ''}><img src="${SPARK}" alt="" style="width:16px">Suggest measures</button>${aiMark('AI suggests from this brief and the figures. You decide.')}</div>
+        <p class="xs muted" style="margin-top:12px">${esc(proj.sol)} shares: ${esc(shared.join(', ') || 'nothing yet')}. Suggestions use only these, or say what is missing.</p>
+      </section>
+      ${xs.thinking ? `<section class="card" id="xp-results"><div class="thinking"><img src="${SPARK}" alt="">Reading the brief and the figures ${esc(proj.sol)} shares…</div></section>` : run ? xpResults(proj, info, xs, run) : `<section class="card"><div class="empty" style="padding:20px"><h3>No suggestions yet</h3><p>Say what you want to find out, or press Suggest measures to start from the outcome.</p></div></section>`}
+      ${xpCompare(proj, info, xs)}
+      ${xpRuns(proj, xs)}
+    </section>`;
+  }
+  function exploreAfter() {
+    const el = $('#xp-cmp'); if (!el || !XP_CUR) return;
+    const proj = XP_CUR, info = xpInfo(proj), xs = xpStore(proj, info), items = xpCompareItems(proj, info, xs), wk = weeksOf(aWindow(84));
+    const series = items.map((x, i) => { const raw = wk.map((w) => x.val(w)), b0 = raw.find((v) => v !== null && v !== undefined && isFinite(v) && v !== 0); return { name: x.name, color: `var(--s${i + 1})`, vals: raw.map((v) => (b0 === undefined || v === null || v === undefined || !isFinite(v)) ? null : 100 * v / b0) }; });
+    drawLines(el, wk.map((w) => dayShort(w[0])), series, { label: 'Measures compared as an index, first week 100', height: 240, fmt: (v) => nf(v, 0), fmtAxis: (v) => nf(v, 0), tipLabel: (i) => 'Week of ' + day(wk[i][0]) });
+  }
+  ['solution', 'sim'].forEach((k) => { const prev = pages[k] && pages[k].after; if (pages[k]) pages[k].after = (id) => { if (prev) prev(id); exploreAfter(); }; });
+  // Ask: "What else could we measure for <solution or organisation>?"
+  function exploreAsk(ql, ps) {
+    if (!/what else|other (measures|metrics|kpis)|(more|new|different) (measures|metrics|kpis)|(could|should|can) we (also )?(measure|track)|explore (impact|measures)/.test(ql)) return null;
+    const ment = ps.filter((p) => [p.name, p.sol, p.org].some((x) => ql.includes(x.toLowerCase())) || ql.includes(p.org.split(' ')[0].toLowerCase()));
+    const p = ment[0] || ps[0], info = xpInfo(p), xs = xpStore(p, info), sh = xpShares(p);
+    const res = xpSuggest(p, info, { outcome: xs.brief.outcome, kind: xs.brief.kind, q: ql, focus: xs.brief.focus }, xs);
+    const ideas = res.ids.map((id) => xpResolve(p, info, xpCatById(id), sh, xs)).filter(Boolean), pick = [];
+    ['a', 'b', 'c'].forEach((t) => { const x = ideas.find((i) => i.t === t); if (x) pick.push(x); });
+    pick.sort((x, y) => res.ids.indexOf(x.id) - res.ids.indexOf(y.id));
+    if (!pick.length) return { html: `<p>I couldn’t find anything new to suggest for ${citeOf(p)}. It already measures what fits its kind of work.</p>` };
+    const days = aWindow(30);
+    return { html: `<p>For ${citeOf(p)}${ment.length ? '' : ' (name a solution or organisation to focus on another)'}, ${pick.length} idea${pick.length === 1 ? '' : 's'} from its outcome and the figures it shares:</p>
+      <ul>${pick.map((i) => { const cm = i.t === 'a' ? i.cm : i.mcm, v = cm ? evalCustom(p, cm, days) : null; return `<li><b>${esc(i.name)}</b> <span class="muted">· ${XP_TYPE[i.t]}</span><br>${esc(i.why || i.needs || '')}${v !== null ? ` Last 30 days: <span class="mono">${fmtM(customMeta(cm), v)}</span> ${q(customMeta(cm).quality)}` : ''}</li>`; }).join('')}</ul>
+      ${new Set(ment.map((x) => x.org)).size === 1 && ment.length > 1 ? `<p class="xs muted">${esc(p.org)} has ${ment.length} solutions collecting. Ask about each by name.</p>` : ''}
+      <p><a class="btn sm" href="${p.href}" data-xp-open="1"><img src="${SPARK}" alt="" style="width:16px">Open Explore for ${esc(p.sol)}</a></p>
+      <p class="xs muted">${aiMark('Suggested by AI. You decide.')} Figures come from the solution’s own history. Nothing is measured until a second person approves it.</p>` };
+  }
+  // Demo studio: ship figures someone asked a developer for (demo workspace only).
+  function exploreStudioSec() {
+    const items = [];
+    state.sims.forEach((s) => { if (s.xp) Object.entries(s.xp.reqs).forEach(([id, r]) => { if (!r.shipped && r.canShip) items.push([s, id, r]); }); });
+    return `<section class="studio-sec"><h3>${icon('connect-ai', 'sm')}Figures asked of developers</h3><p class="help">When someone asks a developer for a new figure in Explore, pretend it shipped. Figures start arriving from the next day.</p>
+      ${items.length ? `<div class="list">${items.map(([s, id, r]) => `<div class="row" style="grid-template-columns:minmax(0,1fr) auto"><div><div class="what small">${esc(r.label)}</div><div class="meta"><span class="mono">${esc(r.key)}</span><span>${esc(s.name)}</span></div></div><button type="button" class="btn sm" data-xp-act="ship" data-xp-proj="${s.id}" data-xp-id="${id}">Ship it</button></div>`).join('')}</div>` : '<p class="help">Nothing asked for yet.</p>'}</section>`;
+  }
+  function xpAddMeasure(proj, name, cm) {
+    const c = { id: 'c' + state.seq++, name, op: cm.op, a: cm.a, b: cm.op === 'ratio' || cm.op === 'per' ? cm.b : null, rate: 2, target: '', aud: 'team', status: 'waiting', by: state.role };
+    proj.custom().push(c);
+    proj.approvals().unshift({ id: 'a' + state.seq++, cmId: c.id, projId: proj.id, projOrg: proj.org, type: 'Measure', title: c.name, proposer: state.role, since: now(), status: 'waiting', summary: `A new measure for ${proj.sol}, suggested in Explore and built from the figures it shares.`, fields: [['Worked out as', customFormula(c)], ['Kind', customMeta(c).quality], ['Who sees it', 'Team only']], evidence: `Preview checked on ${day(M.addDays(endDay(), 1))}`, affects: `${proj.sol} measures` });
+    log(`Proposed the measure “${c.name}” for ${proj.sol}, from an Explore suggestion`);
+    return c;
+  }
+  const XP_ACTS = {
+    run: (proj, xs, d, keep) => {
+      if (!keep) xpReadBrief(xs);
+      xs.thinking = true; render();
+      setTimeout(() => { xpRun(proj, xs); render(); const r = $('#xp-results'); if (r) r.scrollIntoView({ block: 'nearest' }); }, reduceMotion ? 0 : 700);
+    },
+    reopen: (proj, xs, d) => { const r = xs.runs.find((x) => x.id === d.xpRun); if (!r) return; xs.cur = r.id; xs.brief = JSON.parse(JSON.stringify(r.brief)); render(); const el = $('#xp-results'); if (el) el.scrollIntoView({ block: 'nearest' }); },
+    rerun: (proj, xs, d) => { const r = xs.runs.find((x) => x.id === d.xpRun); if (!r) return; xs.brief = JSON.parse(JSON.stringify(r.brief)); XP_ACTS.run(proj, xs, d, true); },
+    add: (proj, xs, d) => {
+      const info = xpInfo(proj), idea = xpResolve(proj, info, xpCatById(d.xpId), xpShares(proj), xs), cm = idea && (idea.t === 'a' ? idea.cm : idea.mcm);
+      if (!cm || idea.dup) return;
+      xpAddMeasure(proj, idea.t === 'b' ? idea.mname : idea.name, cm); render(); toast('Measure sent for approval.');
+    },
+    builder: (proj, xs, d) => {
+      const idea = xpResolve(proj, xpInfo(proj), xpCatById(d.xpId), xpShares(proj), xs); if (!idea || !idea.cm) return;
+      state.bld = { proj: proj.id, name: idea.name, op: idea.cm.op, a: idea.cm.a, b: idea.cm.b || 'handled', rate: 2, target: '', aud: 'team' };
+      state.solTab = 'measures'; render(); const b = $('#bld'); if (b) b.scrollIntoView({ block: 'center' });
+    },
+    request: (proj, xs, d) => {
+      const info = xpInfo(proj), idea = xpResolve(proj, info, xpCatById(d.xpId), xpShares(proj), xs); if (!idea || idea.t !== 'b' || xpReqOf(xs, idea)) return;
+      const f = idea.fig, apId = 'a' + state.seq++;
+      proj.approvals().unshift({ id: apId, projId: proj.id, projOrg: proj.org, type: 'New figure', title: f.label, proposer: state.role, since: now(), status: 'waiting', summary: `Ask the developer of ${proj.sol} to share a new figure, so “${idea.t === 'b' && idea.as ? xpFill(idea.as.name, info) || idea.name : idea.name}” can be measured.`, fields: [['Key', f.key], ['Type', f.type + (f.agg ? ' · ' + f.agg : '')], ['Unit', f.unit], ['Means', f.desc], ['Split by', f.dims.join(', ') || '–']], evidence: 'Suggested by AI in Explore from the brief and the figures the solution shares', affects: `${proj.sol} catalog (metric_catalog_version) and its measures` });
+      xs.reqs[idea.id] = { apId, key: f.key, label: f.label, at: now(), shipped: null, canShip: !!f.gen };
+      xs.open = idea.id;
+      log(`Asked the developer of ${proj.sol} for a new figure, ${f.key}`);
+      render(); toast('Request sent. The developer brief is ready to copy.');
+    },
+    copy: (proj, xs, d) => {
+      const el = $('#xp-dev-' + d.xpId); if (!el) return;
+      const fallback = () => { const r = document.createRange(); r.selectNodeContents(el); getSelection().removeAllRanges(); getSelection().addRange(r); toast('Selected. Press Ctrl C to copy.'); };
+      try { navigator.clipboard.writeText(el.textContent).then(() => toast('Copied. Send it to the developer.'), fallback); } catch (err) { fallback(); }
+    },
+    ship: (proj, xs, d) => {
+      const req = xs.reqs[d.xpId], it = xpCatById(d.xpId); if (!req || req.shipped || !sandbox() || !it.fig || !it.fig.gen) return;
+      req.shipped = state.simDay; xpEnsureField(proj, it, req, xpInfo(proj));
+      log(`${proj.sol} started sharing ${req.key}; metric_catalog_version bumped`, 'Demo studio');
+      render(); toast(`Shipped. Figures arrive from ${dayShort(M.addDays(state.simDay, 1))}.`);
+    },
+    'mock-approve': (proj, xs, d) => { const a = xpAp(proj, d.xpAp); if (!a) return; a.status = 'approved'; log(`Approved “${a.title}”`, 'Aisyah Rahman'); render(); toast('Aisyah approved it.'); },
+    'rec-open': (proj, xs, d) => { const idea = xpResolve(proj, xpInfo(proj), xpCatById(d.xpId), xpShares(proj), xs); xs.recOpen = d.xpId; xs.recDraft = { v: '', u: idea.rec.unit, s: 'The organisation’s records', e: '' }; render(); const f = $('#xp-rv'); if (f) f.focus(); },
+    'rec-cancel': (proj, xs) => { xs.recOpen = null; xs.recDraft = null; render(); },
+    'rec-save': (proj, xs, d) => {
+      const dr = xs.recDraft, info = xpInfo(proj), idea = xpResolve(proj, info, xpCatById(d.xpId), xpShares(proj), xs);
+      const v = parseFloat(dr.v), bad = (id, msg) => { const el = $('#' + id); el.setAttribute('aria-invalid', 'true'); if (msg) el.placeholder = msg; el.focus(); };
+      if (!isFinite(v)) { bad('xp-rv'); return; }
+      if (!dr.e.trim()) { bad('xp-re', 'Say where the number comes from first'); return; }
+      const apId = 'a' + state.seq++;
+      proj.approvals().unshift({ id: apId, projId: proj.id, projOrg: proj.org, type: idea.rec.base ? 'Baseline' : 'Organisation figure', title: idea.rec.label, proposer: state.role, since: now(), status: 'waiting', summary: `A number from the organisation, so “${idea.name}” can be worked out for ${proj.sol}.`, fields: [['Value', `${v} ${dr.u}`], ['Source', dr.s], ['Used for', idea.name]], evidence: dr.e.trim(), affects: `${idea.name} for ${proj.sol}` });
+      xs.recs[idea.id] = { apId, label: idea.rec.label, value: v, unit: dr.u, source: dr.s, evidence: dr.e.trim() };
+      xs.recOpen = null; xs.recDraft = null;
+      log(`Recorded “${idea.rec.label}” as ${v} ${dr.u} for ${proj.sol}, sent for approval`);
+      render(); toast('Sent for approval.');
+    },
+    'pick-clear': (proj, xs) => { xs.picks = []; render(); },
+  };
+  function xpReadBrief(xs) { const o = $('#xp-outcome'), qq = $('#xp-q'), k = $('#xp-kind'); if (o) xs.brief.outcome = o.value; if (qq) xs.brief.q = qq.value.trim(); if (k) xs.brief.kind = k.value; }
+  const xpProjOf = (d) => (d.xpProj && projById(d.xpProj)) || XP_CUR;
+  document.addEventListener('click', (e) => {
+    const t = e.target.closest('[data-xp-act], [data-xp-focus], [data-xp-pick], [data-xp-ex], [data-xp-open]');
+    if (!t) return;
+    const d = t.dataset;
+    if (d.xpOpen) { state.solTab = 'explore'; return; }
+    const proj = xpProjOf(d); if (!proj) return;
+    const xs = xpStore(proj, xpInfo(proj));
+    if (d.xpFocus) { xpReadBrief(xs); const f = xs.brief.focus, i = f.indexOf(d.xpFocus); if (i >= 0) f.splice(i, 1); else f.push(d.xpFocus); render(); return; }
+    if (d.xpEx) { xpReadBrief(xs); xs.brief.q = d.xpEx; render(); return; }
+    if (d.xpPick) { const i = xs.picks.indexOf(d.xpPick); if (i >= 0) xs.picks.splice(i, 1); else if (xs.picks.length >= 3) { toast('Compare up to three at a time.'); return; } else xs.picks.push(d.xpPick); render(); return; }
+    if (d.xpAct && XP_ACTS[d.xpAct]) { e.preventDefault(); XP_ACTS[d.xpAct](proj, xs, d); }
+  });
+  document.addEventListener('input', (e) => {
+    const id = e.target.id; if (!/^xp-/.test(id) || !XP_CUR) return;
+    const xs = xpStore(XP_CUR, xpInfo(XP_CUR));
+    if (id === 'xp-outcome') xs.brief.outcome = e.target.value;
+    if (id === 'xp-q') xs.brief.q = e.target.value;
+    if (xs.recDraft && ({ 'xp-rv': 'v', 'xp-ru': 'u', 'xp-re': 'e' })[id]) { xs.recDraft[({ 'xp-rv': 'v', 'xp-ru': 'u', 'xp-re': 'e' })[id]] = e.target.value; e.target.removeAttribute('aria-invalid'); }
+  });
+  document.addEventListener('change', (e) => {
+    const id = e.target.id; if (!/^xp-/.test(id) || !XP_CUR) return;
+    const xs = xpStore(XP_CUR, xpInfo(XP_CUR));
+    if (id === 'xp-kind') { xpReadBrief(xs); render(); }
+    if (id === 'xp-rs' && xs.recDraft) xs.recDraft.s = e.target.value;
+  });
+
   // ------------------------------------------------------------------ ANALYTICS: standard views over any measure
-  // scope is 'all', 'c:<client id>' or a project id
+  // scope is 'all', 'c:<organisation id>' or a project id
   function anSel(a, ps) {
     if (a.proj === 'all') return ps;
     if (a.proj.startsWith('c:')) { const c = coById(a.proj.slice(2)), ids = c ? coSolutions(c).map((x) => x.id) : []; return ps.filter((p) => ids.includes(p.id)); }
@@ -1440,7 +2244,7 @@
     a.by = a.by || 'client';
     if (!anSel(a, ps).length) a.proj = 'all';
     const sel = anSel(a, ps), cos = companies().map((c) => ({ c, list: ps.filter((p) => coSolutions(c).some((x) => x.id === p.id)) })).filter((x) => x.list.length);
-    const scopeName = a.proj === 'all' ? 'all clients' : a.proj.startsWith('c:') ? coById(a.proj.slice(2)).short : `${sel[0].org} · ${sel[0].sol}`;
+    const scopeName = a.proj === 'all' ? 'all organisations' : a.proj.startsWith('c:') ? coById(a.proj.slice(2)).short : `${sel[0].org} · ${sel[0].sol}`;
     const visible = MEASURES.filter((m) => !m.reka || has('Commercial'));
     if (!visible.some((m) => m.key === a.measure)) a.measure = 'hours';
     const m = mByKey(a.measure);
@@ -1460,7 +2264,7 @@
     return `${head({ title: 'Analytics', lead: 'Trends, comparisons and patterns for any measure, across one project or all of them.', actions: `<button type="button" class="btn sm" data-act="an-ask"><img src="${SPARK}" alt="" style="width:16px">Ask about this</button><button type="button" class="btn sm" data-act="export">Export CSV</button>` })}
     <section class="card" style="padding:14px 18px"><div class="form-grid an-controls">
       <div class="field"><label for="an-m">Measure</label><select id="an-m">${DOMAINS.map((dm) => { const xs = visible.filter((x) => x.domain === dm); return xs.length ? `<optgroup label="${dm}">${xs.map((x) => `<option value="${x.key}" ${x.key === a.measure ? 'selected' : ''}>${x.name}</option>`).join('')}</optgroup>` : ''; }).join('')}</select></div>
-      <div class="field"><label for="an-p">Show</label><select id="an-p"><option value="all">All clients (${ps.length} solution${ps.length === 1 ? '' : 's'})</option>${cos.map(({ c, list }) => `<optgroup label="${esc(c.short)}"><option value="c:${c.id}" ${a.proj === 'c:' + c.id ? 'selected' : ''}>All of ${esc(c.short)}</option>${list.map((p) => `<option value="${p.id}" ${p.id === a.proj ? 'selected' : ''}>${esc(p.name)} · ${esc(p.sol)}</option>`).join('')}</optgroup>`).join('')}</select></div>
+      <div class="field"><label for="an-p">Show</label><select id="an-p"><option value="all">All organisations (${ps.length} solution${ps.length === 1 ? '' : 's'})</option>${cos.map(({ c, list }) => `<optgroup label="${esc(c.short)}"><option value="c:${c.id}" ${a.proj === 'c:' + c.id ? 'selected' : ''}>All of ${esc(c.short)}</option>${list.map((p) => `<option value="${p.id}" ${p.id === a.proj ? 'selected' : ''}>${esc(p.name)} · ${esc(p.sol)}</option>`).join('')}</optgroup>`).join('')}</select></div>
       <div class="field"><span class="lab">Period</span><div class="seg">${[[30, '30 days'], [90, '90 days'], [365, '12 months']].map(([d, l]) => `<button type="button" data-anrange="${d}" aria-pressed="${a.range === d}">${l}</button>`).join('')}</div></div>
     </div></section>
     <section class="grid g4 stats">
@@ -1473,7 +2277,7 @@
       <div class="chart" id="ch-an"></div>
       <div class="legend"><span><i style="background:var(--s1)"></i>This period</span><span><i style="background:var(--baseline)"></i>The period before, dashed</span></div></section>
     <section class="grid g-main">
-      <div class="card"><div class="card-head"><div><h2>By ${a.by === 'client' ? 'client' : 'solution'}</h2><p class="sub">${esc(RANGES[a.range])} · ${m.sum ? 'added up within each row' : 'each from its own totals, never averaged'}</p></div><div class="seg" role="group" aria-label="Compare by"><button type="button" data-anby="client" aria-pressed="${a.by === 'client'}">Clients</button><button type="button" data-anby="project" aria-pressed="${a.by !== 'client'}">Solutions</button></div></div>
+      <div class="card"><div class="card-head"><div><h2>By ${a.by === 'client' ? 'client' : 'solution'}</h2><p class="sub">${esc(RANGES[a.range])} · ${m.sum ? 'added up within each row' : 'each from its own totals, never averaged'}</p></div><div class="seg" role="group" aria-label="Compare by"><button type="button" data-anby="client" aria-pressed="${a.by === 'client'}">Organisations</button><button type="button" data-anby="project" aria-pressed="${a.by !== 'client'}">Solutions</button></div></div>
         <div class="table-wrap"><table><thead><tr><th>${a.by === 'client' ? 'Client' : 'Solution'}</th><th class="num">${esc(m.name)}</th><th class="num">Change</th><th>12 weeks</th></tr></thead><tbody>
         ${rows.map((r) => { const c = r.v !== null && r.pv ? 100 * (r.v - r.pv) / Math.abs(r.pv) : null, gd = c === null ? null : (m.better === 'up' ? c >= 0 : c <= 0); return `<tr class="link ${a.proj === r.g.id ? 'sel' : ''}" data-anpick="${r.g.id}" tabindex="0"><td><span class="name">${esc(r.g.name)}</span><span class="sub">${esc(r.g.sub)}</span>${m.sum && r.v !== null ? `<div class="bar-track" style="margin-top:6px;height:6px"><div class="bar-fill" style="width:${100 * r.v / maxV}%"></div></div>` : ''}</td><td class="num">${fmtM(m, r.v) || '<span class="dash">–</span> <span class="needs">not shared</span>'}</td><td class="num" style="color:var(--${gd === null ? 'muted' : gd ? 'ok-ink' : 'fault-ink'})">${pctTxt(c)}</td><td>${sparkline(weeksOf(aWindow(84)).map((w) => m.calc(mergeTotals(r.g.list.map((p) => totals(p, w))))), 90, 26)}</td></tr>`; }).join('')}
         </tbody></table></div></div>
@@ -1511,6 +2315,7 @@
   function askAnswer(raw) {
     const ql = raw.toLowerCase(), ps = projects();
     if (!ps.length) return { html: '<p>There are no figures to answer from yet. Connect a solution, or simulate one in Demo studio, and ask again.</p>' };
+    const xpa = exploreAsk(ql, ps); if (xpa) return xpa;
     const per = askPeriod(ql);
     const ment = ps.filter((p) => [p.name, p.sol, p.org].some((x) => ql.includes(x.toLowerCase())) || ql.includes(p.org.split(' ')[0].toLowerCase()));
     const mw = MEASURE_WORDS.find(([, re]) => re.test(ql));
@@ -1532,11 +2337,11 @@
       if (!cps.length) return { html: `<p><b>${esc(co.short)}</b> has ${co.projects.length ? `${co.projects.length} project${co.projects.length === 1 ? '' : 's'}, but none is collecting figures yet` : 'no projects yet'}. I can only answer once a solution is sending data.</p>${needs.length ? `<p>What needs you:</p><ul>${needs.map(([, , t, , hr]) => `<li><a href="${hr}">${esc(t)}</a></li>`).join('')}</ul>` : ''}` };
       return { html: `<p><b>${esc(co.short)}</b>, ${esc(per.label)}: ${h !== null ? `an estimated <span class="mono" style="font-size:1.1em">${nf(h)} hours</span> saved ${q('estimated')}, likely ${nf(rg[0])} to ${nf(rg[1])}${ch !== null ? `, ${ch >= 0 ? 'up' : 'down'} ${nf(Math.abs(ch), 0)}% on ${esc(per.prevLabel)}` : ''}` : 'no hours saved yet, because no project has an approved baseline'}. <span class="mono">${nf(ct.vol)}</span> items handled across ${cps.length} solution${cps.length === 1 ? '' : 's'}.</p>
         <ul>${co.projects.map((pr) => { const ss = pr.solutions.filter((x) => x.proj), t = mergeTotals(ss.map((x) => totals(x.proj, per.days))), hv = hm.calc(t); return `<li>${esc(pr.name)}: ${ss.length ? ss.map((x) => citeOf(x.proj)).join(', ') + ` <span class="mono">${hv !== null ? nf(hv) + ' h' : nf(t.vol) + ' handled'}</span>` : '<span class="muted">not collecting yet</span>'} · ${esc(STATUS[worstOf(pr.solutions.map((x) => x.status))][1].toLowerCase())}</li>`; }).join('')}</ul>
-        ${needs.length ? `<p>${needs.length} thing${needs.length === 1 ? '' : 's'} need${needs.length === 1 ? 's' : ''} you here:</p><ul>${needs.map(([, , t, , hr]) => `<li><a href="${hr}">${esc(t)}</a></li>`).join('')}</ul>` : '<p>Nothing needs you for this client.</p>'}
-        <p class="xs muted">Worked out from ${cps.length} project${cps.length === 1 ? '' : 's'} for this client, ${esc(per.label)}${ct.missing ? `. ${ct.missing} missing day${ct.missing === 1 ? '' : 's'} not counted` : ''}. Hours add up across projects without counting the same work twice.</p>` };
+        ${needs.length ? `<p>${needs.length} thing${needs.length === 1 ? '' : 's'} need${needs.length === 1 ? 's' : ''} you here:</p><ul>${needs.map(([, , t, , hr]) => `<li><a href="${hr}">${esc(t)}</a></li>`).join('')}</ul>` : '<p>Nothing needs you for this organisation.</p>'}
+        <p class="xs muted">Worked out from ${cps.length} project${cps.length === 1 ? '' : 's'} for this organisation, ${esc(per.label)}${ct.missing ? `. ${ct.missing} missing day${ct.missing === 1 ? '' : 's'} not counted` : ''}. Hours add up across projects without counting the same work twice.</p>` };
     }
     if (/how (is|are|do|does)|calculat|formula|worked out|what does .* mean|definition/.test(ql)) {
-      return { html: `<p><b>${esc(m.name)}</b> ${q(m.quality)}</p><p>${esc(m.how)}</p>${m.key === 'hours' ? '<p>Minutes by hand come from the baseline the client agreed. Machine time is never counted as a person’s time. The likely range uses the fastest and slowest times in the baseline.</p>' : ''}<p class="xs muted">Every project uses the same definition, so they can be compared.</p>` };
+      return { html: `<p><b>${esc(m.name)}</b> ${q(m.quality)}</p><p>${esc(m.how)}</p>${m.key === 'hours' ? '<p>Minutes by hand come from the baseline the organisation agreed. Machine time is never counted as a person’s time. The likely range uses the fastest and slowest times in the baseline.</p>' : ''}<p class="xs muted">Every project uses the same definition, so they can be compared.</p>` };
     }
     if (/why|drop|fell|fall|went (down|up)|rise|rose|increase|decrease|change|differen/.test(ql)) {
       const week = /week/.test(ql) || !/month|quarter|year|days/.test(ql);
@@ -1582,7 +2387,7 @@
   function askSuggestions() {
     const p = projects()[0];
     const c = companies().find((x) => coProjs(x).length);
-    return [`How many hours did we save in ${monthName(lastFullMonth())}?`, 'What needs my attention?', c ? `How is ${c.short} doing this month?` : null, p ? `Why did ${p.sol} change this week?` : null, 'Which project improved most this month?', 'Compare all projects', 'Show the trend of work handled', 'How is hours saved worked out?'].filter(Boolean);
+    return [`How many hours did we save in ${monthName(lastFullMonth())}?`, 'What needs my attention?', c ? `How is ${c.short} doing this month?` : null, p ? `Why did ${p.sol} change this week?` : null, p ? `What else could we measure for ${p.sol}?` : null, 'Which project improved most this month?', 'Compare all projects', 'Show the trend of work handled', 'How is hours saved worked out?'].filter(Boolean);
   }
   pages.ask = () => {
     const chat = state.chat = state.chat || [];
@@ -1591,7 +2396,7 @@
       ${chat.length ? `<div class="grid" style="gap:16px" id="chat">${chat.map((x, i) => x.role === 'user'
         ? `<div style="justify-self:end;max-width:min(75%,560px);background:var(--primary);color:var(--on-primary);padding:10px 14px;border-radius:16px 16px 4px 16px">${esc(x.text)}</div>`
         : `<div style="display:grid;grid-template-columns:32px minmax(0,1fr);gap:12px;align-items:start"><span class="ico ai" style="width:32px;height:32px;border-radius:10px;display:grid;place-items:center"><img src="${SPARK}" alt="" style="width:18px${x.thinking && !reduceMotion ? ';animation:breathe 1.2s infinite alternate' : ''}"></span><div class="narrative" style="font-size:.9375rem;max-width:none;min-width:0">${x.thinking ? '<p class="muted">Working it out from the figures…</p>' : x.html}${x.chart ? `<div class="chart" id="ask-ch-${i}"></div>` : ''}</div></div>`).join('')}</div>`
-      : `<div class="empty" style="padding:12px"><span class="ico ai" style="width:52px;height:52px;border-radius:14px;display:grid;place-items:center"><img src="${SPARK}" alt="" style="width:28px"></span><h3>What do you want to know?</h3><p>For example, how much time a client saved last month, why a figure moved, or which project is improving fastest.</p></div>`}
+      : `<div class="empty" style="padding:12px"><span class="ico ai" style="width:52px;height:52px;border-radius:14px;display:grid;place-items:center"><img src="${SPARK}" alt="" style="width:28px"></span><h3>What do you want to know?</h3><p>For example, how much time an organisation saved last month, why a figure moved, or which project is improving fastest.</p></div>`}
       <div class="chips">${askSuggestions().map((t) => `<button type="button" class="chip" data-askq="${esc(t)}">${esc(t)}</button>`).join('')}</div>
       <form id="f-ask" style="display:flex;gap:8px;align-items:flex-end"><div class="field" style="flex:1"><input id="ask-q" placeholder="Ask about hours saved, turnaround, corrections, any project…" aria-label="Your question" autocomplete="off" value="${esc(state.askDraft || '')}"></div><button type="submit" class="btn primary" style="min-height:44px">Ask</button></form>
       <p class="xs muted">Ask never makes up a figure, says when it can’t answer, and doesn’t claim what caused a change. ${demo() ? 'Answers here use the example data.' : 'Answers use your workspace.'}</p>
@@ -1617,19 +2422,55 @@
   }
   function demoAtt() {
     const waiting = state.approvals.filter((a) => a.status === 'waiting').length;
-    return [['fault', 'alerts', 'Quote drafter stopped answering', 'Bina Jaya · since 14 Oct, 22:00', '#solution-quote-drafter', 'Check'], ['warn', 'clock', 'Shift planner hasn’t sent data for 2 days', 'Acme Plastics · showing the last good figures', '#solution-shift-planner', 'Open'], ['warn', 'shield', `${waiting} item${waiting === 1 ? '' : 's'} waiting for approval`, has('Approve') ? 'Some are yours to decide' : 'A project manager decides', '#approvals', 'Review'], ['info', 'target', 'Front-desk hours saved needs a baseline', 'Sampel Medik · impact can’t be shown yet', '#approvals', 'Add'], ['info', 'reports', state.reportApproved ? 'September report approved' : 'September report is ready to review', 'Contoh Logistik · due 17 Oct', '#report', 'Open']];
+    return [['fault', 'alerts', 'Quote drafter stopped answering', 'Bina Jaya · since 14 Oct, 22:00', '#troubleshoot-quote-drafter', 'Troubleshoot'], ['warn', 'clock', 'Shift planner hasn’t sent data for 2 days', 'Acme Plastics · showing the last good figures', '#troubleshoot-shift-planner', 'Troubleshoot'], ['warn', 'shield', `${waiting} item${waiting === 1 ? '' : 's'} waiting for approval`, has('Approve') ? 'Some are yours to decide' : 'A project manager decides', '#approvals', 'Review'], ['info', 'target', 'Front-desk hours saved needs a baseline', 'Sampel Medik · impact can’t be shown yet', '#approvals', 'Add'], ['info', 'reports', state.reportApproved ? 'September report approved' : 'September report is ready to review', 'Contoh Logistik · due 17 Oct', '#report', 'Open']];
   }
 
   // ------------------------------------------------------------------ SETTINGS and HELP
-  pages.settings = () => `${head({ title: 'Settings', lead: `${esc(state.setup.workspace)} workspace` })}
+  // ---------- Platform and Trail pages (SPEC §7.3): Settings, Demo, Audit, Staff, and Watch → Adoption
+  const SWITCHES = [['collect', 'Nightly collection', 'Reads every measurement link each night. Off pauses every organisation’s figures; days missed are filled in when it comes back.'], ['ai', 'AI drafting', 'Report summaries, KPI and measure suggestions, and Ask. Off shows people a plain message instead.'], ['email', 'Report emails', 'Sends approved reports to each organisation’s contacts. Off keeps them in Reports.']];
+  const swOn = (k) => !(state.switchesOff || {})[k];
+  pages.settings = () => `${head({ title: 'Settings', lead: 'Platform switches, collection, retention and the integration pack. Each switch asks for a reason first.' })}
+    <section class="card"><div class="card-head"><h2>Platform switches</h2><span class="xs muted">Operator for switches</span></div><div class="list">
+      ${SWITCHES.map(([k, l, d]) => `<div class="row" style="grid-template-columns:minmax(0,1fr) auto"><div><div class="what">${l}</div><div class="meta">${d}</div></div>${atLeast('Operator') ? `<button type="button" class="switch" role="switch" aria-checked="${swOn(k)}" data-act="switch" data-k="${k}" aria-label="${l}"><span></span></button>` : `<span class="head-actions"><button type="button" class="switch" role="switch" aria-checked="${swOn(k)}" disabled aria-label="${l}"><span></span></button><span class="needs">Needs Operator</span></span>`}</div>`).join('')}</div></section>
     <div class="grid g2">
-      <section class="card"><div class="card-head"><h2>Team</h2><button type="button" class="btn sm" data-act="invite">${icon('user-plus', 'sm')}Invite</button></div>
-        <div class="list">${Object.values(M.staff).map((s) => `<div class="row"><span class="avatar">${s.initials}</span><div><div class="what">${s.name}</div><div class="meta">${s.note}</div></div><span class="pill idle">${s.rights.includes('Approve') ? 'Can approve' : 'Can suggest'}${s.rights.includes('Commercial') ? ' · sees fees' : ''}</span></div>`).join('')}</div>
-        <p class="small muted" style="margin-top:12px">Analysts suggest KPIs. Project managers approve them. Only people with the commercial right see fees.</p></section>
-      <section class="card"><div class="card-head"><h2>Collection and measures</h2></div>${kv([['Nightly figures', '06:00 MYT'], ['Health checks', 'Every 15 minutes'], ['Data kept in', 'Singapore'], ['Kept for', 'The contract plus 24 months, then monthly totals'], ['Hourly staff cost', 'RM45 an hour, for every client. Used for \u201cvalue of time freed\u201d, always shown as an estimate'], ['Demo workspaces', 'Simulated only, never send anything, cleared after 90 days unless kept']], 140)}</section>
-      <section class="card"><div class="card-head"><h2>Audit trail</h2><span class="pill idle">${icon('lock', 'sm')}Can’t be edited</span></div>${activityList(10)}</section>
-      <section class="card"><div class="card-head"><h2>Integration pack</h2></div><p class="small">Everything a developer needs to add a measurement link: the contract, examples and a test to run before handing over.</p><div class="code-block" style="margin-top:12px">AX_MEASURE_KEY=ax_msr_… node contract-test/cli.mjs --base https://your-solution/internal/measure/v1</div></section>
+      <section class="card"><div class="card-head"><h2>Collection and measures</h2></div>${kv([['Nightly figures', '02:00 in each organisation’s time'], ['Health checks', 'Every 15 minutes'], ['Data kept in', 'Singapore'], ['Kept for', 'The contract plus 24 months, then monthly totals'], ['Hourly staff cost', 'RM45 an hour, for every organisation. Used for “value of time freed”, always shown as an estimate'], ['Demo workspaces', 'Simulated only, never send anything, cleared after 90 days unless kept']], 140)}</section>
+      <section class="card"><div class="card-head"><h2>Integration pack</h2></div><p class="small">Everything a developer needs to add a Measurement Link: the contract, examples and a test to run before handing over.</p><div class="code-block" style="margin-top:12px">AX_MEASURE_KEY=ax_msr_… node contract-test/cli.mjs --base https://your-solution/internal/measure/v1</div></section>
     </div>`;
+  pages.staff = () => {
+    const rights = { Approve: 'Approve', Commercial: 'Commercial (fees and cost)', Measurement: 'Measurement' };
+    return `${head({ title: 'Staff', lead: 'REKA staff who use AXLE · Outcomes: their rung, rights and two-step sign-in. Organisation contacts are never listed here.', actions: atLeast('Admin') ? `<button type="button" class="btn primary" data-act="invite">${icon('user-plus', 'sm')}Add staff</button>` : '<span class="head-actions"><button type="button" class="btn primary" disabled>Add staff</button><span class="needs">Needs Admin</span></span>' })}
+    <section class="card"><div class="table-wrap"><table><thead><tr><th>Person</th><th>Rung</th><th>Rights</th><th>Two-step sign-in</th><th>Last active</th><th></th></tr></thead><tbody>
+      ${Object.values(M.staff).map((x) => `<tr><td><div style="display:flex;gap:10px;align-items:center"><span class="avatar">${x.initials}</span><div><span class="name">${esc(x.name)}</span><span class="sub">${esc(x.note)}</span></div></div></td><td><span class="rung-chip">${esc(x.rung.toUpperCase())}</span></td><td>${x.rights.map((r) => `<span class="pill idle">${esc(rights[r] || r)}</span>`).join(' ')}</td><td>${stChip('ok', 'On')}</td><td class="mono">${x.id === state.role ? 'Now' : dayShort(today()) + ', 09:' + (10 + x.name.length)}</td>
+        <td style="text-align:right">${atLeast('Admin') && x.id !== state.role ? '<button type="button" class="btn sm" data-act="staff-change">Change rung</button>' : x.id === state.role ? '<span class="needs">You can’t lower your own rung</span>' : '<span class="needs">Needs Admin</span>'}</td></tr>`).join('')}
+    </tbody></table></div></section>
+    <section class="card"><h2>The ladder</h2><div class="table-wrap" style="margin-top:10px"><table><tbody>${[['Viewer', 'Read everything except secrets and areas behind a right'], ['Support', 'Plus: acknowledge incidents, add notes and conclusions'], ['Operator', 'Plus: switches, Level 1 R8 actions (run, retry, test, suppress)'], ['Admin', 'Plus: staff, settings, key rotation'], ['Owner', 'Plus: secrets, deletion, two-person approvals']].map(([r, d]) => `<tr><td style="width:130px"><span class="rung-chip">${r.toUpperCase()}</span></td><td>${d}</td></tr>`).join('')}</tbody></table></div>
+      <p class="small muted" style="margin-top:10px">Approve and Commercial are rights on top of a rung. Nobody approves a change they proposed.</p></section>`;
+  };
+  pages.audit = () => {
+    const f = (state.auditQ || '').toLowerCase(), list = auditList().filter(([t, w, x]) => !f || (t + ' ' + w + ' ' + x).toLowerCase().includes(f));
+    return `${head({ title: 'Audit', lead: 'Every staff action, with who and when. It can’t be edited from AXLE.', actions: '<button type="button" class="btn" data-act="export">Export CSV</button>' })}
+    <section class="card" style="padding:14px 18px"><div class="field"><input id="audit-q" placeholder="Search by person, organisation or action" aria-label="Search the audit" value="${esc(state.auditQ || '')}" autocomplete="off"></div></section>
+    <section class="card">${list.length ? `<div class="table-wrap"><table><thead><tr><th>When</th><th>Who</th><th>What</th></tr></thead><tbody>${list.slice(0, 60).map(([t, w, x]) => `<tr><td class="mono" style="white-space:nowrap">${esc(t.replace(' 2026,', ','))}</td><td><span class="name">${esc(w.split(' · ')[0])}</span></td><td>${esc(x)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="small muted">Nothing matches.</p>'}</section>`;
+  };
+  pages.audit.after = () => { const qi = $('#audit-q'); if (qi) qi.addEventListener('input', (e) => { state.auditQ = e.target.value; clearTimeout(state.auditT); state.auditT = setTimeout(() => { render(); const el = $('#audit-q'); if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); } }, 250); }); };
+  pages.adoption = () => {
+    const pm = mByKey('people'), days = aWindow(state.range), prev = windowDays(state.range, M.addDays(days[0], -1)), wk = weeksOf(aWindow(84));
+    const rows = companies().map((c) => { const ps = coProjs(c), t = coTotals(c, days), tp = coTotals(c, prev), v = pm.calc(t), pv = comparable(t, tp) ? pm.calc(tp) : null; return { c, ps, v, ch: v !== null && pv ? chgPct(v, pv) : null }; });
+    const stopped = rows.filter((r) => r.ch !== null && r.ch < -20);
+    return `${head({ title: 'Adoption', lead: 'How many people use each organisation’s solutions, and who stopped.', actions: rangeSeg() })}
+    ${stopped.length ? `<div class="callout warn">${icon('alerts')}<span><b>Use fell by more than a fifth</b> at ${stopped.map((r) => esc(r.c.short)).join(', ')}. Worth a call before the next report.</span></div>` : ''}
+    <section class="card"><div class="table-wrap"><table><thead><tr><th>Organisation</th><th class="num">People a day ${q(pm.quality)}</th><th class="num">Change</th><th>12 weeks</th><th class="num">Solutions in use</th></tr></thead><tbody>
+      ${rows.map((r) => `<tr class="link" data-go="${r.c.href.slice(1)}" tabindex="0"><td><span class="name">${esc(r.c.name)}</span><span class="sub">${esc(r.c.industry)}</span></td><td class="num">${r.v === null ? '<span class="dash">–</span> <span class="needs">not shared</span>' : nf(r.v, 1)}</td><td class="num">${chgHtml(r.ch)}</td><td>${r.ps.length ? sparkline(wk.map((w) => pm.calc(mergeTotals(r.ps.map((p) => totals(p, w))))), 90, 26) : ''}</td><td class="num">${r.ps.length}</td></tr>`).join('')}
+    </tbody></table></div><p class="xs muted" style="margin-top:10px">People are counted once a day by each solution and never added across days.</p></section>`;
+  };
+  pages.demo = () => `${head({ title: 'Demo', lead: 'Demo data and demo organisations, kept apart from real ones. Nothing here is ever sent or counted.' })}
+    <section class="grid g2">
+      <div class="card"><div class="card-head"><h2>Demo workspace</h2>${sandbox() ? '<span class="pill info">Open now</span>' : ''}</div><p class="small">A separate workspace of simulated organisations for sales demos, training and rehearsing a first report. Demo studio simulates projects, moves the date and causes problems. Cleared 90 days after its last use.</p>
+        <div class="head-actions" style="margin-top:12px"><button type="button" class="btn primary" data-ws="sandbox">Open ${esc(state.sandboxName)}</button><button type="button" class="btn" data-act="tour-start">Watch the guided demo</button></div></div>
+      <div class="card"><div class="card-head"><h2>Example data</h2>${demo() ? '<span class="pill info">Open now</span>' : ''}</div><p class="small">Five invented organisations with a year of figures, approvals and a report, for learning the console. Read-only in spirit: anything you change resets when you leave.</p>
+        <div class="head-actions" style="margin-top:12px"><button type="button" class="btn" data-ws="example">Open example data</button></div></div>
+    </section>
+    <section class="card"><h2>Rules</h2>${kv([['Kept apart', 'Demo organisations never mix with real ones, in lists, totals, Ask, reports or audit'], ['Never sends', 'No emails, report delivery or calls to real solutions'], ['Names', 'Invented by default; a typed real name is allowed and flagged in audit'], ['Live database', `${esc(state.setup.workspace)}: real organisations only`]], 140)}</section>`;
   pages.guide = () => `${head({ title: 'Help', lead: 'How Outcomes measures, and what each label means.' })}
     <div class="grid g3">${[['measured', 'Measured', 'Counted or timed by the solution itself.'], ['derived', 'Derived', 'Worked out only from measured figures, like a rate.'], ['estimated', 'Estimated', 'Uses a sample or an agreed baseline. Always shown with a likely range.']].map(([k, t, d]) => `<div class="card"><div style="margin-bottom:8px">${q(k)}</div><h3>${t}</h3><p class="small" style="margin-top:6px">${d}</p></div>`).join('')}</div>
     <section class="card"><h2>Never a false zero</h2><p class="small" style="margin-top:6px;max-width:70ch">If a solution stops sending data, its figures fade and say why. A missing day is a gap, never a zero. A real zero, like an office closed on Sunday, shows as 0.</p></section>
@@ -1648,10 +2489,10 @@
     return `<div class="scrim" data-act="studio-close"></div><aside class="studio" role="dialog" aria-label="Demo studio">
       <div class="studio-head">${icon('flask')}<h2>Demo studio</h2><span class="pill ai">${esc(state.sandboxName)}</span><button type="button" class="icon-btn" data-act="studio-close" aria-label="Close">${icon('x')}</button></div>
       <div class="studio-body">
-        <section class="studio-sec"><h3>${icon('settings', 'sm')}This demo workspace</h3><div class="field"><label for="sb-name">Name</label><input id="sb-name" value="${esc(state.sandboxName)}"><span class="help">For example \u201cDemo for Harapan Foods\u201d before a sales call. Only REKA staff see it. It never sends anything to clients and is cleared after 90 days unless kept.</span></div></section>
-        <section class="studio-sec"><h3>${icon('live', 'sm')}Guided demo</h3><p class="help">Plays a new client from nothing to its first report, then measures, analytics and Ask. It clears this demo workspace first.</p><button type="button" class="btn primary" data-act="tour-start">Start the guided demo</button></section>
-        <section class="studio-sec"><h3>${icon('plus', 'sm')}Simulate a new project</h3><p class="help">Creates the client, project and solution, with daily figures already flowing. Every name and number is invented.</p>
-          <div class="field"><label for="sf-name">Client</label><input id="sf-name" value="${esc(f.name)}"></div>
+        <section class="studio-sec"><h3>${icon('settings', 'sm')}This demo workspace</h3><div class="field"><label for="sb-name">Name</label><input id="sb-name" value="${esc(state.sandboxName)}"><span class="help">For example \u201cDemo for Harapan Foods\u201d before a sales call. Only REKA staff see it. It never sends anything to organisations and is cleared after 90 days unless kept.</span></div></section>
+        <section class="studio-sec"><h3>${icon('live', 'sm')}Guided demo</h3><p class="help">Plays a new organisation from nothing to its first report, then measures, analytics and Ask. It clears this demo workspace first.</p><button type="button" class="btn primary" data-act="tour-start">Start the guided demo</button></section>
+        <section class="studio-sec"><h3>${icon('plus', 'sm')}Simulate a new project</h3><p class="help">Creates the organisation, project and solution, with daily figures already flowing. Every name and number is invented.</p>
+          <div class="field"><label for="sf-name">Organisation</label><input id="sf-name" value="${esc(f.name)}"></div>
           <div class="field"><label for="sf-project">Project</label><input id="sf-project" value="${esc(f.project)}"></div>
           <div class="field"><span class="lab">Kind of work</span><div class="chips">${Object.entries(KINDS).map(([k, x]) => `<button type="button" class="chip" data-sfkind="${k}" aria-pressed="${f.kind === k}">${x.label.split(' ')[0]}</button>`).join('')}</div></div>
           <div class="grid g2" style="gap:10px"><div class="field"><label for="sf-vol">${cap(KINDS[f.kind].nouns)} a weekday</label><input id="sf-vol" type="number" value="${f.vol}"></div><div class="field"><label for="sf-base">Minutes by hand</label><input id="sf-base" type="number" value="${f.base}"><span class="help">0 means no baseline yet</span></div></div>
@@ -1665,6 +2506,7 @@
           <div class="chips"><button type="button" class="chip warn" data-ev="stale">Data stops arriving</button><button type="button" class="chip fault" data-ev="down">Stops answering</button><button type="button" class="chip" data-ev="spike">Volume spike</button><button type="button" class="chip" data-ev="quality">Quality drops</button><button type="button" class="chip" data-ev="manifest">New detail in data</button></div>
           <div class="chips"><button type="button" class="chip ok" data-ev="recover">Recover</button><button type="button" class="chip ok" data-ev="backfill">Recover and fill the gap</button></div>
           <p class="help">Status now: ${STATUS[simStatus(es)][1]}${es.ev.spike ? ' · volume spike on' : ''}${es.ev.quality ? ' · quality drop on' : ''}</p>` : '<p class="help">Create or connect a solution first.</p>'}</section>
+        ${exploreStudioSec()}
         <section class="studio-sec"><h3>${icon('x', 'sm')}Start over</h3><div class="head-actions"><button type="button" class="btn sm" data-act="reset-ws">Clear this demo workspace</button></div><p class="help">Your real workspace is never touched.</p></section>
       </div></aside>`;
   }
@@ -1704,11 +2546,11 @@
   const T = state.tourCtx;
   const tsim = () => simById(T.simId);
   const TOUR = [
-    { t: 'Meet Outcomes', d: 'REKA builds AI solutions for clients. Outcomes shows each client what their solution changed. Let’s take a new client from nothing to their first report.', go() { setWs('sandbox'); resetWorkspace(true); go('home'); } },
-    { t: 'Add the client', d: 'Everything starts with the client and their signed data agreement. Nothing is collected until it’s signed.', mark: '#f-org', go() { state.draftOrg = 'Harapan Foods'; go('new-client'); } },
-    { t: 'Client added', d: 'Harapan Foods is in. Next, the project REKA agreed with them.', go() { if (!T.orgId) { const o = newOrg('Harapan Foods', 'Food and beverage'); T.orgId = o.id; log('Added client Harapan Foods'); } go('client-' + T.orgId); } },
-    { t: 'Create the project', d: 'Pick the kind of work: it steers which KPIs AI suggests. The outcome is written in the client’s own words.', mark: '#f-proj', go() { state.newKind = 'documents'; state.draftProj = 'Supplier invoices'; state.newProjOrg = T.orgId; go('new-project'); } },
-    { t: 'Project created', d: 'The project is waiting for its solution to be connected.', go() { if (!T.simId) { const s = newSim(state.orgs.find((o) => o.id === T.orgId), { kind: 'documents', project: 'Supplier invoices', sol: 'Invoice reader', vol: 220, history: 14 }); T.simId = s.id; state.focusSim = s.id; state.wiz = freshWizard(); log('Created project Supplier invoices for Harapan Foods'); } go('client-' + T.orgId); } },
+    { t: 'Meet Outcomes', d: 'REKA builds AI solutions for organisations. Outcomes shows each organisation what their solution changed. Let’s take a new organisation from nothing to their first report.', go() { setWs('sandbox'); resetWorkspace(true); go('home'); } },
+    { t: 'Add the organisation', d: 'Everything starts with the organisation and their signed data agreement. Nothing is collected until it’s signed.', mark: '#f-org', go() { state.draftOrg = 'Harapan Foods'; go('new-organisation'); } },
+    { t: 'Organisation added', d: 'Harapan Foods is in. Next, the project REKA agreed with them.', go() { if (!T.orgId) { const o = newOrg('Harapan Foods', 'Food and beverage'); T.orgId = o.id; log('Added organisation Harapan Foods'); } go('organisation-' + T.orgId); } },
+    { t: 'Create the project', d: 'Pick the kind of work: it steers which KPIs AI suggests. The outcome is written in the organisation’s own words.', mark: '#f-proj', go() { state.newKind = 'documents'; state.draftProj = 'Supplier invoices'; state.newProjOrg = T.orgId; go('new-project'); } },
+    { t: 'Project created', d: 'The project is waiting for its solution to be connected.', go() { if (!T.simId) { const s = newSim(state.orgs.find((o) => o.id === T.orgId), { kind: 'documents', project: 'Supplier invoices', sol: 'Invoice reader', vol: 220, history: 14 }); T.simId = s.id; state.focusSim = s.id; state.wiz = freshWizard(); log('Created project Supplier invoices for Harapan Foods'); } go('organisation-' + T.orgId); } },
     { t: 'Brief the developer', d: 'The solution needs a small, read-only link. Outcomes writes the brief for the developer, or for Claude Code.', mark: '#wpanel', go() { wizTo(3); } },
     { t: 'Test the connection', d: 'Outcomes calls the link, checks the request is signed and reads one day of figures.', mark: '#wpanel', go() { wizTo(4); if (!state.wiz.tested) setTimeout(runTests, 300); } },
     { t: 'Check what it shares', d: 'Each figure is checked and explained in plain words. Anything that could identify people is held back.', mark: '#wpanel', go() { wizTo(5); } },
@@ -1720,8 +2562,8 @@
     { t: 'Five weeks later', d: 'Time moves on. Every night the KPIs update. Watch the trend build.', go() { if (!T.aged) { advance(35); T.aged = true; } state.range = 30; go('sim-' + T.simId); } },
     { t: 'Something breaks', d: 'The solution stops sending data. Figures fade and say why. Nothing turns into a zero, and the project owner is told.', go() { if (!T.broke) { applyEvent(tsim(), 'stale'); T.broke = true; } go('sim-' + T.simId); } },
     { t: 'Back on track', d: 'The developer fixes it. The missing days are collected again, so the record has no gap.', go() { if (!T.fixed) { applyEvent(tsim(), 'backfill'); T.fixed = true; } go('sim-' + T.simId); } },
-    { t: 'The monthly report', d: 'Drafted for you from the figures, with how they were measured and the caveats. A person approves it before the client sees it.', go() { tsim().reportScheduled = true; go('report-' + T.simId); } },
-    { t: 'Across every client', d: 'Three more clients, simulated with their own history. Home shows what needs you across all of them, worst first.', go() { if (!T.three) { addThree(); T.three = true; } state.range = 30; go('home'); } },
+    { t: 'The monthly report', d: 'Drafted for you from the figures, with how they were measured and the caveats. A person approves it before the organisation sees it.', go() { tsim().reportScheduled = true; go('report-' + T.simId); } },
+    { t: 'Across every organisation', d: 'Three more organisations, simulated with their own history. Home shows what needs you across all of them, worst first.', go() { if (!T.three) { addThree(); T.three = true; } state.range = 30; go('home'); } },
     { t: 'More than three numbers', d: 'Every project gets the same library of measures across health, usage, operations, impact and cost, so projects can be compared fairly.', go() { state.solTab = 'measures'; state.bld = null; go('sim-' + T.simId); } },
     { t: 'Add your own measure', d: 'Build a measure from the figures the solution shares, with a live preview. Here, hours saved per person. It goes for approval like any KPI.', mark: '#bld', go() { state.solTab = 'measures'; state.bld = { proj: T.simId, name: 'Hours saved per person', op: 'per', a: 'hours', b: 'people', rate: 2, target: '', aud: 'client' }; go('sim-' + T.simId); setTimeout(() => { const b = $('#bld'); if (b) b.scrollIntoView({ block: 'center' }); }, 60); } },
     { t: 'Standard analytics', d: 'Any measure over time against the period before, by project and by weekday. Rates are always worked out from totals, never averaged.', go() { state.bld = null; state.an = { measure: 'hours', proj: 'all', range: 90 }; go('analytics'); } },
@@ -1762,10 +2604,10 @@
   // ------------------------------------------------------------------ search palette
   function openPalette() {
     const el = $('#palette'); if (!el) return;
-    const items = [['Home', '#home'], ['Clients', '#clients'], ['Approvals', '#approvals'], ['Reports', '#reports'], ['Settings', '#settings'], ['Connect a solution', '#connect'], ['Add client', '#new-client']]
-      .concat(demo() ? M.orgs.map((o) => [o.name, '#client-' + o.id]).concat(Object.values(M.solutions).filter((s) => s.status !== 'not_connected').map((s) => [`${s.name} · ${orgById(s.org).short}`, '#solution-' + s.id])) : state.orgs.map((o) => [o.name, '#client-' + o.id]).concat(state.sims.map((s) => [`${s.name} · ${orgOf(s).name}`, '#sim-' + s.id])));
+    const items = [['Home', '#home'], ['Organisations', '#organisations'], ['Approvals', '#approvals'], ['Reports', '#reports'], ['Settings', '#settings'], ['Connect a solution', '#connect'], ['New organisation', '#new-organisation']]
+      .concat(demo() ? M.orgs.map((o) => [o.name, '#organisation-' + o.id]).concat(Object.values(M.solutions).filter((s) => s.status !== 'not_connected').map((s) => [`${s.name} · ${orgById(s.org).short}`, '#solution-' + s.id])) : state.orgs.map((o) => [o.name, '#organisation-' + o.id]).concat(state.sims.map((s) => [`${s.name} · ${orgOf(s).name}`, '#sim-' + s.id])));
     el.hidden = false;
-    el.innerHTML = `<div class="scrim" data-act="close-palette"></div><div class="card" role="dialog" aria-label="Search" style="position:fixed;z-index:60;top:12vh;left:50%;transform:translateX(-50%);width:min(560px,calc(100vw - 32px));padding:10px;box-shadow:var(--shadow-lg)"><div class="field"><input id="pal-q" placeholder="Search clients, projects, solutions" aria-label="Search" autocomplete="off"></div><div id="pal-list" style="max-height:50vh;overflow:auto;margin-top:6px;display:grid;gap:2px"></div></div>`;
+    el.innerHTML = `<div class="scrim" data-act="close-palette"></div><div class="card" role="dialog" aria-label="Search" style="position:fixed;z-index:60;top:12vh;left:50%;transform:translateX(-50%);width:min(560px,calc(100vw - 32px));padding:10px;box-shadow:var(--shadow-lg)"><div class="field"><input id="pal-q" placeholder="Search organisations, projects, solutions" aria-label="Search" autocomplete="off"></div><div id="pal-list" style="max-height:50vh;overflow:auto;margin-top:6px;display:grid;gap:2px"></div></div>`;
     const draw = (qv) => { $('#pal-list').innerHTML = items.filter(([l]) => l.toLowerCase().includes(qv.toLowerCase())).slice(0, 10).map(([l, h]) => `<a href="${h}" style="padding:10px 12px;border-radius:10px;color:var(--ink);text-decoration:none;display:block">${esc(l)}</a>`).join('') || '<p class="small muted" style="padding:10px">Nothing matches.</p>'; };
     draw(''); const inp = $('#pal-q'); inp.focus();
     inp.addEventListener('input', () => draw(inp.value));
@@ -1774,25 +2616,36 @@
   function closePalette() { const el = $('#palette'); if (el) { el.hidden = true; el.innerHTML = ''; } }
 
   // ------------------------------------------------------------------ router
-  // Old addresses (before clients were called clients) still work: they redirect to the new ones.
-  const OLD = { organisations: 'clients', 'new-organisation': 'new-client' };
+  // Old addresses (before organisations were called organisations) still work: they redirect to the new ones.
+  const OLD = { clients: 'organisations', 'new-client': 'new-organisation' };
   function parse() {
     const was = (location.hash || '').slice(1);
     let h = was || (state.signedIn ? 'home' : 'signin');
-    const old = /^(?:organisation|org)-(.+)$/.exec(h);
-    if (old) h = 'client-' + old[1]; else if (OLD[h]) h = OLD[h];
+    const old = /^(?:client|org)-(.+)$/.exec(h);
+    if (old) h = 'organisation-' + old[1]; else if (OLD[h]) h = OLD[h];
     if (was && h !== was) { try { history.replaceState(null, '', '#' + h); } catch (err) { /* file pages may refuse; the alias still works */ } }
-    for (const p of ['client', 'solution', 'sim', 'connect', 'report']) if (h.startsWith(p + '-')) return [p, h.slice(p.length + 1), h];
+    for (const p of ['organisation', 'solution', 'sim', 'connect', 'report', 'troubleshoot']) if (h.startsWith(p + '-')) return [p, h.slice(p.length + 1), h];
     return [h, null, h];
   }
   let last = '';
-  const TITLES = { analytics: 'Analytics', ask: 'Ask', signin: 'Sign in', welcome: 'Welcome', home: 'Home', clients: 'Clients', 'new-client': 'Add client', 'new-project': 'New project', connect: 'Connect a solution', approvals: 'Approvals', reports: 'Reports', report: 'Report', settings: 'Settings', guide: 'Help' };
+  const TITLES = { analytics: 'Analytics', ask: 'Ask', signin: 'Sign in', welcome: 'Welcome', home: 'Overview', organisations: 'Organisations', 'new-organisation': 'New organisation', 'new-project': 'New project', connect: 'Connect a solution', approvals: 'Approvals', reports: 'Reports', report: 'Report', settings: 'Settings', guide: 'AXLE guide', adoption: 'Adoption', demo: 'Demo', audit: 'Audit', staff: 'Staff', r8: 'Overview', incidents: 'Incidents', troubleshoot: 'Troubleshoot', jobs: 'Jobs', providers: 'Providers', services: 'Services', configuration: 'Configuration', 'ops-audit': 'Operations audit', links: 'Measurement links' };
+  // "How this page works" for the standard pages (SPEC §3.6). Pages may pass their own.
+  const HOW = {
+    home: 'Start with <b>Needs a person</b>: each row says what is wrong and links to the fix; a technical problem opens Troubleshoot in R8. Every figure is worked out from the solutions’ daily figures and opens the list behind it. Hours saved and value are estimates against agreed baselines, always shown with a likely range. Fees need the Commercial right; without it you see a dash, never a zero.',
+    organisations: 'The strip above the list counts organisations by state; click one to filter. Search covers organisations and their projects. Sort and group are kept while you move around. Each row opens the organisation.',
+    approvals: 'Every KPI, baseline, measure, mapping and report waits here for someone other than the person who proposed it. Approving or rejecting asks for a reason and is recorded.',
+    reports: 'Reports are drafted on the 1st once a month of figures is in. Nothing reaches an organisation until a second person approves it.',
+    r8: 'One word for the whole platform, then what needs an operator, worst first. Each row opens Troubleshoot. R8 words stay in R8; the Dashboard says “not answering” and links here.',
+    jobs: 'Every background job with its schedule in plain words, its last run and what failed. Run now and Retry failures are Level 1 actions: they ask for a reason and go to the operations audit.',
+    providers: 'Every outside service Outcomes depends on. Test provider makes one real call and shows the result and the time. Keys and secrets are never shown here; they live in the vault.',
+    links: 'Each organisation’s solution exposes a read-only Measurement Link. This page shows each link’s state, its last good collection, the nightly contract test and its key’s age. A failing link opens Troubleshoot.',
+  };
   function render() {
     let [page, arg, raw] = parse();
     if (!state.signedIn) { page = 'signin'; raw = 'signin'; } else if (!state.mode) { page = 'welcome'; raw = 'welcome'; } else if (page === 'signin' || page === 'welcome') { page = 'home'; raw = 'home'; }
-    if (page === 'client' && !coById(arg)) { page = 'clients'; raw = page; }
+    if (page === 'organisation' && !coById(arg)) { page = 'organisations'; raw = page; }
     if (page === 'solution' && (!demo() || !M.solutions[arg] || M.solutions[arg].status === 'not_connected')) { page = 'home'; raw = page; }
-    if (page === 'sim' && (demo() || !simById(arg))) { page = demo() ? 'home' : 'clients'; raw = page; }
+    if (page === 'sim' && (demo() || !simById(arg))) { page = demo() ? 'home' : 'organisations'; raw = page; }
     if (page === 'report' && arg && (demo() || !simById(arg))) { page = 'reports'; raw = page; }
     if (page === 'connect' && demo()) { setWs('real'); }
     if (!pages[page]) { page = 'home'; raw = 'home'; }
@@ -1800,15 +2653,15 @@
     const root = $('#root');
     const scroll = window.scrollY;
     if (state.mode && routeClient(raw)) { const c = coById(routeClient(raw)); if (c) rememberClient(c); }
+    curTitle = ''; curPage = page;
     root.innerHTML = (page === 'signin' || page === 'welcome') ? pages[page]() : appShell(raw, pages[page](arg));
-    const name = page === 'client' ? coById(arg).short : page === 'sim' ? simById(arg).name : page === 'solution' ? M.solutions[arg].name : TITLES[page];
-    document.title = `${name || 'Outcomes'} · Outcomes`;
+    document.title = (page === 'signin' || page === 'welcome') ? `${TITLES[page]} · AXLE · Outcomes` : `${curTitle || TITLES[page] || 'Outcomes'} · AXLE · Outcomes`;
     if (pages[page].after) pages[page].after(arg);
     if (last !== raw) { window.scrollTo(0, 0); last = raw; } else window.scrollTo(0, scroll);
   }
 
   // ------------------------------------------------------------------ events
-  const closePops = (except) => ['#new-pop', '#bell-pop', '#user-pop', '#ws-pop'].forEach((s) => { const p = $(s); if (p && s !== except) p.hidden = true; });
+  const closePops = (except) => ['#new-pop', '#bell-pop', '#user-pop', '#ws-pop', '#scope-pop'].forEach((s) => { const p = $(s); if (p && s !== except) p.hidden = true; });
   const toggle = (sel) => { const p = $(sel); closePops(sel); p.hidden = !p.hidden; };
   const readSf = () => { const f = state.sf; if (!f) return; ['name', 'project', 'vol', 'base'].forEach((k) => { const el = $('#sf-' + k); if (el) f[k] = el.type === 'number' ? +el.value : el.value; }); };
   const acts = {
@@ -1819,8 +2672,23 @@
     'new-menu': () => toggle('#new-pop'), bell: () => toggle('#bell-pop'), user: () => toggle('#user-pop'),
     palette: openPalette, 'close-palette': closePalette,
     signout: () => { state.signedIn = false; state.mode = null; state.setup.step = 1; state.tour = null; state.studio = false; location.hash = '#signin'; render(); },
-    'switch-mode': () => { setWs(demo() ? 'real' : 'example'); state.tour = null; location.hash = '#home'; render(); toast(demo() ? 'Example clients opened.' : 'Back to your workspace.'); },
+    'switch-mode': () => { setWs(demo() ? 'real' : 'example'); state.tour = null; location.hash = '#home'; render(); toast(demo() ? 'Example data opened.' : 'Back to your workspace.'); },
     'ws-menu': () => toggle('#ws-pop'),
+    scope: () => toggle('#scope-pop'),
+    switch: (d) => { const k = d.k, on = swOn(k), l = SWITCHES.find((x) => x[0] === k)[1]; askReason({ title: `${on ? 'Switch off' : 'Switch on'} ${l.toLowerCase()}`, confirm: `${on ? 'Switch off' : 'Switch on'} ${l.toLowerCase()}`, body: on ? 'A banner shows on every page until it is back on.' : '', what: on ? 'Switched off' : 'Switched on', target: l, done: `${l} ${on ? 'switched off' : 'switched on'}.`, run: () => { state.switchesOff = state.switchesOff || {}; state.switchesOff[k] = on; } }); },
+    'staff-change': () => toast('In the real product this asks which rung, and a reason. Rungs change only with Admin.'),
+    'reason-cancel': () => { closeReason(); },
+    'r8-ack': (d) => askReason({ title: `Acknowledge ${d.id}`, confirm: `Acknowledge ${d.id}`, level: 1, body: 'Says someone is on it. The incident stays open until it recovers.', what: 'Acknowledged incident', target: d.id, done: `Acknowledged ${d.id}.`, run: () => { state.ack = state.ack || {}; state.ack[d.link] = true; } }),
+    'r8-retry': (d) => { const L = r8Model().links.find((l) => l.id === d.id); askReason({ title: `Retry collection for ${L.name}`, confirm: 'Retry collection now', level: 1, body: 'Reads the last missing day again, now.', what: 'Retried collection', target: L.name, done: L.st === 'fault' ? `Retried: ${L.name} still answers 503.` : `Retried: still no figures from ${L.name} for the day.` }); },
+    'r8-test': (d) => { const L = r8Model().links.find((l) => l.id === d.id); askReason({ title: `Run the contract test on ${L.name}`, confirm: 'Run the contract test', level: 1, what: 'Ran the contract test', target: L.name, done: L.st === 'fault' ? 'Contract test: 3 of 17 checks ran, then the link stopped answering.' : 'Contract test: 17 of 17 passed.' }); },
+    'r8-suppress': (d) => { const L = r8Model().links.find((l) => l.id === d.id); askReason({ title: `Suppress alerts for ${L.name}`, confirm: 'Suppress for 1 hour', level: 1, body: 'Alerts stop for one hour, then start again by themselves. A suppression always ends.', what: 'Suppressed alerts for 1 hour', target: L.name, done: 'Alerts suppressed until 15:30.', run: () => { state.suppress = state.suppress || {}; state.suppress[L.id] = '15:30 MYT'; } }); },
+    'r8-run': (d) => { const j = r8Model().jobs.find((x) => x.id === d.id); askReason({ title: `Run ${j.name} now`, confirm: 'Run now', level: 1, what: 'Ran job now', target: j.name, done: j.failed ? `${j.name} ran: ${j.processed} of ${j.eligible} processed, ${j.failed} failed again.` : `${j.name} ran: ${j.processed} of ${j.eligible} processed.` }); },
+    'r8-retryjob': (d) => { const j = r8Model().jobs.find((x) => x.id === d.id); askReason({ title: `Retry the ${j.failed} failed item${j.failed === 1 ? '' : 's'}`, confirm: 'Retry failures', level: 1, body: 'Runs only the failed items, not the whole job.', what: 'Retried failed items', target: j.name, done: `Retried ${j.failed} item${j.failed === 1 ? '' : 's'}: still failing.` }); },
+    'r8-pause': (d) => { const j = r8Model().jobs.find((x) => x.id === d.id), on = (state.paused || {})[j.id]; askReason({ title: `${on ? 'Resume' : 'Pause'} ${j.name}`, confirm: on ? 'Resume' : 'Pause', level: 1, body: on ? '' : 'Paused jobs show a banner on every page until they are resumed.', what: on ? 'Resumed job' : 'Paused job', target: j.name, done: `${j.name} ${on ? 'resumed' : 'paused'}.`, run: () => { state.paused = state.paused || {}; state.paused[j.id] = !on; } }); },
+    'r8-ptest': (d) => { const x = r8Model().providers.find((p) => p.id === d.id); opsLog().unshift({ at: now(), who: me().name, rung: rungOf(me()), what: 'Tested provider', target: x.name, reason: 'Test provider', level: 1 }); state.provTest = state.provTest || {}; state.provTest[x.id] = { ok: true, ms: Math.round(x.ms * (0.8 + 0.4 * Math.random())), at: now() }; render(); toast(`${x.name} answered.`); },
+    'r8-rotate': (d) => askReason({ title: d.name.replace('Measurement key · ', 'Rotate the key for '), confirm: 'Rotate key', level: 1, body: 'Makes a new key. The solution accepts both for 7 days (AX_MEASURE_KEY_NEXT), then the old one stops working.', what: 'Rotated measurement key', target: d.name.replace('Measurement key · ', ''), done: 'New key made. Send it to the developer from the vault; the old one works for 7 more days.' }),
+    'save-conc': (d) => { state.conclusions = state.conclusions || {}; state.conclusions[d.id] = ($('#conc') || {}).value || ''; log('Saved a troubleshooting conclusion'); toast('Conclusion saved.'); },
+    'nav-all': () => { const mode = axMode(parse()[2]); const groups = navModel()[mode].map((g) => g[0]); const m = state.navClosed[mode]; const allOpen = groups.every((g) => !m[g]); groups.forEach((g) => { m[g] = allOpen; }); render(); },
     'w-next': wizardNext,
     'w-back': () => { state.wiz.step--; render(); },
     'copy-prompt': () => {
@@ -1835,13 +2703,13 @@
     'approve-sim-report': (d) => { const s = simById(d.sim), ym = lastFullMonth(); state.simReports[s.id + ym] = true; log(`Approved the ${monthName(ym)} report for ${orgOf(s).name}`); render(); toast('Report approved.', () => { delete state.simReports[s.id + ym]; render(); }); },
     'to-month-end': () => { const t = M.toDate(today()); const target = new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth() + 1, 1)).toISOString().slice(0, 10); advance(Math.round((M.toDate(target) - t) / 864e5)); render(); toast(`Moved to ${day(today())}.`); },
     'approve-report': () => { state.reportApproved = true; const a = state.approvals.find((x) => x.report); if (a) a.status = 'approved'; log('Approved the September report for Contoh Logistik'); render(); toast('Report approved.', () => { state.reportApproved = false; if (a) a.status = 'waiting'; auditList().shift(); render(); }); },
-    'send-report': () => toast(sandbox() ? 'Demo workspaces never send anything to clients.' : 'Email delivery comes in phase 2. The PDF is ready.'),
+    'send-report': () => toast(sandbox() ? 'Demo workspaces never send anything to organisations.' : 'Email delivery comes in phase 2. The PDF is ready.'),
     'approve-narrative': () => { state.narrativeApproved = true; log('Approved the September summary for Contoh Logistik'); render(); toast('Summary approved.', () => { state.narrativeApproved = false; auditList().shift(); render(); }); },
     retry: () => toast('Retrying now.'),
     invite: () => toast('Invites come from your REKA account directory.'),
     studio: () => { if (!sandbox()) { setWs('sandbox'); state.studio = true; location.hash = '#home'; render(); toast('Opened the demo workspace. Your real workspace is unchanged.'); return; } state.studio = !state.studio; render(); },
     'studio-close': () => { readSf(); state.studio = false; render(); },
-    'sf-create': () => { readSf(); const s = createSimProject(state.sf); state.sf = null; state.eventSim = s.stage === 'collecting' ? s.id : state.eventSim; go(s.stage === 'draft' ? 'client-' + s.orgId : 'sim-' + s.id); },
+    'sf-create': () => { readSf(); const s = createSimProject(state.sf); state.sf = null; state.eventSim = s.stage === 'collecting' ? s.id : state.eventSim; go(s.stage === 'draft' ? 'organisation-' + s.orgId : 'sim-' + s.id); },
     'sf-three': () => { addThree(); state.sf = null; go('home'); toast('Three projects added.'); },
     play: () => { if (state.playing) { clearInterval(state.playing); state.playing = null; render(); return; } state.playing = setInterval(() => { advance(1); render(); }, 1000); render(); },
     'reset-ws': () => { resetWorkspace(false); state.studio = false; go('home'); toast('Workspace cleared.'); },
@@ -1852,7 +2720,7 @@
       if (!b.name.trim()) { const el = $('#bld-name'); el.setAttribute('aria-invalid', 'true'); el.placeholder = 'Give the measure a name first'; el.focus(); return; }
       const cm = { id: 'c' + state.seq++, name: b.name.trim(), op: b.op, a: b.a, b: b.op === 'ratio' || b.op === 'per' ? b.b : null, rate: b.rate, target: b.target, aud: b.aud, status: 'waiting', by: state.role };
       pj.custom().push(cm);
-      pj.approvals().unshift({ id: 'a' + state.seq++, cmId: cm.id, projId: pj.id, projOrg: pj.org, type: 'Measure', title: cm.name, proposer: state.role, since: now(), status: 'waiting', summary: `A new measure for ${pj.sol}, built from the figures it already shares.`, fields: [['Worked out as', customFormula(cm)], ['Kind', customMeta(cm).quality], ['Who sees it', cm.aud === 'client' ? 'Team and client' : 'Team only']].concat(cm.target ? [['Target', cm.target]] : []), evidence: `Preview checked on ${day(M.addDays(endDay(), 1))}`, affects: `${pj.sol} measures${cm.aud === 'client' ? ' and the client report' : ''}` });
+      pj.approvals().unshift({ id: 'a' + state.seq++, cmId: cm.id, projId: pj.id, projOrg: pj.org, type: 'Measure', title: cm.name, proposer: state.role, since: now(), status: 'waiting', summary: `A new measure for ${pj.sol}, built from the figures it already shares.`, fields: [['Worked out as', customFormula(cm)], ['Kind', customMeta(cm).quality], ['Who sees it', cm.aud === 'client' ? 'Staff and organisation' : 'Staff only']].concat(cm.target ? [['Target', cm.target]] : []), evidence: `Preview checked on ${day(M.addDays(endDay(), 1))}`, affects: `${pj.sol} measures${cm.aud === 'client' ? ' and the organisation report' : ''}` });
       log(`Proposed the measure \u201c${cm.name}\u201d for ${pj.sol}`);
       state.bld = null; render(); toast('Measure sent for approval.');
     },
@@ -1871,8 +2739,9 @@
   document.addEventListener('click', (e) => {
     if (e.target.id === 'scrim') { $('#sidebar').classList.remove('open'); e.target.hidden = true; return; }
     if (!e.target.closest('.rel')) closePops();
+    const cg = e.target.closest('[data-cfshow-go]'); if (cg) { state.cf = Object.assign(state.cf || { sort: 'needs', q: '' }, { show: cg.dataset.cfshowGo }); }
     if (e.target.closest('#pal-list a')) { closePalette(); return; }
-    const t = e.target.closest('button, [data-go], [data-act], [data-anpick]');
+    const t = e.target.closest('button, [data-go], [data-act], [data-anpick], [data-jobsel], [data-provsel]');
     if (!t) return;
     const d = t.dataset;
     if (d.range) { state.range = +d.range; render(); return; }
@@ -1884,6 +2753,11 @@
     if (d.bop) { state.bld.op = d.bop; if ((d.bop === 'ratio' || d.bop === 'per') && !state.bld.b) state.bld.b = 'handled'; render(); return; }
     if (d.baud) { state.bld.aud = d.baud; render(); return; }
     if (d.aud) { state.audience = d.aud; render(); return; }
+    if (d.navgroup !== undefined) { const mode = axMode(parse()[2]); state.navClosed[mode][d.navgroup] = t.getAttribute('aria-expanded') === 'true'; render(); return; }
+    if (d.scope !== undefined) { closePops(); state.scope = d.scope || null; const wk = demo() ? 'example' : state.ws; state.repFor = d.scope ? { k: wk, id: d.scope } : null; state.an = Object.assign(state.an || { measure: 'hours', range: 90 }, { proj: d.scope ? 'c:' + d.scope : 'all' }); const c = d.scope && coById(d.scope); if (c && /^(home|organisations)$/.test(parse()[0])) location.hash = c.href; else render(); toast(c ? `Scoped to ${c.short}.` : 'Showing all organisations.'); return; }
+    if (d.incf) { state.incF = d.incf; render(); return; }
+    if (d.jobsel) { state.jobSel = d.jobsel; render(); return; }
+    if (d.provsel) { state.provSel = d.provsel; render(); return; }
     if (d.cfshow) { state.cf.show = d.cfshow; render(); return; }
     if (d.cotab) { state.coTab = d.cotab; render(); return; }
     if (d.repfor) { state.repFor = d.repfor === 'all' ? null : { k: repKey(), id: d.repfor }; render(); return; }
@@ -1900,8 +2774,8 @@
     if (d.sfappr) { readSf(); state.sf.approval = d.sfappr; render(); return; }
     if (d.adv) { readSf(); advance(+d.adv); render(); toast(`Moved to ${day(today())}.`); return; }
     if (d.ev) { const s = simById(($('#ev-sim') || {}).value || state.eventSim); if (!s) return; state.eventSim = s.id; applyEvent(s, d.ev); render(); toast(({ stale: 'Data stopped arriving.', down: 'Solution stopped answering.', spike: s.ev.spike ? 'Volume spike on.' : 'Volume spike off.', quality: s.ev.quality ? 'Quality drop on.' : 'Quality drop off.', manifest: 'New detail sent for approval.', recover: 'Recovered. The gap stays.', backfill: 'Recovered and filled in.' })[d.ev]); return; }
-    if (d.start) { if (d.start === 'tour') { tourGo(0); return; } setWs(d.start === 'demo' ? 'example' : 'real'); location.hash = '#home'; render(); toast(d.start === 'demo' ? 'Example clients opened.' : 'Your workspace is ready.'); return; }
-    if (d.ws) { const k = d.ws; closePops(); state.tour = null; setWs(k); location.hash = '#home'; render(); toast(k === 'sandbox' ? `${state.sandboxName} opened.` : k === 'example' ? 'Example clients opened.' : `${state.setup.workspace} opened.`); return; }
+    if (d.start) { if (d.start === 'tour') { tourGo(0); return; } setWs(d.start === 'demo' ? 'example' : 'real'); location.hash = '#home'; render(); toast(d.start === 'demo' ? 'Example data opened.' : 'Your workspace is ready.'); return; }
+    if (d.ws) { const k = d.ws; closePops(); state.tour = null; setWs(k); location.hash = '#home'; render(); toast(k === 'sandbox' ? `${state.sandboxName} opened.` : k === 'example' ? 'Example data opened.' : `${state.setup.workspace} opened.`); return; }
     if (d.role) { state.role = d.role; closePops(); render(); toast(`Now signed in as ${me().name}.`); return; }
     if (d.themeSet) {
       const v = d.themeSet;
@@ -1914,12 +2788,14 @@
   });
   document.addEventListener('change', (e) => { if (e.target.id === 'ev-sim') { state.eventSim = e.target.value; render(); } if (e.target.id === 'sb-name') { state.sandboxName = e.target.value.trim() || 'Demo workspace'; render(); } });
   document.addEventListener('submit', (e) => {
+    if (e.target.id === 'f-note') { e.preventDefault(); const t = ($('#note-t').value || '').trim(); if (!t) return; const id = e.target.dataset.org; state.notes[id].unshift([me().name, now(), t]); log(`Added a note on ${coById(id).short}`); render(); toast('Note added.'); return; }
+    if (e.target.id === 'reason-form') { e.preventDefault(); const r = ($('#reason-t').value || '').trim(); if (r.length < 3) { $('#reason-t').setAttribute('aria-invalid', 'true'); $('#reason-t').focus(); return; } r8Do(state.reasonFor, r); return; }
     if (e.target.id === 'f-ws') { e.preventDefault(); state.setup.workspace = $('#ws-name').value.trim() || 'REKA Inisiatif'; state.setup.step = 2; render(); }
   });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') { closePops(); closePalette(); if (state.studio) { readSf(); state.studio = false; render(); } const sb = $('#sidebar'); if (sb) { sb.classList.remove('open'); $('#scrim').hidden = true; } }
     if (e.key === 'Enter' && e.target.matches('tr[data-go]')) location.hash = '#' + e.target.dataset.go;
-    if (e.key === 'Enter' && e.target.matches('tr[data-anpick]')) e.target.click();
+    if (e.key === 'Enter' && e.target.matches('tr[data-anpick], tr[data-jobsel], tr[data-provsel]')) e.target.click();
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k' && state.mode) { e.preventDefault(); openPalette(); }
   });
   window.addEventListener('hashchange', () => { closePalette(); render(); });
