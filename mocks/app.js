@@ -1,5 +1,5 @@
 /* Outcomes product mock.
-   - Your workspace: sign in, set up, add organisations, create projects, connect solutions, approve, collect, report.
+   - Your workspace: sign in, set up, add clients, create projects, connect solutions, approve, collect, report.
      Any number of projects; their daily figures are simulated from each project's kind, volume and baseline.
    - Demo studio (mock only): create simulated projects, move the date forward, cause problems, and a guided tour.
    - The example workspace: five fixed clients from data.js.
@@ -501,7 +501,7 @@
     return authShell(`${dots}<div><p class="xs muted">Step 3 of 3</p><h1>How do you want to start?</h1></div>
         <div class="choice-grid">
           <button type="button" class="choice" data-start="new" aria-pressed="false"><span class="ic">${icon('connect-ai')}</span><span><b>Connect my first project</b><span class="d">Add a client, create their project and connect its solution. We’ll guide you.</span></span><span class="pill info tag">Recommended</span></button>
-          <button type="button" class="choice" data-start="tour" aria-pressed="false"><span class="ic">${icon('live')}</span><span><b>Watch the guided demo</b><span class="d">See a new project go from nothing to its first report, in 19 short steps.</span></span><span class="radio"></span></button>
+          <button type="button" class="choice" data-start="tour" aria-pressed="false"><span class="ic">${icon('live')}</span><span><b>Watch the guided demo</b><span class="d">See a new project go from nothing to its first report, in ${TOUR.length} short steps.</span></span><span class="radio"></span></button>
           <button type="button" class="choice" data-start="demo" aria-pressed="false"><span class="ic">${icon('overview')}</span><span><b>Explore with example data</b><span class="d">A workspace with five clients already running. Every figure is invented.</span></span><span class="radio"></span></button>
         </div>`);
   };
@@ -510,11 +510,11 @@
   function navHtml(route) {
     const waiting = (demo() ? state.approvals : state.myApprovals).filter((a) => a.status === 'waiting').length;
     const reportsDue = demo() ? (state.reportApproved ? 0 : 1) : state.sims.filter((s) => simReportState(s).st === 'ready').length;
-    const items = [['home', 'Home', 'home'], ['organisations', 'Clients', 'organisation'], ['analytics', 'Analytics', 'analytics'], ['ask', 'Ask', 'ask'], ['approvals', 'Approvals', 'shield', waiting, has('Approve')], ['reports', 'Reports', 'reports', reportsDue]];
-    const isCur = (k) => route === k || (k === 'organisations' && /^(new-organisation|new-project|connect)$/.test(route)) || (k === 'reports' && /^report/.test(route));
+    const items = [['home', 'Home', 'home'], ['clients', 'Clients', 'organisation'], ['analytics', 'Analytics', 'analytics'], ['ask', 'Ask', 'ask'], ['approvals', 'Approvals', 'shield', waiting, has('Approve')], ['reports', 'Reports', 'reports', reportsDue]];
+    const isCur = (k) => route === k || (k === 'clients' && /^(new-client|new-project|connect)$/.test(route)) || (k === 'reports' && /^report/.test(route));
     const rec = recentClients(), all = companies(), fill = all.filter((c) => !rec.some((r) => r.id === c.id)).slice(0, Math.max(0, 3 - rec.length)).map((c) => ({ id: c.id, name: c.short, href: c.href.slice(1) }));
     const shown = rec.concat(fill), cur = (r) => route === r.href || routeClient(route) === r.id;
-    const subs = shown.map((r) => `<a class="sub" href="#${r.href}" ${cur(r) ? 'aria-current="page"' : ''}>${esc(r.name)}</a>`).join('') + (all.length > shown.length ? `<a class="sub" href="#organisations">All ${all.length} clients</a>` : '');
+    const subs = shown.map((r) => `<a class="sub" href="#${r.href}" ${cur(r) ? 'aria-current="page"' : ''}>${esc(r.name)}</a>`).join('') + (all.length > shown.length ? `<a class="sub" href="#clients">All ${all.length} clients</a>` : '');
     return items.map(([k, l, ic, c, loud], i) => `<a href="#${k}" ${isCur(k) ? 'aria-current="page"' : ''}>${icon(ic)}<span>${l}</span>${c ? `<span class="count ${loud ? 'loud' : ''}" aria-label="${c} waiting">${c}</span>` : ''}</a>${i === 1 ? subs : ''}`).join('')
       + `<span class="grp">Workspace</span><a href="#settings" ${route === 'settings' ? 'aria-current="page"' : ''}>${icon('settings')}<span>Settings</span></a><a href="#guide" ${route === 'guide' ? 'aria-current="page"' : ''}>${icon('insight')}<span>Help</span></a>`;
   }
@@ -554,7 +554,7 @@
       <aside class="sidebar" id="sidebar" aria-label="Navigation">
         <div class="brand"><img src="assets/antarax-mark.svg" alt=""><div><b>Outcomes</b><small>REKA Managed AI</small></div></div>
         <div class="rel"><button type="button" class="btn primary new-btn" data-act="new-menu" aria-haspopup="true">${icon('plus', 'sm')}New</button>
-          <div class="pop" id="new-pop" hidden style="left:0;right:auto;top:48px;width:100%"><a href="#new-organisation">${icon('organisation', 'sm')}<span>Organisation</span></a><a href="#new-project">${icon('projects', 'sm')}<span>Project</span></a><a href="#connect">${icon('connect-ai', 'sm')}<span>Connect a solution</span></a></div></div>
+          <div class="pop" id="new-pop" hidden style="left:0;right:auto;top:48px;width:100%"><a href="#new-client">${icon('organisation', 'sm')}<span>Client</span></a><a href="#new-project">${icon('projects', 'sm')}<span>Project</span></a><a href="#connect">${icon('connect-ai', 'sm')}<span>Connect a solution</span></a></div></div>
         <nav class="nav" aria-label="Main">${navHtml(route)}</nav>
         <div class="rel"><button type="button" class="workspace" data-act="ws-menu" aria-haspopup="true" style="width:100%;cursor:pointer;text-align:left"><span class="ws" style="${sandbox() ? 'background:var(--ai)' : demo() ? 'background:var(--warn)' : ''}">${initials(wsName())}</span><div style="min-width:0;flex:1"><b>${esc(wsName())}</b><span>${demo() ? 'Example data' : sandbox() ? 'Demo workspace · simulated' : 'Your workspace'}</span></div>${icon('chev-down', 'sm')}</button>
           <div class="pop" id="ws-pop" hidden style="left:0;right:auto;top:auto;bottom:62px;width:100%"><h4>Switch workspace</h4>${[['real', state.setup.workspace, 'Real clients and their data'], ['sandbox', state.sandboxName, 'Simulated clients for demos, training and rehearsing reports'], ['example', 'Example clients', 'Five fixed example clients']].map(([k, n, d2]) => `<button type="button" data-ws="${k}" aria-pressed="${(k === 'example' ? demo() : !demo() && state.ws === k)}"><span class="ws" style="flex:none;width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-size:.6875rem;font-weight:700;color:var(--surface);background:${k === 'sandbox' ? 'var(--ai)' : k === 'example' ? 'var(--warn)' : 'var(--ink)'}">${initials(n)}</span><span><b class="ink">${esc(n)}</b><small>${d2}</small></span></button>`).join('')}</div></div>
@@ -593,7 +593,7 @@
     const s = firstSim(), st = s ? s.stage : null;
     return [
       { t: 'Set up your workspace', d: 'Name, time zone and team.', done: true },
-      { t: 'Add your first organisation', d: 'The client, and their data agreement.', done: state.orgs.length > 0, href: '#new-organisation', cta: 'Add organisation' },
+      { t: 'Add your first client', d: 'The client, and their data agreement.', done: state.orgs.length > 0, href: '#new-client', cta: 'Add client' },
       { t: 'Create a project', d: 'What the solution is for, in the client’s words.', done: !!s, href: '#new-project', cta: 'Create project' },
       { t: 'Connect the solution', d: 'Check its data, choose KPIs and record the baseline.', done: !!s && st !== 'draft', href: '#connect', cta: 'Connect' },
       { t: 'Get the KPIs approved', d: 'Someone else checks every KPI and baseline.', done: st === 'approved' || st === 'collecting', href: s ? '#sim-' + s.id : '#approvals', cta: 'Check status' },
@@ -704,8 +704,8 @@
   function companies() {
     if (demo()) {
       const dp = demoProjects();
-      return M.orgs.map((o) => ({ id: o.id, name: o.name, short: o.short, industry: EX_INDUSTRY[o.id], stage: o.stage, href: '#organisation-' + o.id, signed: true, agreement: o.agreement, renewal: o.renewal, renewalRisk: o.renewalRisk, contract: o.contract, runCost: o.runCost, contact: 'Client contact on file', example: true,
-        projects: o.projects.map((p) => ({ id: p.id, name: p.name, objective: p.objective, kind: M.solutions[p.solutions[0]].kind, cadence: 'Monthly', report: EX_REPORT[o.id](),
+      return M.orgs.map((o) => ({ id: o.id, name: o.name, short: o.short, industry: EX_INDUSTRY[o.id], stage: o.stage, href: '#client-' + o.id, signed: true, agreement: o.agreement, renewal: o.renewal, renewalRisk: o.renewalRisk, contract: o.contract, runCost: o.runCost, contact: 'Client contact on file', example: true,
+        projects: o.projects.map((p) => ({ id: p.id, name: p.name, objective: p.objective, kind: M.solutions[p.solutions[0]].kind, cadence: o.id === 'bina-jaya' ? 'Quarterly' : 'Monthly', report: EX_REPORT[o.id](),
           solutions: p.solutions.map((sid) => { const s = M.solutions[sid]; return { id: sid, name: s.name, status: solStatus(sid), href: s.status === 'not_connected' ? null : '#solution-' + sid, proj: dp.find((x) => x.id === sid) || null, kpis: [s.kpis.approved, s.kpis.total] }; }) })) }));
     }
     return state.orgs.map((o) => {
@@ -714,7 +714,7 @@
         report: r.st === 'ready' ? ['warn', `${monthName(r.ym)} ready to review`, '#report-' + s.id] : r.st === 'approved' ? ['ok', `${monthName(r.ym)} approved`, '#report-' + s.id] : r.st === 'waiting' ? ['info', `First draft ${nextMonthStart()}`, null] : ['idle', s.stage === 'collecting' ? 'Not scheduled' : 'Waiting for data', null],
         solutions: [{ id: s.id, name: s.name, status: simStatus(s), href: s.stage === 'draft' ? '#connect-' + s.id : '#sim-' + s.id, proj: s.stage === 'collecting' ? projOfSim(s) : null, kpis: [s.stage === 'collecting' ? s.kpis.filter((k) => k !== 'impact' || hasBase(s)).length : 0, s.kpis.length] }] }; });
       const stage = sims.some((s) => s.stage === 'collecting') ? 'live' : sims.some((s) => s.stage !== 'draft') ? 'onboarding' : 'planning';
-      return { id: o.id, name: o.name, short: o.name, industry: o.industry, stage, href: '#org-' + o.id, signed: o.signed, agreement: o.signed ? 'Signed' : 'Not signed', renewal: '–', renewalRisk: '–', contract: null, runCost: null, contact: 'Farah Idris · farah@client.example', projects };
+      return { id: o.id, name: o.name, short: o.name, industry: o.industry, stage, href: '#client-' + o.id, signed: o.signed, agreement: o.signed ? 'Signed' : 'Not signed', renewal: '–', renewalRisk: '–', contract: null, runCost: null, contact: 'Farah Idris · farah@client.example', projects };
     });
   }
   const coById = (id) => companies().find((c) => c.id === id);
@@ -730,6 +730,8 @@
     if (waiting && !list.some((x) => /approval/.test(x[2]))) list.push(['warn', 'shield', `${waiting} item${waiting === 1 ? '' : 's'} waiting for approval`, c.short, '#approvals', 'Review']);
     return list;
   }
+  // worst first: something broken, then something late or waiting, then a to-do; 3 when nothing needs you
+  const needSeverity = (list) => Math.min(3, ...list.map((x) => ({ fault: 0, warn: 1, info: 2 })[x[0]] ?? 2));
   const chgPct = (v, pv) => v === null || pv === null || pv === undefined || !pv ? null : 100 * (v - pv) / Math.abs(pv);
   const chgHtml = (c, better = 'up') => c === null ? '<span class="muted">–</span>' : Math.abs(c) < 0.5 ? '<span class="mono muted">0%</span>' : `<span class="mono" style="color:var(--${Math.abs(c) < 1 ? 'muted' : (better === 'up' ? c >= 0 : c <= 0) ? 'ok-ink' : 'fault-ink'})">${c >= 0 ? '+' : '−'}${nf(Math.abs(c), 0)}%</span>`;
   function rememberClient(c) {
@@ -763,30 +765,30 @@
 
   function clientGrid(days) {
     const all = companies(), ex = demo();
-    const list = all.map((c) => ({ c, n: coNeeds(c).length, st: STATUS_ORDER.indexOf(coStatus(c)) })).sort((a, b) => (Math.sign(b.n) - Math.sign(a.n)) || (a.st - b.st)).map((x) => x.c);
+    const list = all.map((c) => ({ c, sev: needSeverity(coNeeds(c)), st: STATUS_ORDER.indexOf(coStatus(c)) })).sort((a, b) => (a.sev - b.sev) || (a.st - b.st)).map((x) => x.c);
     const add = ex ? `<a class="card proj" href="#connect" style="border-style:dashed;place-content:center;justify-items:center;text-align:center;min-height:200px;box-shadow:none"><span class="ico info" style="width:44px;height:44px;border-radius:12px;display:grid;place-items:center">${icon('plus')}</span><b class="ink">Connect another solution</b><span class="small muted">About a day of developer time</span></a>`
-      : `<a class="card proj" href="#new-organisation" style="border-style:dashed;place-content:center;justify-items:center;text-align:center;min-height:200px;box-shadow:none"><span class="ico info" style="width:44px;height:44px;border-radius:12px;display:grid;place-items:center">${icon('plus')}</span><b class="ink">Add a client</b><span class="small muted">Or simulate one in Demo studio</span></a>`;
-    return `<section class="grid" style="gap:12px"><div class="card-head" style="margin:0"><div><h2>Clients</h2><p class="sub">${all.length} client${all.length === 1 ? '' : 's'} · ${all.reduce((a, c) => a + c.projects.length, 0)} projects · those needing you first</p></div><a class="btn sm ghost" href="#organisations">All clients${icon('chev', 'sm')}</a></div>
+      : `<a class="card proj" href="#new-client" style="border-style:dashed;place-content:center;justify-items:center;text-align:center;min-height:200px;box-shadow:none"><span class="ico info" style="width:44px;height:44px;border-radius:12px;display:grid;place-items:center">${icon('plus')}</span><b class="ink">Add a client</b><span class="small muted">Or simulate one in Demo studio</span></a>`;
+    return `<section class="grid" style="gap:12px"><div class="card-head" style="margin:0"><div><h2>Clients</h2><p class="sub">${all.length} client${all.length === 1 ? '' : 's'} · ${all.reduce((a, c) => a + c.projects.length, 0)} projects · those needing you first</p></div><a class="btn sm ghost" href="#clients">All clients${icon('chev', 'sm')}</a></div>
       <div class="grid g3">${list.map((c) => clientCard(c, days)).join('')}${add}</div></section>`;
   }
 
   // ---------- the client list
-  pages.organisations = () => {
+  pages.clients = () => {
     const all = companies();
     const lead = 'Every client, how their solutions are doing, and what each needs from you.';
-    if (!all.length) return `${head({ title: 'Clients', lead, actions: `<a class="btn primary" href="#new-organisation">${icon('plus', 'sm')}Add client</a>` })}<section class="card"><div class="empty">${emptyArt}<h3>No clients yet</h3><p>Start with the client. You record their data agreement here, because nothing is collected until it is signed.</p><div class="head-actions" style="justify-content:center"><a class="btn primary" href="#new-organisation">${icon('plus', 'sm')}Add client</a><button type="button" class="btn" data-act="studio">Try a demo workspace</button></div></div></section>`;
+    if (!all.length) return `${head({ title: 'Clients', lead, actions: `<a class="btn primary" href="#new-client">${icon('plus', 'sm')}Add client</a>` })}<section class="card"><div class="empty">${emptyArt}<h3>No clients yet</h3><p>Start with the client. You record their data agreement here, because nothing is collected until it is signed.</p><div class="head-actions" style="justify-content:center"><a class="btn primary" href="#new-client">${icon('plus', 'sm')}Add client</a><button type="button" class="btn" data-act="studio">Try a demo workspace</button></div></div></section>`;
     const f = state.cf = state.cf || { show: 'all', sort: 'needs', q: '' };
     const days = aWindow(state.range), prevDays = windowDays(state.range, M.addDays(days[0], -1)), hm = mByKey('hours'), vm = mByKey('value');
-    let rows = all.map((c) => { const t = coTotals(c, days), tp = coTotals(c, prevDays); return { c, t, h: hm.calc(t), hc: comparable(t, tp) ? chgPct(hm.calc(t), hm.calc(tp)) : null, v: vm.calc(t), needs: coNeeds(c).length, st: coStatus(c) }; });
+    let rows = all.map((c) => { const t = coTotals(c, days), tp = coTotals(c, prevDays); return { c, t, h: hm.calc(t), hc: comparable(t, tp) ? chgPct(hm.calc(t), hm.calc(tp)) : null, v: vm.calc(t), needs: coNeeds(c).length, sev: needSeverity(coNeeds(c)), st: coStatus(c) }; });
     const counts = { live: rows.filter((r) => r.c.stage === 'live').length, needs: rows.filter((r) => r.needs).length };
     const totH = mergeTotals(rows.map((r) => r.t));
     if (f.show === 'needs') rows = rows.filter((r) => r.needs);
     else if (f.show !== 'all') rows = rows.filter((r) => (f.show === 'early' ? ['pilot', 'onboarding', 'planning'] : [f.show]).includes(r.c.stage));
     if (f.q) rows = rows.filter((r) => (r.c.name + ' ' + r.c.industry + ' ' + r.c.projects.map((p) => p.name).join(' ')).toLowerCase().includes(f.q.toLowerCase()));
-    const sorters = { needs: (a, b) => (b.needs - a.needs) || (STATUS_ORDER.indexOf(a.st) - STATUS_ORDER.indexOf(b.st)) || ((b.h || 0) - (a.h || 0)), hours: (a, b) => (b.h === null ? -1 : b.h) - (a.h === null ? -1 : a.h), change: (a, b) => (b.hc === null ? -1e9 : b.hc) - (a.hc === null ? -1e9 : a.hc), name: (a, b) => a.c.short.localeCompare(b.c.short) };
+    const sorters = { needs: (a, b) => (a.sev - b.sev) || (b.needs - a.needs) || (STATUS_ORDER.indexOf(a.st) - STATUS_ORDER.indexOf(b.st)) || ((b.h || 0) - (a.h || 0)), hours: (a, b) => (b.h === null ? -1 : b.h) - (a.h === null ? -1 : a.h), change: (a, b) => (b.hc === null ? -1e9 : b.hc) - (a.hc === null ? -1e9 : a.hc), name: (a, b) => a.c.short.localeCompare(b.c.short) };
     rows.sort(sorters[f.sort]);
     const wk = weeksOf(aWindow(84));
-    return `${head({ title: 'Clients', lead, actions: `${rangeSeg()}${demo() ? '' : `<a class="btn primary" href="#new-organisation">${icon('plus', 'sm')}Add client</a>`}` })}
+    return `${head({ title: 'Clients', lead, actions: `${rangeSeg()}${demo() ? '' : `<a class="btn primary" href="#new-client">${icon('plus', 'sm')}Add client</a>`}` })}
     <section class="grid g4 stats">
       <div class="card stat"><span class="label">Clients</span><span class="value">${all.length}</span><span class="hint">${counts.live} live · ${all.length - counts.live} getting started</span></div>
       <div class="card stat"><span class="label">Need you</span><span class="value" style="color:var(--${counts.needs ? 'warn-ink' : 'ink'})">${counts.needs}</span><span class="hint">Clients with something to fix or decide</span></div>
@@ -810,7 +812,7 @@
       <td class="mono">${esc(c.renewal)}</td></tr>`; }).join('') : `<tr><td colspan="8"><div class="empty" style="padding:16px"><p>No clients match. <button type="button" class="btn sm ghost" data-act="cf-reset">Show all</button></p></div></td></tr>`}
     </tbody></table></div></section>`;
   };
-  pages.organisations.after = () => {
+  pages.clients.after = () => {
     const qi = $('#cf-q'); if (qi) qi.addEventListener('input', (e) => { state.cf.q = e.target.value; clearTimeout(state.cfT); state.cfT = setTimeout(() => { render(); const el = $('#cf-q'); if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); } }, 250); });
     const so = $('#cf-sort'); if (so) so.addEventListener('change', (e) => { state.cf.sort = e.target.value; render(); });
   };
@@ -865,13 +867,13 @@
       </section>`).join('')}
       ${c.example ? '' : `<button type="button" class="card proj" data-act="proj-for" data-org="${c.id}" style="border-style:dashed;place-content:center;justify-items:center;text-align:center;min-height:120px;box-shadow:none;cursor:pointer"><span class="ico info" style="width:40px;height:40px;border-radius:12px;display:grid;place-items:center">${icon('plus')}</span><b class="ink">New project for ${esc(c.short)}</b></button>`}</div>`;
     } else if (tab === 'reports') {
-      body = `<section class="card"><div class="table-wrap"><table><thead><tr><th>Project</th><th>Cadence</th><th>Status</th><th></th></tr></thead><tbody>${c.projects.length ? c.projects.map((p) => `<tr><td><span class="name">${esc(p.name)}</span></td><td>${esc(p.cadence)}</td><td><span class="pill ${p.report[0]}">${esc(p.report[1])}</span></td><td>${p.report[2] ? `<a class="btn sm" href="${p.report[2]}">Open</a>` : ''}</td></tr>`).join('') : '<tr><td colspan="4" class="muted">No projects yet.</td></tr>'}</tbody></table></div></section>`;
+      body = `<section class="card"><div class="card-head"><div><h2>Reports</h2><p class="sub">One per project, on its own schedule</p></div><button type="button" class="btn sm ghost" data-act="reports-for" data-org="${c.id}">All reports for ${esc(c.short)}${icon('chev', 'sm')}</button></div><div class="table-wrap"><table><thead><tr><th>Project</th><th>Cadence</th><th>Status</th><th></th></tr></thead><tbody>${c.projects.length ? c.projects.map((p) => `<tr><td><span class="name">${esc(p.name)}</span></td><td>${esc(p.cadence)}</td><td><span class="pill ${p.report[0]}">${esc(p.report[1])}</span></td><td>${p.report[2] ? `<a class="btn sm" href="${p.report[2]}">Open</a>` : ''}</td></tr>`).join('') : '<tr><td colspan="4" class="muted">No projects yet.</td></tr>'}</tbody></table></div></section>`;
     } else {
       const names = [c.name, c.short].concat(c.projects.map((p) => p.name), coSolutions(c).map((s) => s.name));
       const list = auditList().filter(([, , what]) => names.some((n) => what.includes(n)));
       body = `<section class="card">${list.length ? `<div class="list">${list.slice(0, 20).map(([t, w, what]) => `<div class="row"><span class="avatar">${w === 'Collector' ? icon('live', 'sm') : initials(w.split(' · ')[0])}</span><div class="small"><b class="ink">${esc(w.split(' · ')[0])}</b> ${esc(what)}</div><span class="xs muted mono">${esc(t.replace(' 2026,', ''))}</span></div>`).join('')}</div>` : '<p class="small muted">Nothing recorded for this client yet.</p>'}</section>`;
     }
-    return `${head({ crumbs: crumbs(['Clients', '#organisations'], [c.short]), title: orgTitle(c.name),
+    return `${head({ crumbs: crumbs(['Clients', '#clients'], [c.short]), title: orgTitle(c.name),
       meta: `<span>${esc(c.industry)}</span><span class="pill ${c.stage === 'live' ? 'info' : 'idle'}">${cap(c.stage)}</span>${statusPill(coStatus(c))}${c.renewal !== '–' ? `<span>Renews ${esc(c.renewal)}</span>` : ''}`,
       actions: `<button type="button" class="btn sm" data-act="ask-client" data-name="${esc(c.short)}"><img src="${SPARK}" alt="" style="width:16px">Ask about ${esc(c.short)}</button>${coProjs(c).length ? `<div class="seg" role="group" aria-label="View as"><button type="button" data-aud="staff" aria-pressed="${!client}">Team view</button><button type="button" data-aud="client" aria-pressed="${client}">Client view</button></div>${rangeSeg()}` : ''}` })}
     ${client ? `<div class="callout info">${icon('client-view')}<span><b>You’re seeing what ${esc(c.short)} sees.</b> Fees, notes, activity and anything not yet approved are hidden.</span></div>` : ''}
@@ -889,13 +891,11 @@
     drawLines(el, wk.map((w) => dayShort(w[0])), series, { label: 'By project', height: 220, fmt: (v) => useH ? nf(v) + ' h' : nf(v), tipLabel: (i) => 'Week of ' + day(wk[i][0]) });
     $('#lg-co').innerHTML = series.map((s) => `<span><i style="background:${s.color}"></i>${esc(s.name)}</span>`).join('');
   }
-  pages.org = (id) => companyPage(coById(id));
-  pages.org.after = (id) => companyAfter(coById(id));
-  pages.organisation = (id) => companyPage(coById(id));
-  pages.organisation.after = (id) => companyAfter(coById(id));
+  pages.client = (id) => companyPage(coById(id));
+  pages.client.after = (id) => companyAfter(coById(id));
 
-  pages['new-organisation'] = () => `
-    ${head({ crumbs: crumbs(['Clients', '#organisations'], ['Add organisation']), title: 'Add a client', lead: 'The client whose solution you’ll measure.' })}
+  pages['new-client'] = () => `
+    ${head({ crumbs: crumbs(['Clients', '#clients'], ['Add client']), title: 'Add a client', lead: 'The client whose solution you’ll measure.' })}
     <form id="f-org" class="card narrow grid" style="gap:24px" novalidate>
       <div class="form-grid">
         <div class="field full"><label for="o-name">Client name</label><input id="o-name" placeholder="e.g. Teladan Properties" value="${esc(state.draftOrg || (state.orgs.length ? '' : 'Teladan Properties'))}" required><span class="help" id="o-name-help">As it appears on their contract.</span></div>
@@ -908,9 +908,9 @@
         <p class="small muted">Outcomes only collects totals, and only after the client agrees in writing.</p>
         <label class="check"><input type="checkbox" id="o-signed" checked><span><b class="ink">The client has signed the data agreement</b><br><span class="small muted">Totals only · kept in Singapore · for the contract plus 24 months</span></span></label>
       </div>
-      <div class="wfoot"><a class="btn ghost" href="#organisations">Cancel</a><button type="submit" class="btn primary lg">Add client</button></div>
+      <div class="wfoot"><a class="btn ghost" href="#clients">Cancel</a><button type="submit" class="btn primary lg">Add client</button></div>
     </form>`;
-  pages['new-organisation'].after = () => {
+  pages['new-client'].after = () => {
     $('#o-name').addEventListener('input', (e) => { state.draftOrg = e.target.value; });
     $('#f-org').addEventListener('submit', (e) => {
       e.preventDefault();
@@ -920,15 +920,15 @@
       const o = newOrg(name, $('#o-ind').value, $('#o-signed').checked);
       state.draftOrg = null;
       log(`Added client ${name}`);
-      go('org-' + o.id); toast(`${name} added.`);
+      go('client-' + o.id); toast(`${name} added.`);
     });
   };
 
   pages['new-project'] = () => {
-    if (!state.orgs.length) return `${head({ title: 'Create a project' })}<section class="card"><div class="empty">${emptyArt}<h3>Add a client first</h3><p>A project belongs to a client.</p><a class="btn primary" href="#new-organisation">Add client</a></div></section>`;
+    if (!state.orgs.length) return `${head({ title: 'Create a project' })}<section class="card"><div class="empty">${emptyArt}<h3>Add a client first</h3><p>A project belongs to a client.</p><a class="btn primary" href="#new-client">Add client</a></div></section>`;
     const K = KINDS[state.newKind], orgId = state.newProjOrg || state.orgs[state.orgs.length - 1].id;
     return `
-    ${head({ crumbs: crumbs(['Clients', '#organisations'], ['New project']), title: 'Create a project', lead: 'What you agreed to deliver for the client. Its solution is measured against it.' })}
+    ${head({ crumbs: crumbs(['Clients', '#clients'], ['New project']), title: 'Create a project', lead: 'What you agreed to deliver for the client. Its solution is measured against it.' })}
     <form id="f-proj" class="card narrow grid" style="gap:24px" novalidate>
       <div class="form-grid">
         <div class="field"><label for="p-org">Client</label><select id="p-org">${state.orgs.map((o) => `<option value="${o.id}" ${o.id === orgId ? 'selected' : ''}>${esc(o.name)}</option>`).join('')}</select></div>
@@ -941,7 +941,7 @@
         <div class="field"><label for="p-live">Planned go-live</label><input id="p-live" value="${day(M.addDays(today(), 19))}"></div>
         <div class="field"><label for="p-cad">Client report</label><select id="p-cad"><option>Monthly</option><option>Quarterly</option></select></div>
       </div>
-      <div class="wfoot"><a class="btn ghost" href="#organisations">Cancel</a><button type="submit" class="btn primary lg">Create project</button></div>
+      <div class="wfoot"><a class="btn ghost" href="#clients">Cancel</a><button type="submit" class="btn primary lg">Create project</button></div>
     </form>`;
   };
   pages['new-project'].after = () => {
@@ -956,7 +956,7 @@
       const sim = newSim(org, { kind: state.newKind, project: name, objective: $('#p-obj').value.trim(), live: $('#p-live').value, cadence: $('#p-cad').value, sol: state.sims.length ? KINDS[state.newKind].sol : 'Lease reader' });
       state.focusSim = sim.id; state.draftProj = null; state.wiz = freshWizard();
       log(`Created project ${name} for ${org.name}`);
-      go('org-' + org.id); toast('Project created.');
+      go('client-' + org.id); toast('Project created.');
     });
   };
 
@@ -1064,7 +1064,7 @@
       </tbody></table></div></section>`;
     }
     return `
-    ${head({ crumbs: crumbs(['Clients', '#organisations'], [o.short, '#organisation-' + o.id], [o.projects.find((x) => x.solutions.includes(s.id)).name], [s.name]), title: esc(s.name), meta: `${statusPill(st)}<span>${esc(o.projects[0].name)}</span><span>Live since ${day(s.live)}</span>`, actions: rangeSeg() })}
+    ${head({ crumbs: crumbs(['Clients', '#clients'], [o.short, '#client-' + o.id], [o.projects.find((x) => x.solutions.includes(s.id)).name], [s.name]), title: esc(s.name), meta: `${statusPill(st)}<span>${esc(o.projects[0].name)}</span><span>Live since ${day(s.live)}</span>`, actions: rangeSeg() })}
     ${banner}
     <div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button type="button" role="tab" data-tab="${k}" aria-selected="${state.solTab === k}">${l}</button>`).join('')}</div>
     ${body}
@@ -1113,7 +1113,7 @@
         ${!s.reportScheduled ? `<section class="card"><div class="row" style="border:0;padding:0"><span class="ico info">${icon('reports', 'sm')}</span><div><div class="what">Schedule the client report</div><div class="meta">${esc(s.project.cadence)} · drafted for you, sent only after you check it</div></div><button type="button" class="btn primary sm" data-act="schedule-report" data-sim="${s.id}">Schedule report</button></div></section>`
         : `<section class="card"><div class="row" style="border:0;padding:0"><span class="ico ${rs.st === 'ready' ? 'warn' : 'ok'}">${icon('reports', 'sm')}</span><div><div class="what">${rs.st === 'ready' ? `${monthName(rs.ym)} report is ready to review` : rs.st === 'approved' ? `${monthName(rs.ym)} report approved` : `${esc(s.project.cadence)} report scheduled`}</div><div class="meta">${rs.st === 'waiting' ? `First draft on ${nextMonthStart()}, once a full month of figures is in. Move the date forward in Demo studio to see it.` : 'Drafted from the figures above'}</div></div>${rs.st !== 'waiting' ? `<a class="btn sm ${rs.st === 'ready' ? 'primary' : ''}" href="#report-${s.id}">Open report</a>` : ''}</div></section>`}`;
     }
-    return `${head({ crumbs: crumbs(['Clients', '#organisations'], [o.name, '#org-' + o.id], [s.project.name], [s.name]), title: esc(s.name), meta: `${statusPill(st)}<span>${esc(s.project.name)}</span><span>${K.label}</span>`, actions: s.stage === 'collecting' ? rangeSeg() : '' })}
+    return `${head({ crumbs: crumbs(['Clients', '#clients'], [o.name, '#client-' + o.id], [s.project.name], [s.name]), title: esc(s.name), meta: `${statusPill(st)}<span>${esc(s.project.name)}</span><span>${K.label}</span>`, actions: s.stage === 'collecting' ? rangeSeg() : '' })}
       ${strip}${body}`;
   };
   pages.sim.after = (id) => {
@@ -1129,30 +1129,31 @@
     [`${cap(K.nouns)} handled`, `${K.nouns}.processed`, 'Count, every day', 'ok'],
     [`Time to process a ${K.noun}`, `${K.nouns}.processing_duration`, 'Average seconds, every day', 'ok'],
     [`${cap(K.nouns)} ${K.qual.label}`, `${K.nouns}.flagged`, 'Count, every day', 'ok'],
-    ['People reviewing', 'reviewers.active', 'Distinct people, every week · a code, never a name', 'ok'],
-    ['Items extracted', 'items.extracted', 'Count, every day', 'warn', 'The unit “item” isn’t standard. Fine to use; ask the developer to rename it x.item when convenient.'],
-    [`${cap(K.nouns)} by customer name`, `${K.nouns}.by_customer_name`, 'Count, split by customer', 'fault', 'Split by customer name, which could identify people. Held back unless an admin approves it.'],
+    ['People reviewing', 'reviewers.active', 'Distinct people, every day · each counted once, never named', 'ok'],
+    ['Pages read', 'pages.read', 'Count, every day', 'warn', 'The unit “pages” isn’t on the standard list. Fine for now; ask the developer to use “page”.'],
+    [`${cap(K.nouns)} by customer name`, `${K.nouns}.by_customer_name`, 'Count, split by customer', 'fault', 'Split by customer name, which could identify people. The contract test refuses it; ask the developer to split by customer type instead.'],
   ];
   const wizSim = () => simById(state.focusSim);
-  const devPrompt = (s) => { const K = kindOf(s); return `Add the REKA measurement link to ${state.wiz.solName || s.name}, following the integration pack (integrations/measure in antarax-ripple-monitoring).
+  const devPrompt = (s) => { const K = kindOf(s); return `Add a Measurement Link to ${state.wiz.solName || s.name}. Follow the integration pack: integrations/measure in antarax-ripple-monitoring, starting with CLAUDE_CODE_INTEGRATION.md.
 
-- Add read-only endpoints under /internal/measure/v1: manifest, metrics, observations, health.
+- Read-only GET endpoints under /internal/measure/v1: manifest, metrics, observations, health, openapi.json.
+- TypeScript: use the kit in the pack. Other languages: follow the pack's signature and test vectors.
 - Don't change the app's own data model or API.
-- Share daily totals only: ${K.nouns} handled, processing time (sum and count), ${K.nouns} ${K.qual.label}, active reviewers (pseudonymous).
-- No document text, customer names or personal data.
-- Sign requests with the service key in REKA_MEASURE_KEY.
-- Run the contract test before you finish: npx @reka/measure-test <url>
+- Daily totals for finished days in the client's time zone: ${K.nouns} handled, processing time (with sum and count), ${K.nouns} ${K.qual.label}, people reviewing (each counted once). A missing day is left out, never sent as zero.
+- No document text, names or personal data. Dimension values are short codes, like invoice.
+- Check every call is signed with the key in AX_MEASURE_KEY (ax_msr_…). Outcomes shows it once, when the solution is connected.
+- Before you finish, run the contract test: AX_MEASURE_KEY=… node contract-test/cli.mjs --base <url>
 - If there's no baseline, say so. Don't guess one.`; };
 
   pages.connect = (id) => {
     if (id) state.focusSim = id;
     let s = wizSim();
     if (!s || s.stage !== 'draft') { s = state.sims.find((x) => x.stage === 'draft'); if (s) { state.focusSim = s.id; state.wiz = freshWizard(); } }
-    if (!s) return `${head({ title: 'Connect a solution' })}<section class="card"><div class="empty">${emptyArt}<h3>${state.orgs.length ? 'Create a project first' : 'Add the client and project first'}</h3><p>A solution is measured against a project’s outcome, so we need both before connecting.</p><a class="btn primary" href="${state.orgs.length ? '#new-project' : '#new-organisation'}">${state.orgs.length ? 'Create project' : 'Add organisation'}</a></div></section>`;
+    if (!s) return `${head({ title: 'Connect a solution' })}<section class="card"><div class="empty">${emptyArt}<h3>${state.orgs.length ? 'Create a project first' : 'Add the client and project first'}</h3><p>A solution is measured against a project’s outcome, so we need both before connecting.</p><a class="btn primary" href="${state.orgs.length ? '#new-project' : '#new-client'}">${state.orgs.length ? 'Create project' : 'Add client'}</a></div></section>`;
     const w = state.wiz, o = orgOf(s), K = kindOf(s), solName = w.solName || s.name;
     if (!w.baseline) w.baseline = { method: 'sample', mid: K.base.mid, low: K.base.low, high: K.base.high, n: 20, period: `${day(M.addDays(today(), 5))} to ${day(M.addDays(today(), 9))}`, note: '' };
     const nav = `<ol class="wsteps">${WSTEPS.map((l, i) => `<li class="${i + 1 < w.step ? 'done' : i + 1 === w.step ? 'now' : ''}" ${i + 1 === w.step ? 'aria-current="step"' : ''}><b>${i + 1 < w.step ? '✓' : i + 1}</b><span>${l}</span></li>`).join('')}</ol>`;
-    const foot = (label, disabled) => `<div class="wfoot">${w.step > 1 ? `<button type="button" class="btn ghost" data-act="w-back">${icon('back', 'sm')}Back</button>` : `<a class="btn ghost" href="#org-${o.id}">Cancel</a>`}<button type="button" class="btn primary lg" data-act="w-next" ${disabled ? 'disabled' : ''}>${label}</button></div>`;
+    const foot = (label, disabled) => `<div class="wfoot">${w.step > 1 ? `<button type="button" class="btn ghost" data-act="w-back">${icon('back', 'sm')}Back</button>` : `<a class="btn ghost" href="#client-${o.id}">Cancel</a>`}<button type="button" class="btn primary lg" data-act="w-next" ${disabled ? 'disabled' : ''}>${label}</button></div>`;
     const props = kpiProposals(s);
     let panel = '';
     if (w.step === 1) panel = `<div><h2>Which solution are you connecting?</h2><p class="small muted" style="margin-top:4px">For ${esc(o.name)} · ${esc(s.project.name)}</p></div>
@@ -1169,7 +1170,7 @@
         ${foot('Continue', !w.devReady)}`;
     if (w.step === 4) panel = `<div><h2>Connect and test</h2><p class="small muted" style="margin-top:4px">We check the link answers, then read one day of figures. Nothing is saved until every check passes.</p></div>
         <div class="field"><label for="w-url">Link address</label><input id="w-url" class="mono" value="${esc(w.url)}"><span class="help">From the developer. Must start with https.</span></div>
-        <div class="callout ok" style="align-items:center">${icon('lock')}<span>A read-only key for ${esc(solName)} is ready in the REKA vault. Tell the developer its name: <span class="inline-code">REKA_MEASURE_KEY</span>. You never see the secret.</span></div>
+        <div class="callout ok" style="align-items:center">${icon('lock')}<span>A measurement key for ${esc(solName)} is ready in the REKA vault. The developer sets it on the solution as <span class="inline-code">AX_MEASURE_KEY</span>. You never see the secret.</span></div>
         ${w.tests.length ? `<div class="checks" aria-live="polite">${w.tests.map(([t, ok]) => `<div><span class="tick ${ok}">${ok === 'ok' ? '✓' : '…'}</span><span>${esc(t)}</span></div>`).join('')}</div>` : ''}
         ${w.tested ? `<div class="callout ok">${icon('check')}<span><b>Connected.</b> The link answered and shares 6 figures.</span></div>` : ''}
         ${foot(w.tested ? 'Check the data' : 'Test connection', w.tests.length && !w.tested)}`;
@@ -1199,7 +1200,7 @@
         <div class="field"><label for="w-appr">Who approves</label><select id="w-appr"><option>Aisyah Rahman · Admin</option></select><span class="help">You can’t approve what you set up yourself.</span></div>
         ${foot('Send for approval')}`;
     }
-    return `${head({ crumbs: crumbs(['Clients', '#organisations'], [o.name, '#org-' + o.id], [s.project.name], ['Connect a solution']), title: 'Connect a solution', lead: `${esc(s.project.name)} · step ${w.step} of ${WSTEPS.length}` })}
+    return `${head({ crumbs: crumbs(['Clients', '#clients'], [o.name, '#client-' + o.id], [s.project.name], ['Connect a solution']), title: 'Connect a solution', lead: `${esc(s.project.name)} · step ${w.step} of ${WSTEPS.length}` })}
       <div class="wizard">${nav}<div class="card wpanel" id="wpanel">${panel}</div></div>`;
   };
   pages.connect.after = () => {
@@ -1285,23 +1286,44 @@
   };
 
   // ------------------------------------------------------------------ REPORTS
+  // One row per project report, tagged with its client, in every workspace.
+  function reportRows() {
+    const pill = (c, t, dot = true) => `<span class="pill ${c}">${dot ? '<span class="dot"></span>' : ''}${t}</span>`;
+    if (!demo()) return state.sims.map((s) => { const r = simReportState(s), open = r.st === 'ready' || r.st === 'approved';
+      return { cid: s.orgId, name: s.project.name, cadence: s.project.cadence, period: open ? monthName(r.ym) : '–', due: r.st === 'ready', go: open ? 'report-' + s.id : null,
+        status: ({ none: pill('idle', s.stage === 'collecting' ? 'Not scheduled' : 'Waiting for data', false), waiting: pill('info', `First draft ${nextMonthStart()}`, false), ready: pill('warn', 'Ready to review'), approved: pill('ok', 'Approved') })[r.st],
+        action: r.st === 'none' && s.stage === 'collecting' ? `<button type="button" class="btn sm" data-act="schedule-report" data-sim="${s.id}">Schedule</button>` : open ? `<a class="btn sm" href="#report-${s.id}">Open</a>` : '' }; });
+    return [
+      { cid: 'contoh-logistik', name: 'Accounts payable automation', cadence: 'Monthly', period: 'Sep 2026', due: !state.reportApproved, go: 'report', status: state.reportApproved ? pill('ok', 'Approved') : pill('warn', 'Ready to review'), action: '<a class="btn sm" href="#report">Open</a>' },
+      { cid: 'acme-plastics', name: 'Production planning assistant', cadence: 'Monthly', period: 'Sep 2026', status: pill('ok', 'Sent 3 Oct'), action: '' },
+      { cid: 'bina-jaya', name: 'Quotation drafting', cadence: 'Quarterly', period: 'Q3 2026', status: pill('ok', 'Sent 7 Oct'), action: '' },
+      { cid: 'sampel-medik', name: 'Patient enquiry triage', cadence: 'Monthly', period: 'Oct 2026', status: pill('idle', 'Drafts 1 Nov', false), action: '' },
+    ];
+  }
+  const repKey = () => demo() ? 'example' : state.ws;
+  const repFor = () => { const f = state.repFor; return f && f.k === repKey() && coById(f.id) ? coById(f.id) : null; };
   pages.reports = () => {
     const lead = 'Each client gets a report on their schedule. It’s drafted for you and goes out only after you check it.';
-    if (!demo()) {
-      const live = state.sims.filter((s) => s.stage === 'collecting');
-      if (!state.sims.length) return `${head({ title: 'Reports', lead })}<section class="card"><div class="empty">${emptyArt}<h3>No reports yet</h3><p>Once a solution is collecting data, you can schedule its report here.</p></div></section>`;
-      return `${head({ title: 'Reports', lead })}<section class="card"><div class="table-wrap"><table><thead><tr><th>Report</th><th>Client</th><th>Period</th><th>Status</th><th></th></tr></thead><tbody>
-        ${state.sims.map((s) => { const r = simReportState(s); return `<tr><td><span class="name">${esc(s.project.name)}</span><span class="sub">${esc(s.project.cadence)}</span></td><td>${esc(orgOf(s).name)}</td><td class="mono">${r.st === 'ready' || r.st === 'approved' ? monthName(r.ym) : '–'}</td><td>${({ none: s.stage === 'collecting' ? '<span class="pill idle">Not scheduled</span>' : '<span class="pill idle">Waiting for data</span>', waiting: `<span class="pill info">First draft ${nextMonthStart()}</span>`, ready: '<span class="pill warn"><span class="dot"></span>Ready to review</span>', approved: '<span class="pill ok"><span class="dot"></span>Approved</span>' })[r.st]}</td><td>${r.st === 'none' && s.stage === 'collecting' ? `<button type="button" class="btn sm" data-act="schedule-report" data-sim="${s.id}">Schedule</button>` : r.st === 'ready' || r.st === 'approved' ? `<a class="btn sm" href="#report-${s.id}">Open</a>` : ''}</td></tr>`; }).join('')}
-      </tbody></table></div></section>${live.some((s) => simReportState(s).st === 'waiting') ? `<div class="demo-bar"><span class="tag">MOCK CONTROLS</span><span>Reports draft on the 1st of each month.</span><button type="button" class="btn sm" data-act="to-month-end">Jump to ${nextMonthStart()}</button></div>` : ''}`;
-    }
+    if (!demo() && !state.sims.length) return `${head({ title: 'Reports', lead })}<section class="card"><div class="empty">${emptyArt}<h3>No reports yet</h3><p>Once a solution is collecting data, you can schedule its report here.</p></div></section>`;
+    const all = reportRows(), one = repFor();
+    const opts = companies().filter((c) => all.some((r) => r.cid === c.id) || (one && one.id === c.id));
+    const count = (id) => all.filter((r) => r.cid === id).length;
+    const rows = (one ? all.filter((r) => r.cid === one.id) : all).map((r, i) => ({ r, i, c: coById(r.cid) })).sort((a, b) => opts.indexOf(a.c) - opts.indexOf(b.c) || a.i - b.i);
+    const due = rows.filter((x) => x.r.due).length, cur = one ? one.id : 'all';
+    const pick = opts.length <= 5
+      ? `<div class="seg" role="group" aria-label="Client">${[['all', 'All clients']].concat(opts.map((c) => [c.id, c.short])).map(([k, l]) => `<button type="button" data-repfor="${k}" aria-pressed="${cur === k}">${esc(l)}</button>`).join('')}</div>`
+      : `<div class="field" style="min-width:200px"><select id="rep-for" aria-label="Client"><option value="all">All clients (${all.length})</option>${opts.map((c) => `<option value="${c.id}" ${cur === c.id ? 'selected' : ''}>${esc(c.short)} (${count(c.id)})</option>`).join('')}</select></div>`;
+    const cols = one ? 4 : 5;
+    const ghost = !demo() && all.some((r) => /First draft/.test(r.status));
     return `${head({ title: 'Reports', lead })}
-    <section class="card"><div class="table-wrap"><table><thead><tr><th>Report</th><th>Client</th><th>Period</th><th>Status</th><th></th></tr></thead><tbody>
-      <tr class="link" data-go="report" tabindex="0"><td><span class="name">Accounts payable automation</span><span class="sub">Monthly</span></td><td>Contoh Logistik</td><td class="mono">Sep 2026</td><td>${state.reportApproved ? '<span class="pill ok"><span class="dot"></span>Approved</span>' : '<span class="pill warn"><span class="dot"></span>Ready to review</span>'}</td><td><a class="btn sm" href="#report">Open</a></td></tr>
-      <tr><td><span class="name">Production planning assistant</span><span class="sub">Monthly</span></td><td>Acme Plastics</td><td class="mono">Sep 2026</td><td><span class="pill ok"><span class="dot"></span>Sent 3 Oct</span></td><td></td></tr>
-      <tr><td><span class="name">Quotation drafting</span><span class="sub">Quarterly</span></td><td>Bina Jaya</td><td class="mono">Q3 2026</td><td><span class="pill ok"><span class="dot"></span>Sent 7 Oct</span></td><td></td></tr>
-      <tr><td><span class="name">Patient enquiry triage</span><span class="sub">Monthly</span></td><td>Sampel Medik</td><td class="mono">Oct 2026</td><td><span class="pill idle">Drafts 1 Nov</span></td><td></td></tr>
-    </tbody></table></div></section>`;
+    <section class="card" style="padding:14px 18px"><div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">${pick}<span class="small muted">${rows.length} report${rows.length === 1 ? '' : 's'}${due ? ` · ${due} ready to review` : ''}</span></div></section>
+    <section class="card">${one ? `<div class="card-head"><div><h2>Reports for ${esc(one.short)}</h2><p class="sub">${esc(one.industry)} · ${one.projects.length} project${one.projects.length === 1 ? '' : 's'}</p></div><a class="btn sm ghost" href="${one.href}">Open client${icon('chev', 'sm')}</a></div>` : ''}
+      <div class="table-wrap"><table class="report-table"><thead><tr><th>Report</th>${one ? '' : '<th class="rt-client">Client</th>'}<th>Period</th><th>Status</th><th></th></tr></thead><tbody>
+      ${rows.length ? rows.map(({ r, c }) => `<tr ${r.go ? `class="link" data-go="${r.go}" tabindex="0"` : ''}><td><span class="name">${esc(r.name)}</span><span class="sub">${esc(r.cadence)}</span>${one ? '' : `<span class="sub rt-co">${esc(c.short)}</span>`}</td>${one ? '' : `<td class="rt-client"><span class="name">${esc(c.short)}</span><span class="sub">${esc(c.industry)}</span></td>`}<td class="mono">${esc(r.period)}</td><td>${r.status}</td><td>${r.action}</td></tr>`).join('')
+        : `<tr><td colspan="${cols}"><div class="empty" style="padding:16px"><p>No reports for ${esc(one.short)} yet. The first is drafted once a solution has a month of figures. <button type="button" class="btn sm ghost" data-repfor="all">Show all clients</button></p></div></td></tr>`}
+    </tbody></table></div></section>${ghost ? `<div class="demo-bar"><span class="tag">MOCK CONTROLS</span><span>Reports draft on the 1st of each month.</span><button type="button" class="btn sm" data-act="to-month-end">Jump to ${nextMonthStart()}</button></div>` : ''}`;
   };
+  pages.reports.after = () => { const sel = $('#rep-for'); if (sel) sel.addEventListener('change', (e) => { state.repFor = e.target.value === 'all' ? null : { k: repKey(), id: e.target.value }; render(); }); };
   const paper = (o) => `<article class="paper" aria-label="Report preview">
       <header class="paper-head"><div class="top"><span class="eyebrow"><img src="${SPARK}" alt="">Performance report</span><img class="reka" src="assets/reka-lockup.svg" alt="REKA"></div>
         <h1>${esc(o.title)}</h1>
@@ -1606,7 +1628,7 @@
         <p class="small muted" style="margin-top:12px">Analysts suggest KPIs. Project managers approve them. Only people with the commercial right see fees.</p></section>
       <section class="card"><div class="card-head"><h2>Collection and measures</h2></div>${kv([['Nightly figures', '06:00 MYT'], ['Health checks', 'Every 15 minutes'], ['Data kept in', 'Singapore'], ['Kept for', 'The contract plus 24 months, then monthly totals'], ['Hourly staff cost', 'RM45 an hour, for every client. Used for \u201cvalue of time freed\u201d, always shown as an estimate'], ['Demo workspaces', 'Simulated only, never send anything, cleared after 90 days unless kept']], 140)}</section>
       <section class="card"><div class="card-head"><h2>Audit trail</h2><span class="pill idle">${icon('lock', 'sm')}Can’t be edited</span></div>${activityList(10)}</section>
-      <section class="card"><div class="card-head"><h2>Integration pack</h2></div><p class="small">Everything a developer needs to add a measurement link: the contract, examples and a test to run before handing over.</p><div class="code-block" style="margin-top:12px">npx @reka/measure-test https://your-solution/internal/measure/v1</div></section>
+      <section class="card"><div class="card-head"><h2>Integration pack</h2></div><p class="small">Everything a developer needs to add a measurement link: the contract, examples and a test to run before handing over.</p><div class="code-block" style="margin-top:12px">AX_MEASURE_KEY=ax_msr_… node contract-test/cli.mjs --base https://your-solution/internal/measure/v1</div></section>
     </div>`;
   pages.guide = () => `${head({ title: 'Help', lead: 'How Outcomes measures, and what each label means.' })}
     <div class="grid g3">${[['measured', 'Measured', 'Counted or timed by the solution itself.'], ['derived', 'Derived', 'Worked out only from measured figures, like a rate.'], ['estimated', 'Estimated', 'Uses a sample or an agreed baseline. Always shown with a likely range.']].map(([k, t, d]) => `<div class="card"><div style="margin-bottom:8px">${q(k)}</div><h3>${t}</h3><p class="small" style="margin-top:6px">${d}</p></div>`).join('')}</div>
@@ -1683,10 +1705,10 @@
   const tsim = () => simById(T.simId);
   const TOUR = [
     { t: 'Meet Outcomes', d: 'REKA builds AI solutions for clients. Outcomes shows each client what their solution changed. Let’s take a new client from nothing to their first report.', go() { setWs('sandbox'); resetWorkspace(true); go('home'); } },
-    { t: 'Add the client', d: 'Everything starts with the client and their signed data agreement. Nothing is collected until it’s signed.', mark: '#f-org', go() { state.draftOrg = 'Harapan Foods'; go('new-organisation'); } },
-    { t: 'Client added', d: 'Harapan Foods is in. Next, the project REKA agreed with them.', go() { if (!T.orgId) { const o = newOrg('Harapan Foods', 'Food and beverage'); T.orgId = o.id; log('Added client Harapan Foods'); } go('org-' + T.orgId); } },
+    { t: 'Add the client', d: 'Everything starts with the client and their signed data agreement. Nothing is collected until it’s signed.', mark: '#f-org', go() { state.draftOrg = 'Harapan Foods'; go('new-client'); } },
+    { t: 'Client added', d: 'Harapan Foods is in. Next, the project REKA agreed with them.', go() { if (!T.orgId) { const o = newOrg('Harapan Foods', 'Food and beverage'); T.orgId = o.id; log('Added client Harapan Foods'); } go('client-' + T.orgId); } },
     { t: 'Create the project', d: 'Pick the kind of work: it steers which KPIs AI suggests. The outcome is written in the client’s own words.', mark: '#f-proj', go() { state.newKind = 'documents'; state.draftProj = 'Supplier invoices'; state.newProjOrg = T.orgId; go('new-project'); } },
-    { t: 'Project created', d: 'The project is waiting for its solution to be connected.', go() { if (!T.simId) { const s = newSim(state.orgs.find((o) => o.id === T.orgId), { kind: 'documents', project: 'Supplier invoices', sol: 'Invoice reader', vol: 220, history: 14 }); T.simId = s.id; state.focusSim = s.id; state.wiz = freshWizard(); log('Created project Supplier invoices for Harapan Foods'); } go('org-' + T.orgId); } },
+    { t: 'Project created', d: 'The project is waiting for its solution to be connected.', go() { if (!T.simId) { const s = newSim(state.orgs.find((o) => o.id === T.orgId), { kind: 'documents', project: 'Supplier invoices', sol: 'Invoice reader', vol: 220, history: 14 }); T.simId = s.id; state.focusSim = s.id; state.wiz = freshWizard(); log('Created project Supplier invoices for Harapan Foods'); } go('client-' + T.orgId); } },
     { t: 'Brief the developer', d: 'The solution needs a small, read-only link. Outcomes writes the brief for the developer, or for Claude Code.', mark: '#wpanel', go() { wizTo(3); } },
     { t: 'Test the connection', d: 'Outcomes calls the link, checks the request is signed and reads one day of figures.', mark: '#wpanel', go() { wizTo(4); if (!state.wiz.tested) setTimeout(runTests, 300); } },
     { t: 'Check what it shares', d: 'Each figure is checked and explained in plain words. Anything that could identify people is held back.', mark: '#wpanel', go() { wizTo(5); } },
@@ -1740,8 +1762,8 @@
   // ------------------------------------------------------------------ search palette
   function openPalette() {
     const el = $('#palette'); if (!el) return;
-    const items = [['Home', '#home'], ['Clients', '#organisations'], ['Approvals', '#approvals'], ['Reports', '#reports'], ['Settings', '#settings'], ['Connect a solution', '#connect'], ['Add organisation', '#new-organisation']]
-      .concat(demo() ? M.orgs.map((o) => [o.name, '#organisation-' + o.id]).concat(Object.values(M.solutions).filter((s) => s.status !== 'not_connected').map((s) => [`${s.name} · ${orgById(s.org).short}`, '#solution-' + s.id])) : state.orgs.map((o) => [o.name, '#org-' + o.id]).concat(state.sims.map((s) => [`${s.name} · ${orgOf(s).name}`, '#sim-' + s.id])));
+    const items = [['Home', '#home'], ['Clients', '#clients'], ['Approvals', '#approvals'], ['Reports', '#reports'], ['Settings', '#settings'], ['Connect a solution', '#connect'], ['Add client', '#new-client']]
+      .concat(demo() ? M.orgs.map((o) => [o.name, '#client-' + o.id]).concat(Object.values(M.solutions).filter((s) => s.status !== 'not_connected').map((s) => [`${s.name} · ${orgById(s.org).short}`, '#solution-' + s.id])) : state.orgs.map((o) => [o.name, '#client-' + o.id]).concat(state.sims.map((s) => [`${s.name} · ${orgOf(s).name}`, '#sim-' + s.id])));
     el.hidden = false;
     el.innerHTML = `<div class="scrim" data-act="close-palette"></div><div class="card" role="dialog" aria-label="Search" style="position:fixed;z-index:60;top:12vh;left:50%;transform:translateX(-50%);width:min(560px,calc(100vw - 32px));padding:10px;box-shadow:var(--shadow-lg)"><div class="field"><input id="pal-q" placeholder="Search clients, projects, solutions" aria-label="Search" autocomplete="off"></div><div id="pal-list" style="max-height:50vh;overflow:auto;margin-top:6px;display:grid;gap:2px"></div></div>`;
     const draw = (qv) => { $('#pal-list').innerHTML = items.filter(([l]) => l.toLowerCase().includes(qv.toLowerCase())).slice(0, 10).map(([l, h]) => `<a href="${h}" style="padding:10px 12px;border-radius:10px;color:var(--ink);text-decoration:none;display:block">${esc(l)}</a>`).join('') || '<p class="small muted" style="padding:10px">Nothing matches.</p>'; };
@@ -1752,19 +1774,25 @@
   function closePalette() { const el = $('#palette'); if (el) { el.hidden = true; el.innerHTML = ''; } }
 
   // ------------------------------------------------------------------ router
+  // Old addresses (before clients were called clients) still work: they redirect to the new ones.
+  const OLD = { organisations: 'clients', 'new-organisation': 'new-client' };
   function parse() {
-    const h = (location.hash || '').slice(1) || (state.signedIn ? 'home' : 'signin');
-    for (const p of ['organisation', 'solution', 'org', 'sim', 'connect', 'report']) if (h.startsWith(p + '-')) return [p, h.slice(p.length + 1), h];
+    const was = (location.hash || '').slice(1);
+    let h = was || (state.signedIn ? 'home' : 'signin');
+    const old = /^(?:organisation|org)-(.+)$/.exec(h);
+    if (old) h = 'client-' + old[1]; else if (OLD[h]) h = OLD[h];
+    if (was && h !== was) { try { history.replaceState(null, '', '#' + h); } catch (err) { /* file pages may refuse; the alias still works */ } }
+    for (const p of ['client', 'solution', 'sim', 'connect', 'report']) if (h.startsWith(p + '-')) return [p, h.slice(p.length + 1), h];
     return [h, null, h];
   }
   let last = '';
-  const TITLES = { analytics: 'Analytics', ask: 'Ask', signin: 'Sign in', welcome: 'Welcome', home: 'Home', organisations: 'Clients', 'new-organisation': 'Add client', 'new-project': 'New project', connect: 'Connect a solution', approvals: 'Approvals', reports: 'Reports', report: 'Report', settings: 'Settings', guide: 'Help' };
+  const TITLES = { analytics: 'Analytics', ask: 'Ask', signin: 'Sign in', welcome: 'Welcome', home: 'Home', clients: 'Clients', 'new-client': 'Add client', 'new-project': 'New project', connect: 'Connect a solution', approvals: 'Approvals', reports: 'Reports', report: 'Report', settings: 'Settings', guide: 'Help' };
   function render() {
     let [page, arg, raw] = parse();
     if (!state.signedIn) { page = 'signin'; raw = 'signin'; } else if (!state.mode) { page = 'welcome'; raw = 'welcome'; } else if (page === 'signin' || page === 'welcome') { page = 'home'; raw = 'home'; }
-    if (page === 'organisation' && (!demo() || !orgById(arg))) { page = 'organisations'; raw = page; }
+    if (page === 'client' && !coById(arg)) { page = 'clients'; raw = page; }
     if (page === 'solution' && (!demo() || !M.solutions[arg] || M.solutions[arg].status === 'not_connected')) { page = 'home'; raw = page; }
-    if ((page === 'org' && (demo() || !state.orgs.some((o) => o.id === arg))) || (page === 'sim' && (demo() || !simById(arg)))) { page = demo() ? 'home' : 'organisations'; raw = page; }
+    if (page === 'sim' && (demo() || !simById(arg))) { page = demo() ? 'home' : 'clients'; raw = page; }
     if (page === 'report' && arg && (demo() || !simById(arg))) { page = 'reports'; raw = page; }
     if (page === 'connect' && demo()) { setWs('real'); }
     if (!pages[page]) { page = 'home'; raw = 'home'; }
@@ -1773,7 +1801,7 @@
     const scroll = window.scrollY;
     if (state.mode && routeClient(raw)) { const c = coById(routeClient(raw)); if (c) rememberClient(c); }
     root.innerHTML = (page === 'signin' || page === 'welcome') ? pages[page]() : appShell(raw, pages[page](arg));
-    const name = page === 'org' ? state.orgs.find((o) => o.id === arg).name : page === 'sim' ? simById(arg).name : page === 'organisation' ? orgById(arg).short : page === 'solution' ? M.solutions[arg].name : TITLES[page];
+    const name = page === 'client' ? coById(arg).short : page === 'sim' ? simById(arg).name : page === 'solution' ? M.solutions[arg].name : TITLES[page];
     document.title = `${name || 'Outcomes'} · Outcomes`;
     if (pages[page].after) pages[page].after(arg);
     if (last !== raw) { window.scrollTo(0, 0); last = raw; } else window.scrollTo(0, scroll);
@@ -1813,7 +1841,7 @@
     invite: () => toast('Invites come from your REKA account directory.'),
     studio: () => { if (!sandbox()) { setWs('sandbox'); state.studio = true; location.hash = '#home'; render(); toast('Opened the demo workspace. Your real workspace is unchanged.'); return; } state.studio = !state.studio; render(); },
     'studio-close': () => { readSf(); state.studio = false; render(); },
-    'sf-create': () => { readSf(); const s = createSimProject(state.sf); state.sf = null; state.eventSim = s.stage === 'collecting' ? s.id : state.eventSim; go(s.stage === 'draft' ? 'org-' + s.orgId : 'sim-' + s.id); },
+    'sf-create': () => { readSf(); const s = createSimProject(state.sf); state.sf = null; state.eventSim = s.stage === 'collecting' ? s.id : state.eventSim; go(s.stage === 'draft' ? 'client-' + s.orgId : 'sim-' + s.id); },
     'sf-three': () => { addThree(); state.sf = null; go('home'); toast('Three projects added.'); },
     play: () => { if (state.playing) { clearInterval(state.playing); state.playing = null; render(); return; } state.playing = setInterval(() => { advance(1); render(); }, 1000); render(); },
     'reset-ws': () => { resetWorkspace(false); state.studio = false; go('home'); toast('Workspace cleared.'); },
@@ -1834,6 +1862,7 @@
     export: () => toast('Exports download in the real product. The mock can\u2019t save files.'),
     'tour-start': () => { tourGo(0); },
     'ask-client': (d) => askSubmit(`How is ${d.name} doing this month?`),
+    'reports-for': (d) => { state.repFor = { k: repKey(), id: d.org }; go('reports'); },
     'cf-reset': () => { state.cf = { show: 'all', sort: state.cf.sort, q: '' }; render(); },
     'tour-next': () => { if (state.tour >= TOUR.length - 1) { state.tour = null; render(); toast('Demo finished. Demo studio is yours.'); return; } tourGo(state.tour + 1); },
     'tour-back': () => tourGo(state.tour - 1),
@@ -1857,6 +1886,7 @@
     if (d.aud) { state.audience = d.aud; render(); return; }
     if (d.cfshow) { state.cf.show = d.cfshow; render(); return; }
     if (d.cotab) { state.coTab = d.cotab; render(); return; }
+    if (d.repfor) { state.repFor = d.repfor === 'all' ? null : { k: repKey(), id: d.repfor }; render(); return; }
     if (d.tab) { state.solTab = d.tab; render(); return; }
     if (d.demo) { state.demoState = d.demo; render(); return; }
     if (d.go) { location.hash = '#' + d.go; return; }
@@ -1893,6 +1923,6 @@
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k' && state.mode) { e.preventDefault(); openPalette(); }
   });
   window.addEventListener('hashchange', () => { closePalette(); render(); });
-  let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { const [p, a] = parse(); if (['home', 'org', 'organisation', 'solution', 'sim', 'analytics'].includes(p) && pages[p].after && state.mode) pages[p].after(a); }, 150); });
+  let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { const [p, a] = parse(); if (['home', 'client', 'solution', 'sim', 'analytics'].includes(p) && pages[p].after && state.mode) pages[p].after(a); }, 150); });
   render();
 })();

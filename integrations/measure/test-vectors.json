@@ -1,0 +1,41 @@
+{
+  "note": "HMAC-SHA256 keyed with the whole key string, over string_to_sign, as lower-case hex after v1=. The key is an example, not a real one.",
+  "vectors": [
+    {
+      "key": "ax_msr_EXAMPLEKEYonlyFORtheDOCSzzzzzzzz",
+      "method": "GET",
+      "path": "/internal/measure/v1/manifest",
+      "timestamp": 1791000000,
+      "string_to_sign": "1791000000\nGET\n/internal/measure/v1/manifest\ne3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "headers": {
+        "AntaraX-Service": "measure",
+        "AntaraX-Timestamp": "1791000000",
+        "AntaraX-Service-Signature": "v1=73721d4f980eaf46acc20137049365ca41666ab45839b493c1b9687f12da55e3"
+      }
+    },
+    {
+      "key": "ax_msr_EXAMPLEKEYonlyFORtheDOCSzzzzzzzz",
+      "method": "GET",
+      "path": "/internal/measure/v1/observations?from=2026-10-01&to=2026-10-07",
+      "timestamp": 1791000000,
+      "string_to_sign": "1791000000\nGET\n/internal/measure/v1/observations?from=2026-10-01&to=2026-10-07\ne3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "headers": {
+        "AntaraX-Service": "measure",
+        "AntaraX-Timestamp": "1791000000",
+        "AntaraX-Service-Signature": "v1=25e38d1cc9471362d116e251de1620d1d2418b090b958bf58282444923a3f135"
+      }
+    },
+    {
+      "key": "ax_msr_EXAMPLEKEYonlyFORtheDOCSzzzzzzzz",
+      "method": "GET",
+      "path": "/internal/measure/v1/observations?from=2026-10-01&to=2026-10-07&metric=documents.generated&limit=100",
+      "timestamp": 1791003600,
+      "string_to_sign": "1791003600\nGET\n/internal/measure/v1/observations?from=2026-10-01&to=2026-10-07&metric=documents.generated&limit=100\ne3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "headers": {
+        "AntaraX-Service": "measure",
+        "AntaraX-Timestamp": "1791003600",
+        "AntaraX-Service-Signature": "v1=564787721a5bd0e9f0fce57a14a15105b057c0c830677a57e22fde163ed489c1"
+      }
+    }
+  ]
+}

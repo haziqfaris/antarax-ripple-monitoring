@@ -2,7 +2,7 @@
 
 REKA's console for measuring what its client AI solutions actually deliver: whether each is healthy and used, how it performs, and what business outcome it produces against an agreed baseline. It starts inside REKA, supporting the Managed AI service's "we watch it, we improve it" promise, and is built so it can graduate to an AntaraX product later.
 
-> **Status:** product requirements draft 0.5 and a clickable product mock, 15 Oct 2026. Nothing is built yet. Every client, person and figure in the mock is invented.
+> **Status:** product requirements draft 0.5, a clickable product mock, and the measurement interface's contract, kit and contract test (proposed), 15 Oct 2026. The console itself is not built yet. Every client, person and figure in the mock is invented.
 
 ## What is here
 
@@ -11,6 +11,9 @@ REKA's console for measuring what its client AI solutions actually deliver: whet
 | [docs/PRD.md](docs/PRD.md) | The product requirements: goals, roles, domain model, numbered requirements, the measurement interface, methodology, AI and approval gates, screens, security, stack, release plan, risks and open decisions |
 | [docs/MASTER_BRIEF.md](docs/MASTER_BRIEF.md) | The master brief the PRD is built from (version 0.1, 15 Oct 2026), unchanged |
 | [mocks/](mocks/README.md) | A clickable product mock: sign-in, first-run setup, connecting a first project, and an established workspace with example data |
+| [integrations/measure/](integrations/measure/README.md) | The Measurement Link integration pack for a solution's developer: the agent instruction, the contract test, OpenAPI, examples, signature test vectors and a Python signer. Generated parts come from antarax-api |
+| [docs/workshop/PHASE_0_DECISIONS.md](docs/workshop/PHASE_0_DECISIONS.md) | The fifteen open decisions for the design workshop, each with a recommendation, what backs it and what it blocks |
+| [docs/research/USABILITY_TEST_PLAN.md](docs/research/USABILITY_TEST_PLAN.md) | Five moderated sessions with REKA project managers on the mock: questions, tasks, script and analysis |
 
 ## Read in this order
 

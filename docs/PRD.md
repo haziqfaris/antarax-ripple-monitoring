@@ -1,6 +1,6 @@
 # Performance Intelligence: product requirements
 
-**Version 0.5, draft, 15 Oct 2026.** 0.2 added first use and onboarding (§8.12, §12.3) and the light AntaraX look (§12.1). 0.3 records the owner's decision to keep that look (D13), and adds the measure library (§10.6), your own measures (§8.13), Ask (§8.14, §11.4), standard analytics (§8.15) and the demo studio (§8.16). 0.4 records two more owner decisions: RM45 an hour for value of time freed (D15), and demo workspaces with Demo studio as a product feature in the MVP (D17, §8.16). 0.5 organises the console by client: one client list, one client page template, and client → project → solution throughout (§8.6, §12.2, §12.4). Working name throughout. Owner: Muhammad Haziq Faris (Founder). Status: for review at the next design workshop.
+**Version 0.5, draft, 15 Oct 2026.** 0.2 added first use and onboarding (§8.12, §12.3) and the light AntaraX look (§12.1). 0.3 records the owner's decision to keep that look (D13), and adds the measure library (§10.6), your own measures (§8.13), Ask (§8.14, §11.4), standard analytics (§8.15) and the demo studio (§8.16). 0.4 records two more owner decisions: RM45 an hour for value of time freed (D15), and demo workspaces with Demo studio as a product feature in the MVP (D17, §8.16). 0.5 organises the console by client: one client list, one client page template, and client → project → solution throughout (§8.6, §12.2, §12.4); it also renames organisation to client on screen and in this document. Working name throughout. Owner: Muhammad Haziq Faris (Founder). Status: for review at the next design workshop.
 
 | | |
 |---|---|
@@ -48,7 +48,7 @@ Performance Intelligence is one internal REKA console that:
 1. **connects** to every client solution through one small, read-only, versioned measurement interface, without changing how the solution is built;
 2. **collects** aggregated metrics on a schedule and keeps their provenance, freshness and quality;
 3. **computes** approved KPIs and impact against agreed baselines, deterministically;
-4. **shows** health, adoption, operational performance, business impact and (for REKA only) commercial performance, at solution, project, organisation and portfolio level;
+4. **shows** health, adoption, operational performance, business impact and (for REKA only) commercial performance, at solution, project, client and portfolio level;
 5. **uses AI** to propose KPIs, baselines, layouts and narratives, which a person approves before anything is published;
 6. **delivers** a reviewed report to the client, as a PDF first.
 
@@ -140,7 +140,7 @@ The brief lists platform admin, REKA operations, project manager, analyst and cl
 | Analyst | **Support** | **Measurement** | Plus: draft measurement plans, propose KPI and baseline changes, add notes, run a connection test |
 | REKA operations | **Operator** | | Plus: pause and resume collection, re-run a pull, rotate a solution's credential reference, acknowledge alerts |
 | Project manager | **Operator** | **Approve**, scoped to their projects | Plus: approve KPIs, baselines, formulas, rollup rules and client visibility; approve a report for delivery |
-| Platform admin | **Admin** | | Plus: organisations, staff rights, report templates, schedules, retention |
+| Platform admin | **Admin** | | Plus: clients, staff rights, report templates, schedules, retention |
 | Leadership | any | **Commercial** | See contract value, service cost, margin and renewal risk |
 | Owner | **Owner** | | Plus: delete data, platform secrets, the two-person approvals |
 | Client viewer | (not staff) | | Reads delivered reports, later an embed. Never signs in to the console |
@@ -148,7 +148,7 @@ The brief lists platform admin, REKA operations, project manager, analyst and cl
 Rules:
 
 - **R-ACC-1** Every role sees the same navigation. A control they cannot use stays visible and disabled with the role or right it needs ("Needs the Approve right") (AXLE §4.2).
-- **R-ACC-2** The **Approve** right is scoped to named projects or organisations. A person cannot approve a change they proposed (separation of duties); a second approver is required.
+- **R-ACC-2** The **Approve** right is scoped to named projects or clients. A person cannot approve a change they proposed (separation of duties); a second approver is required.
 - **R-ACC-3** **Commercial** figures are REKA-only. They never appear in a client report, embed, export or AI narrative meant for a client, whatever the role of the person generating it (brief §4, §11).
 - **R-ACC-4** Isolation is enforced in queries and authorisation, not only in the screen (brief §11). Every query carries the tenant; every row-level policy checks it.
 - **R-ACC-5** Nobody can raise or lower their own role or rights.
@@ -216,7 +216,7 @@ The brief says Frame may supply infrastructure monitoring. Today AX Frame does s
 
 ```mermaid
 flowchart TD
-  T[Tenant<br/><i>REKA today; a future AntaraX customer</i>] --> O[Organisation<br/><i>the client</i>]
+  T[Tenant<br/><i>REKA today; a future AntaraX customer</i>] --> O[Client<br/><i>a company REKA serves; organisation in the data model</i>]
   O --> P[Project<br/><i>an engagement with outcome objectives</i>]
   P --> S[Solution<br/><i>a deployed application or workflow</i>]
   S --> E[Environment<br/><i>production, staging</i>]
@@ -227,14 +227,16 @@ flowchart TD
   K --> B[Baseline<br/><i>with provenance</i>]
 ```
 
-A project may have several solutions; an organisation may have several projects; a solution may have several environments and versions.
+A project may have several solutions; a client may have several projects; a solution may have several environments and versions.
+
+**Client:** a company REKA serves. The brief and the data model call it an organisation (`organisation_id`); on screen and in this document it is always a client.
 
 ### 7.2 Entities
 
 | Entity | Key fields | Notes |
 |---|---|---|
 | **Tenant** | id, name, region, retention policy | `tenant` stays in code; never on screen (AXLE §12) |
-| **Organisation** | id, tenant, name, slug, time zone, industry, data agreement status, audience contacts | The client. On screen: "organisation" |
+| **Organisation** | id, tenant, name, slug, time zone, industry, data agreement status, audience contacts | The client. On screen and in this document: "client" |
 | **Project** | id, organisation, name, objectives, owner (staff), stage (planning · pilot · live · paused · closed), contract dates | Outcome objectives in words, linked to KPIs |
 | **Solution** | id, project, name, kind (document automation, triage, forecasting…), owner, stack note | |
 | **Environment** | id, solution, name, version, go-live date | Only `production` feeds client reports by default |
@@ -245,7 +247,7 @@ A project may have several solutions; an organisation may have several projects;
 | **Baseline** | id, KPI or metric, value, unit, period, method, sample size, source, evidence link, approved by | Never inferred silently |
 | **Measurement plan** | id, project, version, KPIs, status (draft · in review · approved · superseded) | |
 | **KPI** | id, name, business question, formula (versioned), unit, sources, baseline, window, owner, target, quality, exclusions, aggregation policy, audience, domain | All fields required by brief §8 |
-| **Aggregation rule** | KPI, rollup kind (additive · weighted ratio · distinct · non-additive), dedup key, overlap group | Governs organisation and portfolio rollups |
+| **Aggregation rule** | KPI, rollup kind (additive · weighted ratio · distinct · non-additive), dedup key, overlap group | Governs client and portfolio rollups |
 | **Report** | id, organisation, period, template, status (drafting · in review · approved · delivered), audience, PDF hash | |
 | **Recommendation** | id, scope, text, evidence refs, source (AI · staff), status | AI suggestions are recommendations until accepted |
 | **Approval** | id, subject (type, id, version), requested by, approver, decision, reason, at | Two-person where required |
@@ -258,7 +260,7 @@ A project may have several solutions; an organisation may have several projects;
 
 | On screen | In code and API | Never on screen |
 |---|---|---|
-| organisation | `organisation_id` (API), `tenant_id` for the REKA or AntaraX customer | tenant, client, company, organization |
+| client | `organisation_id` (API), `tenant_id` for the REKA or AntaraX customer | tenant, organisation, organization, company |
 | project | `project_id` | engagement |
 | solution | `solution_id` | app, deployment |
 | metric | `metric_key` | signal |
@@ -276,8 +278,8 @@ Priority: **MVP** is Phase 1; **P2**, **P3**, **P4** are later phases (§18). Ea
 
 | Id | Requirement | Priority |
 |---|---|---|
-| FR-REG-1 | Staff with Admin can create, edit and archive organisations, projects, solutions and environments. Every change is audited with a reason | MVP |
-| FR-REG-2 | An organisation records its data agreement: signed or not, date, scope, residency, retention, and who may receive reports. Collection cannot start until it is recorded as signed | MVP |
+| FR-REG-1 | Staff with Admin can create, edit and archive clients, projects, solutions and environments. Every change is audited with a reason | MVP |
+| FR-REG-2 | A client's record holds its data agreement: signed or not, date, scope, residency, retention, and who may receive reports. Collection cannot start until it is recorded as signed | MVP |
 | FR-REG-3 | A project records its outcome objectives in plain words and links each to one or more KPIs | MVP |
 | FR-REG-4 | A solution shows its readiness checklist (AXLE §8.2): agreement signed, integration connected, manifest valid, 3+ KPIs approved, baselines approved, report audience set | MVP |
 | FR-REG-5 | Stages: planning · pilot · live · paused · closed, with each change logged | MVP |
@@ -300,7 +302,7 @@ Priority: **MVP** is Phase 1; **P2**, **P3**, **P4** are later phases (§18). Ea
 
 | Id | Requirement | Priority |
 |---|---|---|
-| FR-COL-1 | Pulls run on a schedule per integration and per endpoint. Default daily for observations, every 15 minutes for health; configurable within the limits the organisation agreed | MVP |
+| FR-COL-1 | Pulls run on a schedule per integration and per endpoint. Default daily for observations, every 15 minutes for health; configurable within the limits the client agreed | MVP |
 | FR-COL-2 | Pulls are incremental from a stored checkpoint, follow cursors to the end, and write idempotently on (integration, metric, dimensions, period) | MVP |
 | FR-COL-3 | Retries back off on 429 and 5xx, honour `Retry-After`, and give up after a set budget, recording why | MVP |
 | FR-COL-4 | Every pull records: started, finished, status, records read, records rejected and why, duration, request ids | MVP |
@@ -331,24 +333,24 @@ Priority: **MVP** is Phase 1; **P2**, **P3**, **P4** are later phases (§18). Ea
 | FR-CMP-2 | Each computed value stores its inputs (observation ids or aggregates), formula version, baseline version, quality and computed-at time | MVP |
 | FR-CMP-3 | Quality propagates: a value is only as good as its weakest input. Measured × estimated = estimated | MVP |
 | FR-CMP-4 | Impact is shown as parts, never one bare number: measured volume, observed machine time, sampled human time, modelled saving, and the assumption range (brief §8) | MVP |
-| FR-CMP-5 | Rollups follow each KPI's aggregation rule (§10.4). A KPI with no rule does not roll up and shows "Not rolled up: no rule approved" at organisation and portfolio level | MVP |
+| FR-CMP-5 | Rollups follow each KPI's aggregation rule (§10.4). A KPI with no rule does not roll up and shows "Not rolled up: no rule approved" at client and portfolio level | MVP |
 | FR-CMP-6 | Missing periods are gaps, never zeros, in charts and sums. A sum over a range with gaps says how many periods are missing | MVP |
 
 ### 8.6 Dashboards
 
 All four levels share one widget library and are configured, not coded (brief §2, §6 L6).
 
-**Organised by client.** REKA staff think in clients, so the console does too. Every screen follows one path: client (an organisation in the data model) → project → solution. On screen, organisations are called **clients**. The same client model and the same page template serve the real workspace, demo workspaces and the example workspace, so a client looks the same wherever it appears.
+**Organised by client.** REKA staff think in clients, so the console does too. Every screen follows one path: client (an organisation in the data model, §7.1) → project → solution. The same client model and the same page template serve the real workspace, demo workspaces and the example workspace, so a client looks the same wherever it appears.
 
 | Id | Requirement | Priority |
 |---|---|---|
-| FR-DSH-1 | **Portfolio** (REKA): what needs a person; collection status; organisations at a glance (projects, solutions, KPI coverage, freshness, outcome trend, renewal); outcome trend; instrumentation gaps; commercial summary for those with the right | MVP |
-| FR-DSH-2 | **Client page** (organisation): one template with tabs. **Overview**: what needs you for this client; hours saved, value of time freed, work handled and time agreed (or quality), each with change against the period before; hours saved by project, one line per project; executive narrative (AI draft, approved); projects table (solutions with status, hours saved, work handled, change, 12-week trend, report status); contract and agreement (REKA only). **Projects**: each project's outcome in the client's words and its solutions. **Reports**: each project's cadence and next report. **Activity**: audit entries for this client (REKA only). Totals are deduplicated across projects | MVP |
+| FR-DSH-1 | **Portfolio** (REKA): what needs a person; collection status; clients at a glance (projects, solutions, KPI coverage, freshness, outcome trend, renewal); outcome trend; instrumentation gaps; commercial summary for those with the right | MVP |
+| FR-DSH-2 | **Client page**: one template with tabs. **Overview**: what needs you for this client; hours saved, value of time freed, work handled and time agreed (or quality), each with change against the period before; hours saved by project, one line per project; executive narrative (AI draft, approved); projects table (solutions with status, hours saved, work handled, change, 12-week trend, report status); contract and agreement (REKA only). **Projects**: each project's outcome in the client's words and its solutions. **Reports**: each project's cadence and next report. **Activity**: audit entries for this client (REKA only). Totals are deduplicated across projects | MVP |
 | FR-DSH-3 | **Project**: objectives and the KPIs that answer them; contributing solutions; baseline comparison; exceptions; improvement backlog | MVP |
 | FR-DSH-4 | **Solution**: outcomes, usage, technical health, operational KPIs, metric catalog, collection diagnostics, trend detail | MVP |
 | FR-DSH-5 | Every figure shows its quality tag and its freshness on hover or tap: "Measured · from Document workflow · updated 14:00 MYT" | MVP |
-| FR-DSH-6 | Range picker: 7 days, 30 days (default for outcomes), 90 days, 12 months, quarter to date, choose dates. The range and organisation scope live in the address | MVP |
-| FR-DSH-7 | **Audience preview**: on organisation and solution pages, staff can switch to "As the client sees it", which hides commercial figures, unapproved KPIs and internal notes | MVP |
+| FR-DSH-6 | Range picker: 7 days, 30 days (default for outcomes), 90 days, 12 months, quarter to date, choose dates. The range and client scope live in the address | MVP |
+| FR-DSH-7 | **Audience preview**: on client and solution pages, staff can switch to "As the client sees it", which hides commercial figures, unapproved KPIs and internal notes | MVP |
 | FR-DSH-8 | Widget kinds in the MVP: figure tile, KPI card (current, baseline, target, quality), trend line (with baseline line and gaps), impact breakdown bar, status strip, attention list, table, freshness chip, narrative block | MVP |
 | FR-DSH-9 | Dashboard layout per solution is a saved configuration (JSON), proposed by AI or staff, approved like a KPI | P2 |
 | FR-DSH-10 | **Client list**: every client with its projects (a status dot per solution), hours saved and value, change, 12-week trend, next report, fee (commercial right only) and renewal. Headline figures: clients (live and getting started), clients that need you, hours saved and value across clients | MVP |
@@ -366,7 +368,7 @@ Detailed in [§11](#11-ai-assistance-and-approval-gates).
 |---|---|---|
 | FR-AI-1 | Given a validated manifest and samples, AI proposes KPIs, formulas, baselines needed, visualisations and gaps, each with the reasoning and the metrics it uses | MVP |
 | FR-AI-2 | Every proposal is a draft. Staff accept, edit or reject each one; nothing AI proposes computes or displays until approved | MVP |
-| FR-AI-3 | AI drafts the period narrative for a report and the organisation page, citing the KPI values and periods it uses. Every number in the narrative must match a computed value, checked by code before display | MVP |
+| FR-AI-3 | AI drafts the period narrative for a report and the client page, citing the KPI values and periods it uses. Every number in the narrative must match a computed value, checked by code before display | MVP |
 | FR-AI-4 | AI flags anomalies and suggests next improvements as recommendations, never as changes | P2 |
 | FR-AI-5 | AI never claims causation from correlation, never states a figure not computed, and never includes commercial data in a client-audience draft (checked by code) | MVP |
 
@@ -384,14 +386,15 @@ Detailed in [§11](#11-ai-assistance-and-approval-gates).
 
 | Id | Requirement | Priority |
 |---|---|---|
-| FR-RPT-1 | A report template per organisation: period (month or quarter), sections, audience, branding | MVP |
+| FR-RPT-1 | A report template per client: period (month or quarter), sections, audience, branding | MVP |
 | FR-RPT-2 | At period end the system drafts the report: headline outcomes, what changed, evidence per figure, caveats, recommended next actions, data quality notes | MVP |
 | FR-RPT-3 | A person reviews and approves before delivery. The approved version is frozen as a PDF with a hash, and the delivery is logged | MVP |
-| FR-RPT-4 | Reports follow brand kit 13: cover "Generated 15 Oct 2026, 14:30 MYT", footer credit line · page n of m · legal line, file name `outcomes-report-<organisation>-<YYYY-MM-DD>.pdf` | MVP |
+| FR-RPT-4 | Reports follow brand kit 13: cover "Generated 15 Oct 2026, 14:30 MYT", footer credit line · page n of m · legal line, file name `outcomes-report-<client>-<YYYY-MM-DD>.pdf` | MVP |
 | FR-RPT-5 | Estimates are labelled in the report, and every figure has a footnote to its source, quality and baseline | MVP |
 | FR-RPT-6 | Scheduled delivery by e-mail to the agreed audience, with the PDF attached and no figures in the e-mail body | P2 |
 | FR-RPT-7 | Restricted share link to a read-only web version, expiring | P3 |
 | FR-RPT-8 | Read-only API and embeddable widgets for a client's own dashboard, limited to approved, client-visible KPIs | P3 |
+| FR-RPT-9 | The Reports page lists every report with its client and filters to one client. A client page's Reports tab links to that client's reports | MVP |
 
 ### 8.10 Alerts
 
@@ -408,7 +411,7 @@ Detailed in [§11](#11-ai-assistance-and-approval-gates).
 | FR-ADM-1 | Staff, roles and rights, as AXLE §8.3. Staff are never listed as client people | MVP |
 | FR-ADM-2 | Schedules, retention, report templates, units list, cardinality limits | MVP |
 | FR-ADM-3 | Audit page per AXLE §8.5: one row per action, filterable, never editable. Collector and AI actions appear as the service ("Collector paused Contoh Logistik: 3 failures") | MVP |
-| FR-ADM-4 | Find (⌘K) over organisations, projects, solutions, KPIs, metrics and pages | P2 |
+| FR-ADM-4 | Find (⌘K) over clients, projects, solutions, KPIs, metrics and pages | P2 |
 
 ### 8.12 First use and onboarding
 
@@ -416,7 +419,7 @@ Detailed in [§11](#11-ai-assistance-and-approval-gates).
 |---|---|---|
 | FR-ONB-1 | A new workspace opens on a getting-started checklist that shows progress and the one next step, until the first report is scheduled | MVP |
 | FR-ONB-2 | Welcome asks only for workspace name, time zone and optional invites, then offers "Connect my first project" or "Explore with example data" | MVP |
-| FR-ONB-3 | The example workspace is clearly labelled "Example data" on every screen and never mixes with real organisations, audit or reports | MVP |
+| FR-ONB-3 | The example workspace is clearly labelled "Example data" on every screen and never mixes with real clients, audit or reports | MVP |
 | FR-ONB-4 | The connect flow gives the developer a copyable brief that matches the integration pack, and does not move on until the person confirms the link is in place | MVP |
 | FR-ONB-5 | The project's kind of work steers which KPIs AI suggests; every suggestion explains why it matters and how it is worked out, in plain words | MVP |
 | FR-ONB-6 | The baseline is captured inside the connect flow, with "not available yet" as an honest option that blocks only the impact KPI | MVP |
@@ -481,6 +484,8 @@ Detailed in [§11](#11-ai-assistance-and-approval-gates).
 
 The brief's L2 contract, written to the AntaraX API framework (`antarax-api` docs 03, 04 and 07) so a REKA-built solution and an AntaraX product speak the same way. Working name **Measurement Link**, by analogy with AXLE Link.
 
+**Status: written and tested, proposed.** The full contract is `antarax-api` [docs/14-measurement-link.md](https://github.com/haziqfaris/antarax-api/blob/claude/practical-thompson-qsu01b/docs/14-measurement-link.md), with [decision 0013](https://github.com/haziqfaris/antarax-api/blob/claude/practical-thompson-qsu01b/docs/decisions/0013-measurement-link.md) (proposed). The kit, the checks and the contract test are in `antarax-api` `packages/lapisan-core/src/measure`. The integration pack built from them is [`integrations/measure/`](../integrations/measure/README.md) in this repository. Where this section and docs/14 differ, docs/14 wins. Signing it off closes D3 and D4.
+
 ### 9.1 Shape
 
 - **Read-only.** Every endpoint is `GET`. Nothing the platform calls changes the solution.
@@ -543,58 +548,63 @@ Changes from the brief's sample: `period_start` and `period_end` are in UTC (`Z`
 
 ### 9.4 Metric types and units
 
-| Type | Meaning | Rolls up by |
-|---|---|---|
-| `counter` | A count of events in the period | sum |
-| `gauge` | A level at the period end (queue depth) | last, or mean over time |
-| `duration` | Time per item; must declare `aggregation` (mean, median, p90) and ideally ship `count` and `sum` so it can be re-weighted | weighted from sum and count |
-| `ratio` | Must ship numerator and denominator metrics, not only the ratio | recomputed from parts |
-| `distinct` | A unique count; must declare its identity (`operator`, `customer`) | not summable; dedup by identity only if the source supplies a sketch |
-| `money` | Amount with currency | sum within currency, never converted |
+| Type | Meaning | Must also say | Rolls up by |
+|---|---|---|---|
+| `counter` | A count of events in the day | | Sum |
+| `gauge` | A level (queue depth) | `aggregation`: `last` or `mean` | Last, or mean over time |
+| `duration` | Time per item | `aggregation`: `mean`, `median` or `p90`; a time unit. Observations carry `count` and `sum` so it can be re-weighted | Weighted from sum and count |
+| `ratio` | A share | `numerator` and `denominator`: counters in the same catalog | Recomputed from the parts |
+| `distinct` | A unique count | `identity`: what is counted once (`operator`) | Not summable |
+| `money` | An amount | Unit is the ISO 4217 code; value a string with the currency's decimals | Sum within currency, never converted |
 
-Units come from a fixed list (`document`, `item`, `request`, `run`, `second`, `minute`, `hour`, `percent`, `MYR`, `USD` …) or are namespaced (`x.batch`). Dimensions are limited to 20 values each by default (configurable), so dashboards stay readable and nobody slips identifiers in as dimensions.
+Units come from a fixed list (`item`, `document`, `page`, `request`, `run`, `message`, `task`, `person`, `second`, `minute`, `hour`, `day`, `percent`, `byte`) or are namespaced (`x.batch`). At most 200 metrics per solution, five dimensions per metric, and 20 values per dimension in a window. Dimension values are short lower-case codes (`invoice`), and anything that looks like an email address, phone number, identity card or account number is refused, so nobody slips identifiers in as dimensions. Every metric sends the day's total (`dimensions: {}`) as well as its splits. Days are served once finished; a missing day is left out, never sent as zero.
 
 ### 9.5 Authentication
 
-The brief proposed OAuth2 client credentials or scoped service tokens. The AntaraX API framework does not use OAuth2 (antarax-api decision 0010) and signs service-to-service calls with an `ax_svc_` key and an HMAC signature (`AntaraX-Service`, `AntaraX-Timestamp`, `AntaraX-Service-Signature`, rejected after 5 minutes; `packages/lapisan-core/src/link/`). Proposal:
+The brief proposed OAuth2 client credentials or scoped service tokens. The AntaraX API framework does not use OAuth2 (antarax-api decision 0010). Proposal (antarax-api decision 0013):
+
+- **Signed exactly as AXLE Link** (`AntaraX-Service`, `AntaraX-Timestamp`, `AntaraX-Service-Signature: v1=<HMAC-SHA256>` over the timestamp, method, path with query, and body hash; refused after five minutes), with `AntaraX-Service: measure`.
+- **Keyed per integration**, not per product: a new key kind, `ax_msr_` and 32 characters. Outcomes makes one when a solution is connected and keeps it sealed; the developer sets it on the solution as `AX_MEASURE_KEY`. Most measured solutions are client systems that will never be AntaraX products, and one shared key would let one leak open every client.
+- **Rotation without a gap** (`AX_MEASURE_KEY_NEXT` accepted alongside), revocation at either end, nothing logged, never in a URL.
 
 | Solution | Auth | Why |
 |---|---|---|
-| REKA-built, TypeScript | AXLE Link signing, using the link kit's verifier | Already written, tested, and replay-safe |
-| REKA-built, other languages | The same signature, from the reference implementation in the integration pack (a 30-line function, with test vectors) | One scheme |
+| REKA-built, TypeScript | The kit in the integration pack, which checks signatures itself | Written and tested once |
+| REKA-built, other languages | The same signature, from the pack's test vectors (a Python reference is in the pack) | One scheme |
 | Third-party that cannot sign | A scoped, read-only bearer token over TLS, IP allow-list where possible | Lowest bar, marked as such on the integration |
 | A client whose IT requires OAuth2 | OAuth2 client credentials, as an exception, recorded on the integration | Only on request |
 
-Either way: TLS only; credentials stored as references in the secret manager; one credential per integration; rotation without downtime (two valid at once); revocation at both ends; nothing logged. See D4.
-
 ### 9.6 Errors
+
+No new codes: the interface answers with codes the antarax-api registry already has.
 
 | Code | Status | When |
 |---|---|---|
-| `invalid_request` | 400 | Bad or unknown parameter |
-| `invalid_signature` | 401 | Signature missing, wrong or old |
-| `range_too_large` | 422 | More than 92 days asked |
-| `metric_unknown` | 404 | `metric=` names no metric |
+| `invalid_request` | 422 | A parameter is wrong, missing or unknown; more than 92 days; a metric not in the catalog |
+| `invalid_cursor` | 400 | A cursor this list did not give out for this question |
+| `invalid_signature` | 401 | Signature missing, wrong or more than five minutes off |
+| `not_found` | 404 | Not configured, switched off, wrong path, or `/baselines` when not offered |
 | `rate_limited` | 429 | With `Retry-After` |
-| `not_ready` | 503 | Aggregates for the period are not computed yet |
-
-New codes are registered in `registry/registry.json` (layer `link`) before use, as antarax-api AGENTS rule 2 requires.
+| `unavailable` | 503 | The day's figures are not computed yet, with `Retry-After` |
+| `internal` | 500 | Anything else, including figures the kit refused to serve because they broke the contract |
 
 ### 9.7 Contract tests and the integration pack
 
-The brief's integration pack (§12) becomes `integrations/measure/` in this repository (P1):
+Built. [`integrations/measure/`](../integrations/measure/README.md) in this repository holds:
 
-- `CLAUDE_CODE_INTEGRATION.md`: the reusable instruction (brief §13), plus the conventions above.
-- `measurement-manifest.schema.json` and `openapi.yaml`.
-- `example-manifest.json`, `example-observations.json`.
-- `contract-test`: a CLI the client runs locally or in CI against its own interface: validates the manifest, every metric, a sample window, pagination, errors, time zones, the personal-data check and the signature. The central validator runs the same checks.
+- `README.md` and `CLAUDE_CODE_INTEGRATION.md`: the instruction for a developer and their coding agent (brief §13).
+- `contract-test/`: the CLI a developer runs against their own interface before handing over (`AX_MEASURE_KEY=… node contract-test/cli.mjs --base https://…/internal/measure/v1`; `--example` shows a passing run). It checks the door (unsigned, stale and foreign calls refused), the manifest and every metric, seven finished days of observations (shape, time-zone bounds, totals, order, repeats, dimension limits), paging and cursors, the refusals above, health, baselines, the OpenAPI document, 404 elsewhere, no personal data, and that every answer is uncached JSON with a request id. Outcomes runs the same checks when an integration is connected, and nightly.
+- `openapi.json`, `examples/` (real answers from the kit serving an invented example solution) and `test-vectors.json`.
+- `reference/python/measure_sign.py`: the signature for solutions not written in TypeScript, checked against the vectors.
+
+The generated parts are built from `antarax-api` (`npm run measure:pack`), so the pack cannot drift from the kit.
 
 ### 9.8 Differences from the brief
 
 | Brief | This PRD | Reason |
 |---|---|---|
 | `/reka-observe/v1` | `/internal/measure/v1` (working) | One-word ids (`^[a-z]+$`); "internal" matches AXLE Link; REKA name avoided so it can graduate |
-| OAuth2 client credentials | `ax_svc_` + HMAC signing, OAuth2 as an exception | House pattern; link kit exists |
+| OAuth2 client credentials | AXLE Link's HMAC signing with a per-integration `ax_msr_` key; OAuth2 as an exception | House pattern; one key per client, not one for all |
 | Local offsets in `period_start` | UTC with `Z`, local date and zone alongside | antarax-api 03 moments rule |
 | `cursor` pagination | Same, with the house list shape and `next` | antarax-api 03 |
 | Frame for infrastructure monitoring | Solution `health` and AXLE Link for health; Frame for run cost | What Frame does today |
@@ -635,7 +645,7 @@ Rules applied: machine time is never counted as human time saved; the range come
 
 ### 10.4 Rollups
 
-| KPI kind | Rule at organisation and portfolio level |
+| KPI kind | Rule at client and portfolio level |
 |---|---|
 | Additive, non-overlapping (documents processed, hours saved in separate workflows) | Sum |
 | Overlapping outcomes (two solutions touching the same workflow) | Must declare an **overlap group**; only one counts, or a declared share. Without a rule: not rolled up |
@@ -684,7 +694,7 @@ The brief's ten steps, with the gate at each:
 | # | Step | Who | Gate |
 |---|---|---|---|
 | 1 | Generate manifest and instrumentation in the solution | Client engineer with Claude Code or Codex and the integration pack | Contract tests pass |
-| 2 | Create organisation, project, solution | Staff (Admin) | Data agreement recorded |
+| 2 | Create client, project, solution | Staff (Admin) | Data agreement recorded |
 | 3 | Add integration; validate credentials; discover | Collector | Test connection passes |
 | 4 | Validate schema, units, privacy, samples | Validator (code) | No failing metric feeds a KPI |
 | 5 | Propose KPIs, baselines, visualisations, gaps | AI | Proposals are drafts |
@@ -719,7 +729,7 @@ Ask is the place where AI answers questions, so it carries the strictest rules:
 
 1. **The model never produces a number.** It chooses which measure, projects and period the question is about, and calls the compute service (the same functions dashboards use) for the values. It only writes the sentences around them.
 2. **Number check.** Before an answer is shown, every number in it is matched against the values the compute service returned. An unmatched number blocks the answer.
-3. **Scope check.** The tools the model can call only return organisations and measures the person may see. Commercial measures are not offered to people without the right.
+3. **Scope check.** The tools the model can call only return clients and measures the person may see. Commercial measures are not offered to people without the right.
 4. **No causation.** "Why" answers list what moved at the same time and say it isn't proof of cause. A lint rejects causal phrases ("because of", "caused", "thanks to").
 5. **Honest refusals.** Out-of-scope questions get "I can only answer from the figures Outcomes collects" and suggestions.
 6. **Untrusted text.** Project names, labels and anything from a solution are passed as data, never instructions (§11.3).
@@ -739,7 +749,7 @@ The mock answers with fixed rules over the same calculations as the dashboards, 
 - Poppins for the interface, JetBrains Mono for every number.
 - The AI sparkle beside every AI suggestion and draft, never a spinner.
 - Dark mode uses the brand's product navy (`#071233`, raised `#0C1B47`) and the dark chart steps. Light, dark or system, chosen in the profile menu.
-- Shell: 248px sidebar (AntaraX A, product name, a "New" button, Home, Organisations, Analytics, Ask, Approvals, Reports, Settings, Help, the workspace card at the foot); 60px top bar with search (⌘K), Ask, notifications and the profile menu.
+- Shell: 248px sidebar (AntaraX A, product name, a "New" button, Home, Clients, Analytics, Ask, Approvals, Reports, Settings, Help, the workspace card at the foot); 60px top bar with search (⌘K), Ask, notifications and the profile menu.
 - Phones: the sidebar becomes a drawer below 1024px; figures go two across; tables scroll in their own box; 44px targets.
 
 What it keeps from AXLE: attention first, never a false zero, read wide and change narrow, a reason and a trail for every change, gate messages that say which right is missing. What it drops: the dark-only rule, orange, and the "AXLE" name on screen. Whether other staff consoles follow is a separate question for the AXLE standard (D14).
@@ -755,7 +765,7 @@ Client output (report, later embed) uses the same light treatment, with the REKA
 | **Analytics** | Any measure over time for all clients, one client or one solution; by client or by solution, and by weekday; against the period before (§8.15) |
 | **Ask** | Questions about the data in plain words (§8.14) |
 | **Approvals** | KPIs, baselines, mappings, client visibility and reports waiting for a second person. Counter is blue when one is yours |
-| **Reports** | Scheduled, drafted, approved and sent reports |
+| **Reports** | Scheduled, drafted, approved and sent reports, for all clients or one (FR-RPT-9) |
 | **Settings** | Team and rights, collection schedule, audit trail, integration pack |
 | **Help** | What measured, derived and estimated mean; never a false zero; support address |
 | **New** | Client, project, or connect a solution, from anywhere |
@@ -768,8 +778,8 @@ A new workspace must lead a person from sign-in to a measured project without re
 |---|---|---|
 | 1 | Sign in | REKA account (SSO) or an e-mailed link; two-step sign-in on |
 | 2 | Welcome, 3 short steps | Workspace name and time zone; invite the team with roles; choose "Connect my first project" or "Explore with example data" |
-| 3 | Home: getting started | A seven-step checklist with progress: workspace, organisation, project, connect, approval, first data, report. Each step has one button |
-| 4 | Add an organisation | Name, industry, time zone, contact, and the data agreement. Nothing is collected until it is recorded as signed |
+| 3 | Home: getting started | A seven-step checklist with progress: workspace, client, project, connect, approval, first data, report. Each step has one button |
+| 4 | Add a client | Name, industry, time zone, contact, and the data agreement. Nothing is collected until it is recorded as signed |
 | 5 | Create a project | Name, the kind of work (documents, triage, planning, other: it steers the KPI suggestions), the outcome in the client's words, go-live, owner, report cadence |
 | 6 | Connect a solution, 8 steps | Solution; how it shares data (measurement link, AntaraX product via AXLE, spreadsheet); a copyable brief for the developer (works with Claude Code or Codex); connect and live test; check each figure in plain words (ready, note, held back for privacy); AI-suggested KPIs to keep or drop; the baseline (timed sample, past records, client estimate, or not available); review and send |
 | 7 | Solution page | A progress strip (connected, approved, first data, report). Waiting for approval, then waiting for the first nightly collection (with "Collect now" for operators), then the first KPIs and trend |
@@ -781,19 +791,22 @@ A new workspace must lead a person from sign-in to a measured project without re
 |---|---|---|
 | Sign in and welcome | `#signin`, `#welcome` | A product someone can start using on their own |
 | Home, first use | `#home` (fresh workspace) | The checklist drives the whole setup |
-| Add organisation, create project | `#new-organisation`, `#new-project` | Plain forms; the data agreement gate |
+| Add client, create project | `#new-client`, `#new-project` | Plain forms; the data agreement gate |
 | Connect a solution | `#connect` | The full guided connection, with the baseline captured up front |
 | Your solution | `#sim-…` | Waiting states, then first figures computed from the baseline you typed |
 | Home, established | `#home` (example workspace) | Hours saved with range, what needs you, client cards, needs you first |
-| Client list | `#organisations` | Every client on one screen; filter, search, sort; needs you counted per client; fees gated by right |
-| Client | `#organisation-contoh-logistik`, or a client in your own or a demo workspace | One template everywhere; tabs; hours saved by project; deduplicated totals explained; AI summary with approval; Ask about this client; team view and client view; fees gated by right |
+| Client list | `#clients` | Every client on one screen; filter, search, sort; needs you counted per client; fees gated by right |
+| Client | `#client-contoh-logistik`; the same `#client-…` address for a client in your own or a demo workspace | One template everywhere; tabs; hours saved by project; deduplicated totals explained; AI summary with approval; Ask about this client; team view and client view; fees gated by right |
 | Solution | `#solution-doc-workflow` | Where the time goes (measured vs estimated); usage, health, data and connection; late and not answering states |
 | Approvals | `#approvals` | Separation of duties; reason required; undo |
+| Reports | `#reports` | Every report with its client; filter to one client, or open it from a client's Reports tab |
 | Client report | `#report` | The reviewed PDF: outcomes, evidence, caveats, next steps |
 | Measures | a solution, Measures tab | The 13-measure library in five domains; add your own with a live preview; commercial gated |
 | Analytics | `#analytics` | Trend against the period before, by client or solution, by weekday; scope to one client; fair-comparison guard |
 | Ask | `#ask` | Grounded answers with sources, inline charts and tables, honest refusals |
 | Demo workspace and Demo studio | workspace switcher, then "Demo studio" | A separate simulated workspace with its banner; simulate projects, move the date, cause problems; the 23-step guided demo |
+
+The older addresses `#organisations`, `#organisation-…`, `#org-…` and `#new-organisation` still work: they redirect to `#clients`, `#client-…` and `#new-client`, so saved links don't break.
 
 ### 12.5 States
 
@@ -813,35 +826,35 @@ From AXLE §10, applied:
 
 ### 12.6 Words and formats
 
-From AXLE §12 and brand kit 13: organisation, member, staff; Sign in; `RM1,200` and `US$45`, grouped by currency; `15 Oct 2026` and `14:30 MYT`; British spelling; sentence case; numbers in JetBrains Mono; "Estimated" and "Measured", never "approx."; no "Oops".
+From AXLE §12 and brand kit 13: client (AXLE's organisation, §7.3), member, staff; Sign in; `RM1,200` and `US$45`, grouped by currency; `15 Oct 2026` and `14:30 MYT`; British spelling; sentence case; numbers in JetBrains Mono; "Estimated" and "Measured", never "approx."; no "Oops".
 
 ## 13 Non-functional requirements
 
 | Id | Area | Requirement |
 |---|---|---|
-| NFR-1 | Performance | Dashboards render from precomputed values; first meaningful paint under 2 s on a 4G phone for the portfolio with 50 organisations |
-| NFR-2 | Scale (MVP) | 50 organisations, 200 solutions, 5,000 metrics, 10 million observations, without a time-series database. Revisit at 10× |
+| NFR-1 | Performance | Dashboards render from precomputed values; first meaningful paint under 2 s on a 4G phone for the portfolio with 50 clients |
+| NFR-2 | Scale (MVP) | 50 clients, 200 solutions, 5,000 metrics, 10 million observations, without a time-series database. Revisit at 10× |
 | NFR-3 | Collection | 95% of scheduled pulls complete within their window; a single slow source cannot delay others (one queue per integration) |
 | NFR-4 | Availability | The console is a staff tool: 99.5% monthly in working hours. Collection catches up after an outage without loss, using checkpoints |
-| NFR-5 | Accessibility | WCAG 2.2 AA on the dark palette (AXLE §14); axe check in CI on Portfolio, Organisation, Solution and Approvals; charts have a table view |
+| NFR-5 | Accessibility | WCAG 2.2 AA on the dark palette (AXLE §14); axe check in CI on Portfolio, Client, Solution and Approvals; charts have a table view |
 | NFR-6 | Phones | Works at 390px, per AXLE §13 |
-| NFR-7 | Time | Store UTC; show the organisation's time zone on its pages and MYT on portfolio pages, with the zone written |
+| NFR-7 | Time | Store UTC; show the client's time zone on its pages and MYT on portfolio pages, with the zone written |
 | NFR-8 | Observability of itself | Collector runs, AI calls (count, latency, cost), computation runs and report generation are logged and visible on Collection health |
 | NFR-9 | Reproducibility | Any published figure can be recomputed from stored inputs and its formula and baseline versions, with the same result |
 | NFR-10 | Internationalisation | British English UI; numbers and money per brand kit 13; Bahasa Malaysia for client reports is P3 |
 
 ## 14 Security, privacy and governance
 
-- **Agreement first.** No collection before the organisation's data agreement is recorded (FR-REG-2): what is collected, why, residency, retention, who receives reports.
+- **Agreement first.** No collection before the client's data agreement is recorded (FR-REG-2): what is collected, why, residency, retention, who receives reports.
 - **Personal Data Protection Act 2010 (Malaysia).** Aggregates only by design; personal data only with recorded authorisation and need; data stays in-region (Singapore, as every AntaraX product).
-- **Isolation.** Tenant and organisation enforced in every query by row-level security and in the service layer; tests prove one organisation's staff scope cannot read another's.
+- **Isolation.** Tenant and client (`tenant_id`, `organisation_id`) enforced in every query by row-level security and in the service layer; tests prove one client's staff scope cannot read another's.
 - **Least privilege.** Read-only credentials, one per integration; secrets in the secret manager, referenced by path; rotation and revocation; rate limits on our pulls.
 - **Encryption.** TLS 1.2+ in transit; encrypted at rest; PDFs hashed.
 - **Audit.** Every staff, collector and AI action recorded with before and after; append-only; exportable.
 - **Commercial separation.** Commercial data is in separate tables, readable only with the Commercial right, never in client-audience inputs to AI, reports, exports or embeds. Tested.
 - **Prompt injection.** As §11.3.
 - **Incident response.** A failed isolation test, a leaked credential or a commercial figure in a client output is a P1 incident, with the steps written in the operations guide.
-- **Two-person rule** (AXLE §4.2) for deleting an organisation's data and for authorising personal-data metrics.
+- **Two-person rule** (AXLE §4.2) for deleting a client's data and for authorising personal-data metrics.
 - **Demo workspaces** are their own workspaces in the data model, with the same isolation as any other. Their collector reads only the simulator, and every outbound channel (e-mail, report delivery, share links, embeds) is switched off for them in the service layer, not only hidden in the screen.
 
 ## 15 Architecture and stack
@@ -893,7 +906,7 @@ Matching what AntaraX products already run (antarax-api 08):
 |---|---|
 | Language | TypeScript throughout; Web Crypto for signing (antarax-api AGENTS rule 8) |
 | Console | Next.js on Vercel (`sin1`), sharing the AXLE shell components once they exist |
-| Database | Supabase Postgres (Singapore), row-level security on tenant and organisation; partition `observations` by month |
+| Database | Supabase Postgres (Singapore), row-level security on `tenant_id` and `organisation_id`; partition `observations` by month |
 | Scheduling | `pg_cron` to enqueue; a queue table processed by a worker (Vercel cron or a Cloudflare Worker cron), one job per integration |
 | Secrets | Supabase Vault or the platform's secret manager; the console stores only references |
 | Signing | `@lapisan/core` link kit, vendored as products do |
@@ -906,15 +919,15 @@ Time-series storage (Timescale or ClickHouse) only if NFR-2 is outgrown.
 
 ### 15.3 Registry entries needed
 
-Before anything ships, a pull request to `antarax-api/registry/registry.json` adds (as AGENTS rule 2 requires): the product id (`outcomes`, working), the `measure` link layer error codes (§9.6), and id prefixes (§7.3). No customer-facing scopes or units in the MVP.
+Before anything ships, a pull request to `antarax-api/registry/registry.json` adds (as AGENTS rule 2 requires): the product id (`outcomes`, working) and id prefixes (§7.3). The Measurement Link needs no new error codes (§9.6); its key kind, `ax_msr_`, is already in the registry as proposed (antarax-api decision 0013). No customer-facing scopes or units in the MVP.
 
 ## 16 Data retention
 
 | Data | Kept | Then |
 |---|---|---|
 | Observations | 25 months at their grain | Reduced to monthly totals |
-| Computed KPI values | For the life of the contract plus 24 months | Deleted with the organisation unless agreed otherwise |
-| Manifests and metric definitions | Every version, for the life of the integration | Deleted with the organisation |
+| Computed KPI values | For the life of the contract plus 24 months | Deleted with the client unless agreed otherwise |
+| Manifests and metric definitions | Every version, for the life of the integration | Deleted with the client |
 | Delivered reports (PDF) | 7 years | Per the agreement |
 | Audit | 7 years | Append-only |
 | Collector run logs | 90 days | Daily totals |
@@ -943,7 +956,7 @@ These appear on the Collection health page for staff.
 | **0 Design and pilot selection** (1 to 2 weeks) | Pick two dissimilar REKA projects; interview process owners; record baseline availability; lock Measurement Link v1; data agreements drafted; decide D1 to D8 | Signed-off PRD, contract and pilot list |
 | **1 Internal MVP** | Registry; integration pack and contract tests; collector and validator; observations; KPI builder with approvals; compute; four dashboard levels; measure library and your own measures; analytics; Ask; one PDF report; alerts for collection; audit; roles and rights; demo workspaces with Demo studio and the simulator | Brief §15, all of it (below) |
 | **2 Reliability and automation** | Guided demo; rehearse a report; backfill; AXLE Link adapter; AI KPI discovery improvements; baseline quality checks; anomaly alerts; scheduled report e-mail; Find; dashboard layout as configuration; third-party adapter | Six solutions live; freshness target held 60 days |
-| **3 Client experience** | Share links; read-only API and embed for client dashboards; organisation rollup refinements; report feedback; Bahasa Malaysia reports | Two clients reading the embed |
+| **3 Client experience** | Share links; read-only API and embed for client dashboards; client rollup refinements; report feedback; Bahasa Malaysia reports | Two clients reading the embed |
 | **4 AntaraX graduation** | Third-party adapters; tenant self-service; packaging; billing; quotas; integrations catalogue; support; brand sheet | Graduation rule met (brand kit 01) |
 
 ### 18.1 MVP acceptance (brief §15)
@@ -954,7 +967,7 @@ These appear on the Collection health page for staff.
 | A2 | Each exposes a valid manifest and at least three useful metrics; both are pulled and normalised | Contract tests; collector run history |
 | A3 | An operator approves a KPI with baseline provenance and sees observed and estimated impact separately | Approvals flow end to end; solution page shows the breakdown |
 | A4 | The same widget library renders both projects by configuration alone | No project-specific UI code |
-| A5 | Organisation and portfolio views enforce isolation and avoid double counting | Isolation tests; rollup tests with an overlap group |
+| A5 | Client and portfolio views enforce isolation and avoid double counting | Isolation tests; rollup tests with an overlap group |
 | A6 | A monthly or quarterly report shows changes, evidence, caveats and next actions | Approved PDF for each pilot |
 | A7 | A disconnected or stale source shows its state, never a zero | Test: stop a pilot interface, watch the states |
 | A8 | Contract and authorisation tests pass; no secrets or unauthorised raw data in outputs | CI; a scan of reports, exports and logs |
@@ -981,8 +994,8 @@ The brief's §16, extended with points this review raised. Each needs the owner.
 |---|---|---|
 | D1 | **Name**, and its relation to Frame and AXLE. "Ripple" is a family name and cannot be the product name (brand kit 12); "AX Ripple" was a retired meaning | "Outcomes" as the AXLE area for the MVP; product name at graduation, recorded in the brand kit |
 | D2 | **Where it lives**: its own host now, inside AXLE Central later? | Yes: AXLE shell now, a group in Central when Central ships |
-| D3 | **Contract path and id**: `/internal/measure/v1` for REKA-built solutions; for AntaraX products, extend AXLE Link with `metrics` and `observations`? | Yes to both, registered in antarax-api |
-| D4 | **Authentication**: `ax_svc_` + HMAC by default, bearer token for third parties, OAuth2 only on request? | Yes |
+| D3 | **Contract path and id**: `/internal/measure/v1` for REKA-built solutions; for AntaraX products, extend AXLE Link with `metrics` and `observations`? | Yes to both. **Written and tested** as antarax-api docs/14, decision 0013 (proposed), with the kit and contract test |
+| D4 | **Authentication**: AXLE Link's HMAC signing with a per-integration `ax_msr_` key by default, bearer token for third parties, OAuth2 only on request? | Yes (decision 0013, proposed) |
 | D5 | **Data residency, contractual permissions, retention and publication approval** | Singapore; the retention table in §16; a template data agreement before Phase 1 |
 | D6 | **Frame**: authoritative for anything? | Run cost only, REKA-only, with agreement; health stays with the solution |
 | D7 | **Hosting and AI provider**, and costs after pilot volumes | §15.2; cost review at the end of Phase 1 |
@@ -996,6 +1009,7 @@ The brief's §16, extended with points this review raised. Each needs the owner.
 | D15 | **Value of time freed** | **Decided 15 Oct 2026: RM45 an hour for every client**, always shown as an estimate with the rate stated |
 | D16 | **Ask**: model, logging and retention of questions; whether clients ever get Ask | Current Claude model with tool calls; 90-day log; staff only in the MVP |
 | D17 | **Demo studio** | **Decided 15 Oct 2026: a product feature**, in separate demo workspaces, core in the MVP (§8.16) |
+| D18 | **Client or organisation**: screens and reports say "client" while the data model, the API and AXLE's vocabulary say "organisation". Keep it that way? | Yes: "client" on screen and in reports, `organisation` in the data model and API; propose "client" to AXLE as Outcomes' display word |
 
 ## 21 Appendices
 
@@ -1119,6 +1133,7 @@ The brief's §16, extended with points this review raised. Each needs the owner.
 
 | Term | Meaning |
 |---|---|
+| Client | A company REKA serves. The brief and the data model call it an organisation (`organisation_id`) |
 | AXLE | REKA's internal console standard for running products. Never shown to clients |
 | AXLE Central | One AXLE across all AntaraX products, planned at `axle.antarax.ai` |
 | AXLE Link | Signed internal endpoints each AntaraX product serves to Central |

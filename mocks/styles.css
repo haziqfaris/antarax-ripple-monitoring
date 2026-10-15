@@ -497,3 +497,10 @@ details.more > div { margin-top: 10px; }
   .client-table td:first-child { min-width: 180px; }
   .client-table .avatar { display: none; }
 }
+
+/* reports on phones: the client moves under the report name */
+.report-table .rt-co { display: none; }
+@media (max-width: 600px) {
+  .report-table .rt-client { display: none; }
+  .report-table .rt-co { display: block; }
+}

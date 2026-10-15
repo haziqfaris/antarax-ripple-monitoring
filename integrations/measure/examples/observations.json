@@ -1,0 +1,167 @@
+{
+  "object": "list",
+  "from": "2026-10-14",
+  "to": "2026-10-14",
+  "time_zone": "Asia/Kuala_Lumpur",
+  "data": [
+    {
+      "object": "observation",
+      "metric_key": "documents.correction_rate",
+      "period_start": "2026-10-13T16:00:00Z",
+      "period_end": "2026-10-14T16:00:00Z",
+      "local_period": "2026-10-14",
+      "value": 3.9,
+      "unit": "percent",
+      "dimensions": {},
+      "quality": "derived",
+      "source": "application_aggregate"
+    },
+    {
+      "object": "observation",
+      "metric_key": "documents.generated",
+      "period_start": "2026-10-13T16:00:00Z",
+      "period_end": "2026-10-14T16:00:00Z",
+      "local_period": "2026-10-14",
+      "value": 205,
+      "unit": "document",
+      "dimensions": {},
+      "quality": "measured",
+      "source": "application_aggregate"
+    },
+    {
+      "object": "observation",
+      "metric_key": "documents.generated",
+      "period_start": "2026-10-13T16:00:00Z",
+      "period_end": "2026-10-14T16:00:00Z",
+      "local_period": "2026-10-14",
+      "value": 16,
+      "unit": "document",
+      "dimensions": {
+        "document_type": "credit_note"
+      },
+      "quality": "measured",
+      "source": "application_aggregate"
+    },
+    {
+      "object": "observation",
+      "metric_key": "documents.generated",
+      "period_start": "2026-10-13T16:00:00Z",
+      "period_end": "2026-10-14T16:00:00Z",
+      "local_period": "2026-10-14",
+      "value": 62,
+      "unit": "document",
+      "dimensions": {
+        "document_type": "delivery_order"
+      },
+      "quality": "measured",
+      "source": "application_aggregate"
+    },
+    {
+      "object": "observation",
+      "metric_key": "documents.generated",
+      "period_start": "2026-10-13T16:00:00Z",
+      "period_end": "2026-10-14T16:00:00Z",
+      "local_period": "2026-10-14",
+      "value": 127,
+      "unit": "document",
+      "dimensions": {
+        "document_type": "invoice"
+      },
+      "quality": "measured",
+      "source": "application_aggregate"
+    },
+    {
+      "object": "observation",
+      "metric_key": "documents.generation_duration",
+      "period_start": "2026-10-13T16:00:00Z",
+      "period_end": "2026-10-14T16:00:00Z",
+      "local_period": "2026-10-14",
+      "value": 38.4,
+      "unit": "second",
+      "dimensions": {},
+      "count": 205,
+      "sum": 7872,
+      "quality": "measured",
+      "source": "application_aggregate"
+    },
+    {
+      "object": "observation",
+      "metric_key": "documents.returned_for_correction",
+      "period_start": "2026-10-13T16:00:00Z",
+      "period_end": "2026-10-14T16:00:00Z",
+      "local_period": "2026-10-14",
+      "value": 8,
+      "unit": "document",
+      "dimensions": {},
+      "quality": "measured",
+      "source": "application_aggregate"
+    },
+    {
+      "object": "observation",
+      "metric_key": "documents.returned_for_correction",
+      "period_start": "2026-10-13T16:00:00Z",
+      "period_end": "2026-10-14T16:00:00Z",
+      "local_period": "2026-10-14",
+      "value": 1,
+      "unit": "document",
+      "dimensions": {
+        "document_type": "credit_note"
+      },
+      "quality": "measured",
+      "source": "application_aggregate"
+    },
+    {
+      "object": "observation",
+      "metric_key": "documents.returned_for_correction",
+      "period_start": "2026-10-13T16:00:00Z",
+      "period_end": "2026-10-14T16:00:00Z",
+      "local_period": "2026-10-14",
+      "value": 2,
+      "unit": "document",
+      "dimensions": {
+        "document_type": "delivery_order"
+      },
+      "quality": "measured",
+      "source": "application_aggregate"
+    },
+    {
+      "object": "observation",
+      "metric_key": "documents.returned_for_correction",
+      "period_start": "2026-10-13T16:00:00Z",
+      "period_end": "2026-10-14T16:00:00Z",
+      "local_period": "2026-10-14",
+      "value": 5,
+      "unit": "document",
+      "dimensions": {
+        "document_type": "invoice"
+      },
+      "quality": "measured",
+      "source": "application_aggregate"
+    },
+    {
+      "object": "observation",
+      "metric_key": "operators.active",
+      "period_start": "2026-10-13T16:00:00Z",
+      "period_end": "2026-10-14T16:00:00Z",
+      "local_period": "2026-10-14",
+      "value": 12,
+      "unit": "person",
+      "dimensions": {},
+      "quality": "measured",
+      "source": "application_aggregate"
+    },
+    {
+      "object": "observation",
+      "metric_key": "runs.failed",
+      "period_start": "2026-10-13T16:00:00Z",
+      "period_end": "2026-10-14T16:00:00Z",
+      "local_period": "2026-10-14",
+      "value": 1,
+      "unit": "run",
+      "dimensions": {},
+      "quality": "measured",
+      "source": "application_aggregate"
+    }
+  ],
+  "next": null
+}

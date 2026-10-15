@@ -1,0 +1,7 @@
+{
+  "error": {
+    "code": "invalid_request",
+    "message": "At most 92 days in one read; ask in windows.",
+    "request_id": "req_EXAMPLE0000000000000"
+  }
+}

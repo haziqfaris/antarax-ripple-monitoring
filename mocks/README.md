@@ -45,16 +45,18 @@ In the demo workspace, the dashed **Demo studio** button in the top bar shows th
 | Where | What it shows |
 |---|---|
 | Home | First use: the seven-step checklist. Later: hours saved with likely range, what needs you (worked out from the data), and a card per client, those needing you first |
-| **Clients** | Every client in one list: filter (all, need you, live, getting started), search clients or projects, sort (needs you first, most hours saved, biggest improvement, A to Z). Each row shows its projects with a status dot per solution, hours saved and value at RM45, change, 12-week trend, next report, fee (commercial right only) and renewal. The sidebar keeps your three most recent clients |
-| A client | The same page in every workspace, with tabs: **Overview** (what needs you for this client, four figures with change, hours saved by project, the AI summary, projects table, contract and agreement), **Projects** (each project's outcome and its solutions), **Reports**, **Activity**. **Ask about** a client answers from that client's figures only. Team view and client view |
+| **Clients** (`#clients`) | Every client in one list: filter (all, need you, live, getting started), search clients or projects, sort (needs you first, most hours saved, biggest improvement, A to Z). Each row shows its projects with a status dot per solution, hours saved and value at RM45, change, 12-week trend, next report, fee (commercial right only) and renewal. The sidebar keeps your three most recent clients |
+| A client (`#client-…`) | The same page and address in every workspace, with tabs: **Overview** (what needs you for this client, four figures with change, hours saved by project, the AI summary, projects table, contract and agreement), **Projects** (each project's outcome and its solutions), **Reports** (with a link to all of that client's reports), **Activity**. **Ask about** a client answers from that client's figures only. Team view and client view |
 | Breadcrumbs | Clients › client › project › solution, on every solution and connection page |
 | A solution, **Measures** tab | 13 standard measures in five areas (health, usage, operations, impact, commercial), with change and 12-week trend. **Add a measure** builds your own with a live preview and sends it for approval |
 | **Analytics** | Any measure for all clients, one client or one solution, 30 days to 12 months: against the period before, by client or by solution, by weekday. Click a row to focus on it. Changes are only shown when the earlier period has enough data |
 | **Ask** | Questions in plain words, for example "How is Contoh Logistik doing this month?", "How many hours did we save in October?", "Why did Invoice reader change this week?", "Which project improved most this month?", "Compare all projects", "Show the trend of work handled". Answers cite their projects and period; unrelated questions get an honest "I can only answer from the figures" |
 | Approvals | KPIs and measures wait for someone other than the proposer. Switch to Aisyah Rahman in the profile menu to approve |
-| Reports | Drafted on the 1st once a month of data is in; open one to see the client PDF layout |
+| Reports | Every report with its client; show all clients or one. Drafted on the 1st once a month of data is in; open one to see the client PDF layout |
 | Profile menu | Switch person (rights change what you can do and see), light or dark, switch workspace |
 | Settings | Team and rights, collection, RM45 an hour for value of time freed, demo workspace rules, audit trail |
+
+Older addresses (`#organisations`, `#organisation-…`, `#org-…`, `#new-organisation`) redirect to the new ones.
 
 ## People in the mock
 

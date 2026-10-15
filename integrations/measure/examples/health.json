@@ -1,0 +1,14 @@
+{
+  "object": "health",
+  "status": "ok",
+  "checked_at": "2026-10-15T02:00:00Z",
+  "problems": [],
+  "freshness": {
+    "documents.generated": "2026-10-14",
+    "documents.returned_for_correction": "2026-10-14",
+    "documents.generation_duration": "2026-10-14",
+    "documents.correction_rate": "2026-10-14",
+    "operators.active": "2026-10-14",
+    "runs.failed": "2026-10-14"
+  }
+}

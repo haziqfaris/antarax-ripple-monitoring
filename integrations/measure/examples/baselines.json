@@ -1,0 +1,18 @@
+{
+  "object": "list",
+  "data": [
+    {
+      "object": "baseline",
+      "metric_key": "documents.generation_duration",
+      "value": 1260,
+      "method": "timed_sample",
+      "period_from": "2026-05-04",
+      "period_to": "2026-05-15",
+      "sample_size": 40,
+      "evidence": "Timed sample of 40 documents prepared by hand before go-live, signed by the accounts payable lead.",
+      "recorded_at": "2026-05-18T03:00:00Z",
+      "unit": "second"
+    }
+  ],
+  "next": null
+}

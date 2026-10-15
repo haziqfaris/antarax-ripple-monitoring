@@ -1,0 +1,70 @@
+{
+  "object": "list",
+  "data": [
+    {
+      "key": "documents.generated",
+      "label": "Documents generated",
+      "type": "counter",
+      "unit": "document",
+      "description": "Documents the workflow produced and sent on.",
+      "dimensions": [
+        "document_type"
+      ],
+      "privacy": "aggregate",
+      "since": "2026-06-01"
+    },
+    {
+      "key": "documents.returned_for_correction",
+      "label": "Returned for correction",
+      "type": "counter",
+      "unit": "document",
+      "description": "Documents a person sent back to be fixed.",
+      "dimensions": [
+        "document_type"
+      ],
+      "privacy": "aggregate",
+      "since": "2026-06-01"
+    },
+    {
+      "key": "documents.generation_duration",
+      "label": "Time to generate",
+      "type": "duration",
+      "unit": "second",
+      "aggregation": "mean",
+      "description": "Machine time to produce one document, from upload to ready.",
+      "privacy": "aggregate",
+      "since": "2026-06-01"
+    },
+    {
+      "key": "documents.correction_rate",
+      "label": "Correction rate",
+      "type": "ratio",
+      "unit": "percent",
+      "numerator": "documents.returned_for_correction",
+      "denominator": "documents.generated",
+      "description": "Share of documents returned for correction.",
+      "privacy": "aggregate",
+      "since": "2026-06-01"
+    },
+    {
+      "key": "operators.active",
+      "label": "People using it",
+      "type": "distinct",
+      "unit": "person",
+      "identity": "operator",
+      "description": "People who used the workflow that day, each counted once.",
+      "privacy": "aggregate",
+      "since": "2026-06-01"
+    },
+    {
+      "key": "runs.failed",
+      "label": "Failed runs",
+      "type": "counter",
+      "unit": "run",
+      "description": "Runs that stopped with an error and needed a person.",
+      "privacy": "aggregate",
+      "since": "2026-06-01"
+    }
+  ],
+  "next": null
+}
