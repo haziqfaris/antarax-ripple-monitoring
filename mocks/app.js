@@ -566,7 +566,7 @@
       r8Only: [['Measurement links', 'links', R.links.filter((l) => l.st !== 'ok').length, 'loud']],
     };
   }
-  const NAV_CUR = { 'new-organisation': 'organisations', 'new-project': 'organisations', connect: 'organisations', organisation: 'organisations', results: 'results', solution: 'results', sim: 'results', report: 'reports', guide: 'home' };
+  const NAV_CUR = { 'new-organisation': 'organisations', 'new-project': 'organisations', connect: 'organisations', screens: 'demo', organisation: 'organisations', results: 'results', solution: 'results', sim: 'results', report: 'reports', guide: 'home' };
   function navHtml(route) {
     const mode = axMode(route), N = navModel();
     const curKey = R8_ROUTES.test(route) ? route.replace(/-.+$/, '') : (NAV_CUR[route] || NAV_CUR[parse()[0]] || route);
@@ -870,7 +870,7 @@
                 <h4>Your account</h4><div style="display:flex;gap:10px;align-items:center;padding:6px 10px 8px"><span class="avatar">${u.initials}</span><span style="flex:1;min-width:0"><b class="ink">${esc(u.name)}</b><small>${esc(u.note)} · two-step sign-in on</small></span><span class="rung">${esc(rungOf(u).toUpperCase())}</span></div>
                 <hr><h4>Sign in as (mock only)</h4>${Object.values(M.staff).map((x) => `<button type="button" data-role="${x.id}" aria-pressed="${x.id === state.role}"><span class="avatar">${x.initials}</span><span style="flex:1"><b class="ink">${x.name}</b><small>${x.rung}${x.rights.length ? ' · ' + x.rights.join(', ') : ''}</small></span></button>`).join('')}
                 <hr><h4>Workspace</h4>${[['real', state.setup.workspace, 'Live database'], ['sandbox', state.sandboxName, 'Demo workspace, simulated'], ['example', 'Example data', 'Five invented organisations']].map(([k, n, d2]) => `<button type="button" data-ws="${k}" aria-pressed="${(k === 'example' ? demo() : !demo() && state.ws === k)}">${icon(k === 'sandbox' ? 'flask' : k === 'example' ? 'overview' : 'home', 'sm')}<span><b class="ink">${esc(n)}</b><small>${d2}</small></span></button>`).join('')}
-                <hr><a href="#guide">${icon('insight', 'sm')}<span>AXLE guide</span></a>
+                <hr><a href="#screens">${icon('overview', 'sm')}<span>All screens (mock)</span></a><a href="#guide">${icon('insight', 'sm')}<span>AXLE guide</span></a>
                 <button type="button" data-act="signout">${icon('logout', 'sm')}<span>Sign out</span></button>
               </div></div>
           </div>
@@ -894,7 +894,7 @@
       { t: 'Set up your workspace', d: 'Name, time zone and team.', done: true },
       { t: 'Add your first organisation', d: 'The organisation, and their data agreement.', done: state.orgs.length > 0, href: '#new-organisation', cta: 'New organisation' },
       { t: 'Create a project', d: 'What the solution is for, in the organisation’s words.', done: !!s, href: '#new-project', cta: 'Create project' },
-      { t: 'Connect the solution', d: 'Check its data, choose KPIs and record the baseline.', done: !!s && st !== 'draft', href: '#connect', cta: 'Connect' },
+      { t: 'Connect the solution', d: 'Copy the prompt for the developer and wait for the connection. Then choose KPIs and the baseline.', done: !!s && st !== 'draft', href: '#connect', cta: 'Connect' },
       { t: 'Get the KPIs approved', d: 'Someone else checks every KPI and baseline.', done: st === 'approved' || st === 'collecting', href: s ? '#sim-' + s.id : '#approvals', cta: 'Check status' },
       { t: 'See your first results', d: 'Figures arrive after the first nightly collection.', done: st === 'collecting', href: s ? '#sim-' + s.id : '#home', cta: 'Open solution' },
       { t: 'Schedule the organisation report', d: 'Drafted for you. Nothing goes out until you check it.', done: !!s && s.reportScheduled, href: '#reports', cta: 'Schedule' },
@@ -917,7 +917,7 @@
         <div class="grid" style="gap:16px;align-content:start">
           <div class="card"><h3>How it works</h3><div class="list" style="margin-top:10px">
             ${[['connect-ai', 'Connect', 'The solution shares a few daily totals through a small read-only link. Its own code and data stay as they are.'], ['target', 'Agree', 'Choose KPIs and baselines with the organisation. Someone else approves them.'], ['savings', 'Measure', 'Each KPI is worked out every night. You can always see what is measured and what is estimated.'], ['reports', 'Report', 'A report is drafted for you. You check it before the organisation sees it.']].map(([ic, t, d]) => `<div class="row" style="grid-template-columns:36px minmax(0,1fr)"><span class="ico info">${icon(ic, 'sm')}</span><div><div class="what">${t}</div><div class="meta">${d}</div></div></div>`).join('')}</div></div>
-          <div class="card"><h3>Want to see it working first?</h3><p class="small muted" style="margin:6px 0 12px">Watch a new project go from nothing to its first report, or open a workspace with five example organisations.</p><div class="head-actions"><button type="button" class="btn primary sm" data-act="tour-start">Watch the guided demo</button><button type="button" class="btn sm" data-act="switch-mode">Example workspace</button></div></div>
+          <div class="card"><h3>Want to see it working first?</h3><p class="small muted" style="margin:6px 0 12px">Watch a new project go from nothing to its first report, or open a workspace with five example organisations.</p><div class="head-actions"><button type="button" class="btn primary sm" data-act="tour-start">Watch the guided demo</button><button type="button" class="btn sm" data-act="switch-mode">Example workspace</button><a class="btn sm" href="#screens">See every screen</a></div></div>
         </div>
       </section>
       ${state.orgs.length ? clientGrid(aWindow(state.range)) : ''}`;
@@ -1260,6 +1260,7 @@
 
   pages['new-organisation'] = () => `
     ${head({ crumbs: crumbs(['Organisations', '#organisations'], ['New organisation']), title: 'Add an organisation', lead: 'The organisation whose solution you’ll measure.' })}
+    <div class="wizard">${journey(0)}
     <form id="f-org" class="card narrow grid" style="gap:24px" novalidate>
       <div class="form-grid">
         <div class="field full"><label for="o-name">Organisation name</label><input id="o-name" placeholder="e.g. Teladan Properties" value="${esc(state.draftOrg || (state.orgs.length ? '' : 'Teladan Properties'))}" required><span class="help" id="o-name-help">As it appears on their contract.</span></div>
@@ -1272,8 +1273,8 @@
         <p class="small muted">Outcomes only collects totals, and only after the organisation agrees in writing.</p>
         <label class="check"><input type="checkbox" id="o-signed" checked><span><b class="ink">The organisation has signed the data agreement</b><br><span class="small muted">Totals only · kept in Singapore · for the contract plus 24 months</span></span></label>
       </div>
-      <div class="wfoot"><a class="btn ghost" href="#organisations">Cancel</a><button type="submit" class="btn primary lg">Add organisation</button></div>
-    </form>`;
+      <div class="wfoot"><a class="btn ghost" href="#organisations">Cancel</a><button type="submit" class="btn primary lg">Add organisation and continue</button></div>
+    </form></div>`;
   pages['new-organisation'].after = () => {
     $('#o-name').addEventListener('input', (e) => { state.draftOrg = e.target.value; });
     $('#f-org').addEventListener('submit', (e) => {
@@ -1284,7 +1285,7 @@
       const o = newOrg(name, $('#o-ind').value, $('#o-signed').checked);
       state.draftOrg = null;
       log(`Added organisation ${name}`);
-      go('organisation-' + o.id); toast(`${name} added.`);
+      state.newProjOrg = o.id; go('new-project'); toast(`${name} added. Next, the project.`);
     });
   };
 
@@ -1293,6 +1294,7 @@
     const K = KINDS[state.newKind], orgId = state.newProjOrg || state.orgs[state.orgs.length - 1].id;
     return `
     ${head({ crumbs: crumbs(['Organisations', '#organisations'], ['New project']), title: 'Create a project', lead: 'What you agreed to deliver for the organisation. Its solution is measured against it.' })}
+    <div class="wizard">${journey(1)}
     <form id="f-proj" class="card narrow grid" style="gap:24px" novalidate>
       <div class="form-grid">
         <div class="field"><label for="p-org">Organisation</label><select id="p-org">${state.orgs.map((o) => `<option value="${o.id}" ${o.id === orgId ? 'selected' : ''}>${esc(o.name)}</option>`).join('')}</select></div>
@@ -1305,22 +1307,28 @@
         <div class="field"><label for="p-live">Planned go-live</label><input id="p-live" value="${day(M.addDays(today(), 19))}"></div>
         <div class="field"><label for="p-cad">Organisation report</label><select id="p-cad"><option>Monthly</option><option>Quarterly</option></select></div>
       </div>
-      <div class="wfoot"><a class="btn ghost" href="#organisations">Cancel</a><button type="submit" class="btn primary lg">Create project</button></div>
-    </form>`;
+      <div class="grid" style="gap:10px;border-top:1px solid var(--line);padding-top:20px"><h3>The solution</h3>
+        <div class="field"><label for="p-sol">Its name</label><input id="p-sol" value="${esc(state.draftSol || (state.sims.length ? K.sol : 'Lease reader'))}"><span class="help">What your team calls the system being measured.</span></div>
+        <span class="ink" style="font-weight:500;margin-top:6px">How will it share its figures?</span><p class="small muted" style="margin-top:-6px">Outcomes only reads daily totals. It never changes anything in the solution.</p>
+        ${methodCards(state.newMethod || 'link', 'data-pmethod')}</div>
+      <div class="wfoot"><a class="btn ghost" href="#organisations">Cancel</a><button type="submit" class="btn primary lg">Create project and continue</button></div>
+    </form></div>`;
   };
   pages['new-project'].after = () => {
     const f = $('#f-proj'); if (!f) return;
     $('#p-name').addEventListener('input', (e) => { state.draftProj = e.target.value; });
+    $('#p-sol').addEventListener('input', (e) => { state.draftSol = e.target.value; });
     $('#p-org').addEventListener('change', (e) => { state.newProjOrg = e.target.value; });
     f.addEventListener('submit', (e) => {
       e.preventDefault();
       const name = $('#p-name').value.trim();
       if (!name) { $('#p-name').setAttribute('aria-invalid', 'true'); const h = $('#p-name-help'); h.textContent = 'Give the project a name to continue.'; h.style.color = 'var(--fault-ink)'; return; }
       const org = state.orgs.find((o) => o.id === $('#p-org').value);
-      const sim = newSim(org, { kind: state.newKind, project: name, objective: $('#p-obj').value.trim(), live: $('#p-live').value, cadence: $('#p-cad').value, sol: state.sims.length ? KINDS[state.newKind].sol : 'Lease reader' });
-      state.focusSim = sim.id; state.draftProj = null; state.wiz = freshWizard();
+      const sol = $('#p-sol').value.trim() || KINDS[state.newKind].sol;
+      const sim = newSim(org, { kind: state.newKind, project: name, objective: $('#p-obj').value.trim(), live: $('#p-live').value, cadence: $('#p-cad').value, sol });
+      state.focusSim = sim.id; state.draftProj = null; state.draftSol = null; state.wiz = Object.assign(freshWizard(), { method: state.newMethod || 'link', solName: sol }); state.newMethod = null;
       log(`Created project ${name} for ${org.name}`);
-      go('organisation-' + org.id); toast('Project created.');
+      go('connect-' + sim.id); toast(state.wiz.method === 'link' ? 'Project created. Next, the prompt for the developer.' : 'Project created. Next, connect it.');
     });
   };
 
@@ -1491,7 +1499,6 @@
   };
 
   // ------------------------------------------------------------------ CONNECT WIZARD
-  const WSTEPS = ['Solution', 'Connect', 'What to measure', 'Baseline and send'];
   const WMETHODS = {
     link: { ic: 'lock', door: 'Measurement link', sub: 'Read-only, signed', t: 'Measurement link', d: 'The solution serves a small read-only link that Outcomes calls each night. Best for anything REKA builds.', effort: 'About a day of developer work', tag: 'Recommended' },
     axle: { ic: 'box', door: 'AXLE Link', sub: 'Built into the product', t: 'An AntaraX product', d: 'Yara, Janka and the other products already share daily totals through AXLE.', effort: 'Minutes. Nothing to build', tag: '' },
@@ -1539,6 +1546,12 @@
   const foundChips = (K) => `<div class="found">${foundFor(K).map(([n, , , st], i) => `<span class="fchip ${st}" style="--i:${i}">${icon(st === 'ok' ? 'check' : st === 'warn' ? 'alerts' : 'lock', 'sm')}${esc(n)}</span>`).join('')}</div>`;
   const foundList = (K) => `<div class="list">${foundFor(K).map(([n, k, kind, st, note]) => `<div class="row"><span class="ico ${st}">${icon(st === 'ok' ? 'check' : st === 'warn' ? 'alerts' : 'lock', 'sm')}</span><div><div class="what">${esc(n)}</div><div class="meta"><span>${kind}</span><span class="mono">${k}</span></div>${note ? `<div class="small" style="margin-top:4px;color:var(--${st}-ink)">${esc(note)}</div>` : ''}</div><span class="pill ${st}">${st === 'ok' ? 'Ready' : st === 'warn' ? 'Note' : 'Held back'}</span></div>`).join('')}</div>`;
 
+  // The whole way from nothing to first figures, shown on every setup page so people always know where they are.
+  const JOURNEY = ['Organisation', 'Project', 'Prompt', 'Connection', 'What to measure', 'Baseline and send', 'Approval', 'First figures'];
+  const journey = (cur) => `<ol class="journey" aria-label="Setting up a project">${JOURNEY.map((l, i) => `<li class="${i < cur ? 'done' : i === cur ? 'now' : ''}" ${i === cur ? 'aria-current="step"' : ''}><b>${i < cur ? icon('check', 'sm') : i + 1}</b><span>${l}</span></li>`).join('')}</ol>`;
+  const methodCards = (cur, attr) => `<div class="choice-grid methods">${Object.entries(WMETHODS).map(([k, x]) => `<button type="button" class="choice method" ${attr}="${k}" aria-pressed="${cur === k}"><span class="ic">${icon(x.ic)}</span><b>${x.t}</b><span class="d">${x.d}</span><span class="effort">${icon('clock', 'sm')}${x.effort}</span>${x.tag ? `<span class="pill info tag">${x.tag}</span>` : ''}</button>`).join('')}</div>`;
+  function copyText(text, msg) { const done = () => toast(msg); try { navigator.clipboard.writeText(text).then(done, done); } catch (err) { done(); } }
+
   pages.connect = (id) => {
     if (id) state.focusSim = id;
     let s = wizSim();
@@ -1546,32 +1559,41 @@
     if (!s) return `${head({ title: 'Connect a solution' })}<section class="card"><div class="empty">${emptyArt}<h3>${state.orgs.length ? 'Create a project first' : 'Add the organisation and project first'}</h3><p>A solution is measured against a project’s outcome, so we need both before connecting.</p><a class="btn primary" href="${state.orgs.length ? '#new-project' : '#new-organisation'}">${state.orgs.length ? 'Create project' : 'New organisation'}</a></div></section>`;
     const w = state.wiz, o = orgOf(s), K = kindOf(s), solName = w.solName || s.name, m = WMETHODS[w.method];
     if (!w.baseline) w.baseline = { method: 'sample', mid: K.base.mid, low: K.base.low, high: K.base.high, n: 20, period: `${day(M.addDays(today(), 5))} to ${day(M.addDays(today(), 9))}`, note: '' };
-    const nav = `<ol class="wsteps">${WSTEPS.map((l, i) => `<li class="${i + 1 < w.step ? 'done' : i + 1 === w.step ? 'now' : ''}" ${i + 1 === w.step ? 'aria-current="step"' : ''}><b>${i + 1 < w.step ? icon('check', 'sm') : i + 1}</b><span>${l}</span></li>`).join('')}</ol>`;
-    const foot = (label, disabled) => `<div class="wfoot">${w.step > 1 ? `<button type="button" class="btn ghost" data-act="w-back">${icon('back', 'sm')}Back</button>` : `<a class="btn ghost" href="#organisation-${o.id}">Cancel</a>`}<button type="button" class="btn primary lg" data-act="w-next" ${disabled ? 'disabled' : ''}>${label}</button></div>`;
+    const back = w.step > 1 ? `<button type="button" class="btn ghost" data-act="w-back">${icon('back', 'sm')}Back</button>` : `<a class="btn ghost" href="#organisation-${o.id}">Later</a>`;
+    const foot = (label, disabled, extra = '') => `<div class="wfoot">${back}<span class="head-actions">${extra}<button type="button" class="btn primary lg" data-act="w-next" ${disabled ? 'disabled' : ''}>${label}</button></span></div>`;
     const props = kpiProposals(s), testing = w.tests.length && !w.tested;
     // Content animates in only when it changes (a new step, the test finishing, the suggestions arriving), never on each tick.
     const shown = `${w.step}:${w.tested}:${!!w.proposals}:${w.method}`, enter = w.shown !== shown; w.shown = shown;
     const lastOk = w.tests.filter((t) => t[1] === 'ok').length - 1;
-    const cstep = (n, title, body, done) => `<div class="cstep${done ? ' done' : ''}"><span class="n">${done ? icon('check', 'sm') : n}</span><div><h3>${title}</h3>${body}</div></div>`;
+    const change = `<details class="more"><summary>Shares by ${m.t.toLowerCase()}. Change</summary><div style="margin-top:10px">${methodCards(w.method, 'data-method')}</div></details>`;
     let panel = '';
-    if (w.step === 1) panel = `<div><h2>Which solution, and how does it share its figures?</h2><p class="small muted" style="margin-top:4px">For ${esc(o.name)} · ${esc(s.project.name)}. Outcomes only reads daily totals. It never changes anything in the solution.</p></div>
-        <div class="field"><label for="w-sol">Solution name</label><input id="w-sol" value="${esc(solName)}"><span class="help">What your team calls it.</span></div>
-        <div class="choice-grid methods">${Object.entries(WMETHODS).map(([k, x]) => `<button type="button" class="choice method" data-method="${k}" aria-pressed="${w.method === k}"><span class="ic">${icon(x.ic)}</span><b>${x.t}</b><span class="d">${x.d}</span><span class="effort">${icon('clock', 'sm')}${x.effort}</span>${x.tag ? `<span class="pill info tag">${x.tag}</span>` : ''}</button>`).join('')}</div>
-        <details class="more"><summary>Environment and version</summary><div class="form-grid" style="margin-top:10px"><div class="field"><label for="w-env">Environment</label><select id="w-env"><option>Production</option><option>Staging, for testing</option></select><span class="help">Only production feeds organisation reports.</span></div><div class="field"><label for="w-ver">Version</label><input id="w-ver" value="1.0.0"></div></div></details>
-        ${foot('Continue')}`;
+    if (w.step === 1) {
+      if (w.method === 'link') panel = `<div><h2>Send the developer this prompt</h2><p class="small muted" style="margin-top:4px">Paste it into Claude Code or Codex, or send it to whoever builds ${esc(solName)}. It points to the integration pack, the contract and the test. About a day of work.</p></div>
+        <div class="code-block prompt" id="dev-prompt">${esc(devPrompt(s))}</div>
+        <p class="small muted">${icon('link', 'sm')} Or send the <button type="button" class="lnk" data-act="copy-devlink">developer link</button>: it shows this prompt, gives them their own read-only key once, and tests the connection when they paste the address.</p>
+        ${change}${foot(`${icon('copy', 'sm')}Copy prompt and wait for the connection`)}`;
+      if (w.method === 'axle') panel = `<div><h2>Which product is it?</h2><p class="small muted" style="margin-top:4px">AntaraX products already share daily totals through AXLE. Nothing to build, no prompt to send.</p></div>
+        <div class="field"><label for="w-prod">AntaraX product</label><select id="w-prod">${['Yara', 'Janka'].map((p) => `<option ${w.product === p ? 'selected' : ''}>${p}</option>`).join('')}</select><span class="help">Outcomes finds ${esc(o.name)}’s workspace in it.</span></div>
+        ${change}${foot('Connect')}`;
+      if (w.method === 'sheet') panel = `<div><h2>Share the spreadsheet template</h2><p class="small muted" style="margin-top:4px">One row a day, one column a figure. Totals only, no names. Someone at ${esc(o.name)} or REKA fills it in each week.</p></div>
+        <div class="code-block" id="w-tpl">${esc(sheetTemplate(K))}</div>
+        ${change}${foot(`${icon('copy', 'sm')}Copy the columns and wait for the file`)}`;
+    }
     if (w.step === 2) {
-      const result = w.tested ? `<div class="callout ok">${icon('check')}<span><b>Connected.</b> ${esc(solName)} shares 6 figures: 4 ready, 1 with a note, 1 held back because it could identify people.</span></div>${foundChips(K)}<details class="more"><summary>Each figure, explained</summary><div style="margin-top:10px">${foundList(K)}</div></details>` : '';
       const checks = w.tests.length ? `<div class="checks" aria-live="polite">${w.tests.map(([t, ok], i) => `<div${i === lastOk && !w.tested ? ' class="just"' : ''}><span class="tick ${ok}">${ok === 'ok' ? '✓' : '…'}</span><span>${esc(t)}</span></div>`).join('')}</div>` : '';
-      let steps = '';
-      if (w.method === 'link') steps = cstep(1, 'Send the developer the brief', `<p class="small muted">About a day of work. They get the integration pack and their own read-only key. It works with Claude Code or Codex.</p><div class="head-actions" style="justify-content:flex-start;margin-top:10px"><button type="button" class="btn sm" data-act="copy-prompt">${icon('copy', 'sm')}Copy brief</button><button type="button" class="btn sm" data-act="copy-devlink">${icon('link', 'sm')}Copy developer link</button></div><details class="more"><summary>Show the brief</summary><div class="code-block" id="dev-prompt" style="margin-top:8px">${esc(devPrompt(s))}</div></details>`, w.tested)
-          + cstep(2, 'Paste the address and test', `<p class="small muted">When their contract test passes. If they use the developer link, they paste it there and the test runs by itself.</p><div class="field" style="margin-top:10px"><label for="w-url" class="sr-only">Link address</label><input id="w-url" class="mono" value="${esc(w.url)}" ${testing ? 'disabled' : ''}></div>`, w.tested);
-      if (w.method === 'axle') steps = cstep(1, 'Pick the product', `<div class="field" style="margin-top:10px"><label for="w-prod">AntaraX product</label><select id="w-prod">${['Yara', 'Janka'].map((p) => `<option ${w.product === p ? 'selected' : ''}>${p}</option>`).join('')}</select><span class="help">Outcomes finds ${esc(o.name)}’s workspace in it through AXLE. Nothing to build.</span></div>`, w.tested)
-          + cstep(2, 'Test', '<p class="small muted">Outcomes asks AXLE for the product’s daily totals for this organisation, and reads one day.</p>', w.tested);
-      if (w.method === 'sheet') steps = cstep(1, 'Share the template', `<p class="small muted">One row a day, one column a figure. Totals only: no names.</p><details class="more"><summary>Show the columns</summary><div class="code-block" id="w-tpl" style="margin-top:8px">${esc(sheetTemplate(K))}</div></details><div class="head-actions" style="justify-content:flex-start;margin-top:10px"><button type="button" class="btn sm" data-act="copy-tpl">${icon('copy', 'sm')}Copy the columns</button></div>`, !!w.sheetFile)
-          + cstep(2, 'Upload a week of figures', `<div class="head-actions" style="justify-content:flex-start;margin-top:10px"><button type="button" class="btn sm" data-act="w-pickfile">${icon('upload', 'sm')}${w.sheetFile ? 'Choose another file' : 'Choose a CSV file'}</button><button type="button" class="btn sm ghost" data-act="w-examplefile">Use the example file</button><input type="file" id="w-file" accept=".csv,text/csv" hidden></div>${w.sheetFile ? `<p class="small" style="margin-top:8px">${icon('sheet', 'sm')} <b class="ink">${esc(w.sheetFile)}</b></p>` : ''}`, w.tested);
-      panel = `<div><h2>Connect ${esc(solName)}</h2><p class="small muted" style="margin-top:4px">${w.method === 'sheet' ? 'Outcomes reads the file, checks it and keeps the daily totals.' : 'Outcomes checks the connection, then reads one day of figures. Nothing is saved until every check passes.'}</p></div>
-        ${steps}${checks}${result}
-        ${foot(w.tested ? 'Choose what to measure' : testing ? 'Testing…' : 'Test connection', testing || (w.method === 'sheet' && !w.sheetFile && !w.tested))}`;
+      const result = w.tested ? `<div class="callout ok">${icon('check')}<span><b>Connected.</b> ${esc(solName)} shares 6 figures: 4 ready, 1 with a note, 1 held back because it could identify people.</span></div>${foundChips(K)}<details class="more"><summary>Each figure, explained</summary><div style="margin-top:10px">${foundList(K)}</div></details>` : '';
+      const leave = `<a class="btn" href="#organisation-${o.id}">Leave and come back</a>`;
+      if (w.tested || testing) panel = `<div><h2>${w.tested ? `${esc(solName)} is connected` : 'Testing the connection'}</h2><p class="small muted" style="margin-top:4px">Outcomes checks the connection, then reads one day of figures. Nothing is saved until every check passes.</p></div>${checks}${result}${foot(w.tested ? 'Choose what to measure' : 'Testing…', !w.tested)}`;
+      else if (w.method === 'link') panel = `<div><h2>Waiting for the connection</h2><p class="small muted" style="margin-top:4px">You can leave this page. Outcomes tests the link as soon as the developer gives the address, and tells you when ${esc(solName)} is connected.</p></div>
+        <ol class="wait-steps"><li class="done"><b>${icon('check', 'sm')}</b><span>Prompt copied${w.promptAt ? ` <span class="mono xs muted">${esc(w.promptAt.replace(' 2026,', ''))}</span>` : ''}</span></li><li class="now"><b>2</b><span>The developer adds the link and runs the contract test</span></li><li><b>3</b><span>They paste the address in their developer link</span></li><li><b>4</b><span>Outcomes tests it and tells you</span></li></ol>
+        <label class="check"><input type="checkbox" id="w-notify" ${w.notify === false ? '' : 'checked'}><span>Email me when it connects, or if the test fails</span></label>
+        <details class="more"><summary>Have the address yourself? Test it here</summary><div class="with-btn" style="margin-top:8px"><input id="w-url" class="mono" aria-label="Link address" value="${esc(w.url)}"><button type="button" class="btn" data-act="w-test">Test</button></div></details>
+        <div class="demo-bar"><span class="tag">MOCK CONTROLS</span><button type="button" class="btn sm" data-act="w-devdone">The developer finished</button></div>
+        ${foot('Waiting for the connection', true, leave)}`;
+      else if (w.method === 'sheet') panel = `<div><h2>Waiting for the first file</h2><p class="small muted" style="margin-top:4px">Upload a week of figures saved from the template. Outcomes reads and checks it straight away.</p></div>
+        <div class="head-actions" style="justify-content:flex-start"><button type="button" class="btn" data-act="w-pickfile">${icon('upload', 'sm')}Choose a CSV file</button><button type="button" class="btn ghost" data-act="w-examplefile">Use the example file</button><input type="file" id="w-file" accept=".csv,text/csv" hidden></div>
+        ${foot('Waiting for the file', true, leave)}`;
+      else panel = `<div><h2>Connect ${esc(w.product)}</h2></div>${foot('Connect')}`;
     }
     if (w.step === 3) panel = !w.proposals ? `<div class="thinking" style="padding:8px 0"><img src="${SPARK}" alt=""><span>Reading 4 figures and suggesting KPIs for ${esc(s.project.name)}…</span></div><div class="grid" style="gap:10px"><div class="skel" style="height:72px"></div><div class="skel" style="height:72px"></div><div class="skel" style="height:72px"></div></div>` : `
         <div class="card-head" style="margin:0"><div><h2>Choose what to measure</h2><p class="small muted" style="margin-top:4px">Suggested from what ${esc(solName)} shares and what the project is for.</p></div>${aiMark()}</div>
@@ -1592,32 +1614,40 @@
         <div class="field" style="margin-top:12px"><label for="w-appr">Who approves</label><select id="w-appr"><option>Aisyah Rahman · Admin</option></select><span class="help">You can’t approve what you set up yourself. Collection starts once they do.</span></div></section>
         ${foot('Send for approval')}`;
     }
-    return `${head({ crumbs: crumbs(['Organisations', '#organisations'], [o.name, '#organisation-' + o.id], [s.project.name], ['Connect a solution']), title: 'Connect a solution', lead: `${esc(s.project.name)} · step ${w.step} of ${WSTEPS.length}` })}
-      <div class="wizard">${nav}<div class="card wpanel${enter ? ' enter' : ''}" id="wpanel">${connMap(w, s, o)}${panel}</div></div>`;
+    return `${head({ crumbs: crumbs(['Organisations', '#organisations'], [o.name, '#organisation-' + o.id], [s.project.name], ['Connect']), title: `Connect ${esc(solName)}`, topTitle: 'Connect a solution', lead: `${esc(s.project.name)} · ${esc(o.name)}` })}
+      <div class="wizard">${journey(w.step + 1)}<div class="card wpanel${enter ? ' enter' : ''}" id="wpanel">${connMap(w, s, o)}${panel}</div></div>`;
   };
   pages.connect.after = () => {
     const w = state.wiz;
     const map = { 'b-mid': 'mid', 'b-low': 'low', 'b-high': 'high', 'b-n': 'n', 'b-period': 'period', 'b-note': 'note' };
     Object.keys(map).forEach((id) => { const el = $('#' + id); if (el) el.addEventListener('input', () => { w.baseline[map[id]] = el.type === 'number' ? +el.value : el.value; }); });
-    const sol = $('#w-sol'); if (sol) sol.addEventListener('input', () => { w.solName = sol.value; });
-    const url = $('#w-url'); if (url) url.addEventListener('input', () => { w.url = url.value; });
+    const url = $('#w-url'); if (url) url.addEventListener('input', () => { w.url = url.value; url.removeAttribute('aria-invalid'); });
+    const nt = $('#w-notify'); if (nt) nt.addEventListener('change', () => { w.notify = nt.checked; });
     const prod = $('#w-prod'); if (prod) prod.addEventListener('change', () => { w.product = prod.value; render(); });
-    const f = $('#w-file'); if (f) f.addEventListener('change', () => { const x = f.files && f.files[0]; if (!x) return; if (!/\.csv$/i.test(x.name)) { toast('Choose a CSV file, saved from the template.'); return; } w.sheetFile = x.name; render(); });
+    const f = $('#w-file'); if (f) f.addEventListener('change', () => { const x = f.files && f.files[0]; if (!x) return; if (!/\.csv$/i.test(x.name)) { toast('Choose a CSV file, saved from the template.'); return; } w.sheetFile = x.name; runTests(); });
     if (w.step === 3 && !w.proposals) setTimeout(() => { w.proposals = true; if (/^#connect/.test(location.hash)) render(); }, reduceMotion ? 0 : 1500);
   };
   function runTests() {
-    const w = state.wiz, s = wizSim(), lines = wizTests(w, orgOf(s));
+    const w = state.wiz, s = wizSim(); if (!s || w.tested || w.tests.length) return;
+    const lines = wizTests(w, orgOf(s)), name = w.solName || s.name;
     w.tests = lines.map((t) => [t, 'wait']); render();
-    lines.forEach((t, i) => setTimeout(() => { w.tests[i] = [t, 'ok']; if (i === lines.length - 1) w.tested = true; if (/^#connect/.test(location.hash)) render(); }, reduceMotion ? 0 : 450 * (i + 1)));
+    lines.forEach((t, i) => setTimeout(() => {
+      if (state.wiz !== w) return;
+      w.tests[i] = [t, 'ok'];
+      if (i === lines.length - 1) { w.tested = true; log(`${name} connected for ${orgOf(s).name}: every check passed`, 'Collector'); if (!/^#connect/.test(location.hash)) toast(`${name} is connected.`); }
+      if (/^#connect/.test(location.hash)) render();
+    }, reduceMotion ? 0 : 450 * (i + 1)));
   }
   function wizardNext() {
-    const w = state.wiz;
-    if (w.step === 2 && !w.tested) {
-      if (w.tests.length) return;
-      if (w.method === 'link' && !/^https:\/\//.test(w.url)) { toast('The address must start with https.'); const u = $('#w-url'); if (u) { u.setAttribute('aria-invalid', 'true'); u.focus(); } return; }
-      if (w.method === 'sheet' && !w.sheetFile) { toast('Choose the CSV file first.'); return; }
-      runTests(); return;
+    const w = state.wiz, s = wizSim(); if (!s) return;
+    if (w.step === 1) {
+      if (w.method === 'link') { w.promptAt = now(); copyText(devPrompt(s), 'Prompt copied. Send it to the developer.'); log(`Copied the developer prompt for ${w.solName || s.name}`); }
+      if (w.method === 'sheet') copyText(sheetTemplate(kindOf(s)), 'Columns copied. Share them with whoever fills in the sheet.');
+      w.step = 2; render(); window.scrollTo(0, 0);
+      if (w.method === 'axle') runTests();
+      return;
     }
+    if (w.step === 2) { if (!w.tested) { if (w.method === 'axle') runTests(); return; } }
     if (w.step === 4 && w.keep.impact && w.baseline.method !== 'none' && !(w.baseline.low <= w.baseline.mid && w.baseline.mid <= w.baseline.high && w.baseline.mid > 0)) { toast('Check the minutes: fastest ≤ typical ≤ slowest.'); return; }
     if (w.step === 4) { finishWizard(); return; }
     w.step++; render(); window.scrollTo(0, 0);
@@ -2729,7 +2759,7 @@
   pages.demo = () => `${head({ title: 'Demo', lead: 'Demo data and demo organisations, kept apart from real ones. Nothing here is ever sent or counted.' })}
     <section class="grid g2">
       <div class="card"><div class="card-head"><h2>Demo workspace</h2>${sandbox() ? '<span class="pill info">Open now</span>' : ''}</div><p class="small">A separate workspace of simulated organisations for sales demos, training and rehearsing a first report. Demo studio simulates projects, moves the date and causes problems. Cleared 90 days after its last use.</p>
-        <div class="head-actions" style="margin-top:12px"><button type="button" class="btn primary" data-ws="sandbox">Open ${esc(state.sandboxName)}</button><button type="button" class="btn" data-act="tour-start">Watch the guided demo</button></div></div>
+        <div class="head-actions" style="margin-top:12px"><button type="button" class="btn primary" data-ws="sandbox">Open ${esc(state.sandboxName)}</button><button type="button" class="btn" data-act="tour-start">Watch the guided demo</button><a class="btn" href="#screens">See every screen</a></div></div>
       <div class="card"><div class="card-head"><h2>Example data</h2>${demo() ? '<span class="pill info">Open now</span>' : ''}</div><p class="small">Five invented organisations with a year of figures, approvals and a report, for learning the console. Read-only in spirit: anything you change resets when you leave.</p>
         <div class="head-actions" style="margin-top:12px"><button type="button" class="btn" data-ws="example">Open example data</button></div></div>
     </section>
@@ -2811,12 +2841,10 @@
   const TOUR = [
     { t: 'Meet Outcomes', d: 'REKA builds AI solutions for organisations. Outcomes shows each organisation what their solution changed. Let’s take a new organisation from nothing to their first report.', go() { setWs('sandbox'); resetWorkspace(true); go('home'); } },
     { t: 'Add the organisation', d: 'Everything starts with the organisation and their signed data agreement. Nothing is collected until it’s signed.', mark: '#f-org', go() { state.draftOrg = 'Harapan Foods'; go('new-organisation'); } },
-    { t: 'Organisation added', d: 'Harapan Foods is in. Next, the project REKA agreed with them.', go() { if (!T.orgId) { const o = newOrg('Harapan Foods', 'Food and beverage'); T.orgId = o.id; log('Added organisation Harapan Foods'); } go('organisation-' + T.orgId); } },
-    { t: 'Create the project', d: 'Pick the kind of work: it steers which KPIs AI suggests. The outcome is written in the organisation’s own words.', mark: '#f-proj', go() { state.newKind = 'documents'; state.draftProj = 'Supplier invoices'; state.newProjOrg = T.orgId; go('new-project'); } },
-    { t: 'Project created', d: 'The project is waiting for its solution to be connected.', go() { if (!T.simId) { const s = newSim(state.orgs.find((o) => o.id === T.orgId), { kind: 'documents', project: 'Supplier invoices', sol: 'Invoice reader', vol: 220, history: 14 }); T.simId = s.id; state.focusSim = s.id; state.wiz = freshWizard(); log('Created project Supplier invoices for Harapan Foods'); } go('organisation-' + T.orgId); } },
-    { t: 'Brief the developer', d: 'The map shows what is being connected. The solution needs a small, read-only link: Outcomes writes the brief, and a developer link gives them their own key.', mark: '#wpanel', go() { wizTo(2); } },
-    { t: 'Test the connection', d: 'Outcomes calls the link, checks the request is signed and reads one day of figures. Watch the map: each check lights up as it passes.', mark: '#wpanel', go() { wizTo(2); if (!state.wiz.tested && !state.wiz.tests.length) setTimeout(runTests, 300); } },
-    { t: 'Check what it shares', d: 'Connected. Each figure is checked and explained in plain words. Anything that could identify people is held back.', mark: '#wpanel', go() { wizTo(2, true); } },
+    { t: 'Create the project', d: 'Harapan Foods is in, and Outcomes goes straight on to the project. The kind of work steers which KPIs AI suggests; the outcome is in the organisation’s words; and you say how the solution will share its figures.', mark: '#f-proj', go() { if (!T.orgId) { const o = newOrg('Harapan Foods', 'Food and beverage'); T.orgId = o.id; log('Added organisation Harapan Foods'); } state.newKind = 'documents'; state.draftProj = 'Supplier invoices'; state.draftSol = 'Invoice reader'; state.newMethod = 'link'; state.newProjOrg = T.orgId; go('new-project'); } },
+    { t: 'Copy the prompt', d: 'The project is created and Outcomes goes straight to the prompt for the developer, or for Claude Code or Codex. One button copies it. The map shows what is being connected.', mark: '#wpanel', go() { if (!T.simId) { const s = newSim(state.orgs.find((o) => o.id === T.orgId), { kind: 'documents', project: 'Supplier invoices', sol: 'Invoice reader', vol: 220, history: 14 }); T.simId = s.id; state.focusSim = s.id; state.wiz = freshWizard(); log('Created project Supplier invoices for Harapan Foods'); } wizTo(1); } },
+    { t: 'Wait for the connection', d: 'The developer adds a small read-only link, about a day of work. The map waits. You can leave: Outcomes tests the link as soon as it answers and tells you.', mark: '#wpanel', go() { wizTo(2); } },
+    { t: 'Connected', d: 'Outcomes checks the link is signed and reads one day of figures; each part of the map lights up as it passes. Every figure is explained, and anything that could identify people is held back.', mark: '#wpanel', go() { wizTo(2); setTimeout(() => { if (state.tour === 5) runTests(); }, 300); } },
     { t: 'AI suggests the KPIs', d: 'AI reads the figures and the project, and suggests what to measure and why. People keep or drop each one.', mark: '#wpanel', go() { wizTo(3); } },
     { t: 'Agree the baseline', d: 'Hours saved needs how long the work took by hand. Here, a timed sample of 30 invoices. Below it, everything being sent for approval.', mark: '#wpanel', go() { wizTo(4); Object.assign(state.wiz.baseline, { method: 'sample', mid: 16, low: 12, high: 21, n: 30 }); render(); } },
     { t: 'Send for approval', d: 'Someone other than the person who set it up approves every KPI and the baseline.', go() { if (tsim().stage === 'draft') { wizTo(4); finishWizard(); } else go('sim-' + T.simId); } },
@@ -2830,14 +2858,16 @@
     { t: 'More than three numbers', d: 'Every project gets the same library of measures across health, usage, operations, impact and cost, so projects can be compared fairly.', go() { state.solTab = 'measures'; state.bld = null; go('sim-' + T.simId); } },
     { t: 'Add your own measure', d: 'Build a measure from the figures the solution shares, with a live preview. Here, hours saved per person. It goes for approval like any KPI.', mark: '#bld', go() { state.solTab = 'measures'; state.bld = { proj: T.simId, name: 'Hours saved per person', op: 'per', a: 'hours', b: 'people', rate: 2, target: '', aud: 'client' }; go('sim-' + T.simId); setTimeout(() => { const b = $('#bld'); if (b) b.scrollIntoView({ block: 'center' }); }, 60); } },
     { t: 'Standard analytics', d: 'Any measure over time against the period before, by project and by weekday. Rates are always worked out from totals, never averaged.', go() { state.bld = null; state.an = { measure: 'hours', proj: 'all', range: 90 }; go('analytics'); } },
-    { t: 'Ask the data', d: 'Ask in plain words. Answers come only from the collected figures, show where each number came from, and never claim a cause.', go() { state.chat = []; go('ask'); askSubmit('Which project improved most this month?'); setTimeout(() => askSubmit('Why did Invoice reader change this week?'), reduceMotion ? 10 : 1000); } },
+    { t: 'Ask the data', d: 'Ask in plain words. Answers come only from the collected figures, show where each number came from, and never claim a cause.', go() { state.chat = []; go('ask'); askSubmit('Which project improved most this month?'); const k = state.tour; setTimeout(() => { if (state.tour === k) askSubmit('Why did Invoice reader change this week?'); }, reduceMotion ? 10 : 1000); } },
     { t: 'Your turn', d: 'Open Demo studio to create projects, move the date forward or cause problems. Everything updates as you go.', go() { state.studio = true; go('home'); } },
   ];
-  function wizTo(n, tested) {
+  function wizTo(n) {
     const s = tsim(); state.focusSim = s.id;
     const w = state.wiz;
     w.method = 'link';
-    if (n >= 3 || tested) { w.tested = true; w.tests = wizTests(w, orgOf(s)).map((t) => [t, 'ok']); }
+    if (n >= 2 && !w.promptAt) w.promptAt = now();
+    if (n >= 3) { w.tested = true; w.tests = wizTests(w, orgOf(s)).map((t) => [t, 'ok']); }
+    if (n === 2 && state.tour === 4) { w.tested = false; w.tests = []; }
     if (n >= 4) w.proposals = true;
     w.step = n; w.solName = 'Invoice reader';
     go('connect-' + s.id);
@@ -2856,6 +2886,76 @@
     TOUR[i].go();
     render();
     const mk = TOUR[i].mark && $(TOUR[i].mark); if (mk) mk.classList.add('tour-mark');
+  }
+  // ------------------------------------------------------------------ ALL SCREENS (mock only)
+  // Every screen in the order people meet it, so the whole product can be judged for convenience in one sitting.
+  // Setup screens open in the demo workspace with the guided demo at that step; the rest open in the example workspace.
+  const SCREENS = [
+    ['Setting up a project, in order', 'Opens in the demo workspace, with the guided demo at that step. Your own workspace is not touched.', true, [
+      ['home', 'Overview, first use', 'The checklist from nothing to a first report', 0],
+      ['organisation', 'New organisation', 'Name, contact and the signed data agreement', 1],
+      ['projects', 'New project', 'The outcome, the kind of work, the solution and how it shares', 2],
+      ['copy', 'Copy the prompt', 'One button copies what the developer needs', 3],
+      ['clock', 'Wait for the connection', 'The map waits; you can leave', 4],
+      ['link', 'Connected', 'Each check lights up; what it shares', 5],
+      ['target', 'What to measure', 'AI suggests KPIs; keep or drop each', 6],
+      ['savings', 'Baseline and send', 'Time by hand, and what goes for approval', 7],
+      ['clock', 'Waiting for approval', 'The solution page says what happens next', 8],
+      ['check', 'Approved', 'A second person approves; collection starts tonight', 9],
+      ['analytics', 'First figures', 'KPIs and the trend once figures arrive', 10],
+      ['alerts', 'When something breaks', 'Figures fade and say why; never a zero', 12],
+      ['reports', 'The monthly report', 'Drafted for you; a person approves it', 14],
+    ]],
+    ['Client data, every week', 'Opens in the example workspace: five invented organisations.', false, [
+      ['analytics', 'Results', 'Every organisation’s figures', 'results'],
+      ['organisation', 'One organisation’s results', 'Figures, summary, reports, client context', 'results-contoh-logistik'],
+      ['box', 'A solution', 'Where the time goes; measures; Explore', 'solution-doc-workflow'],
+      ['reports', 'Reports', 'Every report, by organisation', 'reports'],
+      ['documents', 'A client report', 'What the organisation receives', 'report'],
+      ['check', 'Approvals', 'Nothing counts until someone else approves', 'approvals'],
+      ['documents', 'Client context', 'What organisations told and gave you', 'context'],
+      ['analytics', 'Analytics', 'Any measure over time', 'analytics'],
+      ['ask', 'Ask', 'Questions in plain words', 'ask'],
+    ]],
+    ['Managing Outcomes', 'Opens in the example workspace.', false, [
+      ['overview', 'Overview', 'What needs a person, worst first', 'home'],
+      ['organisation', 'Organisations', 'Stage, readiness, agreement', 'organisations'],
+      ['organisation', 'An organisation’s account', 'Readiness, projects, notes, audit', 'organisation-contoh-logistik'],
+      ['people', 'Adoption', 'Who uses each solution, and who stopped', 'adoption'],
+      ['flask', 'Demo', 'Demo workspaces and Demo studio', 'demo'],
+      ['settings', 'Settings', 'Switches, collection, retention', 'settings'],
+      ['trace', 'Audit', 'Every action, never editable', 'audit'],
+      ['people', 'Staff', 'The ladder and rights', 'staff'],
+    ]],
+    ['R8: the machinery', 'Opens in the example workspace, in R8 mode.', false, [
+      ['monitoring', 'R8 overview', 'One word for the platform', 'r8'],
+      ['alerts', 'Incidents', 'What broke and who is on it', 'incidents'],
+      ['health', 'Troubleshoot', 'Evidence in layers, Level 1 actions', 'troubleshoot-quote-drafter'],
+      ['clock', 'Jobs', 'Every background job', 'jobs'],
+      ['api', 'Providers', 'Outside services', 'providers'],
+      ['system', 'Services', 'Outcomes’ own parts', 'services'],
+      ['settings', 'Configuration', 'Set or missing, never values', 'configuration'],
+      ['trace', 'Operations audit', 'Every R8 action, with why', 'ops-audit'],
+      ['link', 'Measurement links', 'Each organisation’s link and its test', 'links'],
+    ]],
+  ];
+  const NOT_DRAWN = ['Members', 'Invitations', 'Requests', 'Support', 'Models & keys', 'AI usage', 'Live trace', 'Prompts & quality', 'Plans & features', 'Errors', 'Alerts', 'Backups', 'Access'];
+  pages.screens = () => `${head({ title: 'All screens', kind: 'mock', lead: 'Every screen in the mock, in the order people meet them. Open any one to judge whether it is convenient to use.', state: `Mock only · ${SCREENS.reduce((a, g) => a + g[3].length, 0)} screens` })}
+    ${SCREENS.map(([h, sub, flow, items], g) => `<section class="grid" style="gap:10px"><div><h2>${h}</h2><p class="small muted">${sub}</p></div>
+      <div class="scr-grid${flow ? ' flow' : ''}">${items.map(([ic, t, d], i) => `<button type="button" class="scr" data-scr="${g}:${i}"><span class="scr-n">${flow ? i + 1 : icon(ic, 'sm')}</span><span class="scr-t">${flow ? `${icon(ic, 'sm')} ` : ''}${t}</span><span class="scr-d">${d}</span></button>`).join('')}</div></section>`).join('')}
+    <section class="card flat"><h3>Standard AXLE pages not drawn in this mock</h3><p class="small muted" style="margin-top:4px">They appear in the menu in grey. Outcomes uses them as the AXLE standard defines them.</p><div class="chips" style="margin-top:10px">${NOT_DRAWN.map((x) => `<span class="pill idle">${x}</span>`).join('')}</div></section>`;
+  function tourJump(n) {
+    state.studio = false;
+    for (let j = 0; j < n; j++) { state.tour = j; TOUR[j].go(); }
+    tourGo(n);
+  }
+  function screenOpen(key) {
+    const [g, i] = key.split(':').map(Number), it = SCREENS[g] && SCREENS[g][3][i]; if (!it) return;
+    if (typeof it[3] === 'number') { tourJump(it[3]); return; }
+    state.tour = null; state.studio = false;
+    if (!demo()) setWs('example');
+    if (/^solution-/.test(it[3])) state.solTab = 'outcomes';
+    go(it[3]);
   }
   function resetWorkspace(forTour) {
     if (state.playing) { clearInterval(state.playing); state.playing = null; }
@@ -2891,7 +2991,7 @@
     return [h, null, h];
   }
   let last = '';
-  const TITLES = { results: 'Results', analytics: 'Analytics', ask: 'Ask', signin: 'Sign in', welcome: 'Welcome', home: 'Overview', organisations: 'Organisations', 'new-organisation': 'New organisation', 'new-project': 'New project', connect: 'Connect a solution', approvals: 'Approvals', reports: 'Reports', report: 'Report', settings: 'Settings', guide: 'AXLE guide', adoption: 'Adoption', demo: 'Demo', audit: 'Audit', staff: 'Staff', r8: 'Overview', incidents: 'Incidents', troubleshoot: 'Troubleshoot', jobs: 'Jobs', providers: 'Providers', services: 'Services', configuration: 'Configuration', 'ops-audit': 'Operations audit', links: 'Measurement links', context: 'Client context' };
+  const TITLES = { results: 'Results', analytics: 'Analytics', ask: 'Ask', signin: 'Sign in', welcome: 'Welcome', home: 'Overview', organisations: 'Organisations', 'new-organisation': 'New organisation', 'new-project': 'New project', connect: 'Connect a solution', approvals: 'Approvals', reports: 'Reports', report: 'Report', settings: 'Settings', guide: 'AXLE guide', adoption: 'Adoption', demo: 'Demo', audit: 'Audit', staff: 'Staff', r8: 'Overview', incidents: 'Incidents', troubleshoot: 'Troubleshoot', jobs: 'Jobs', providers: 'Providers', services: 'Services', configuration: 'Configuration', 'ops-audit': 'Operations audit', links: 'Measurement links', context: 'Client context', screens: 'All screens' };
   // "How this page works" for the standard pages (SPEC §3.6). Pages may pass their own.
   const HOW = {
     home: 'Start with <b>Needs a person</b>: each row says what is wrong and links to the fix; a technical problem opens Troubleshoot in R8. Every figure is worked out from the solutions’ daily figures and opens the list behind it. Hours saved and value are estimates against agreed baselines, always shown with a likely range. Fees need the Commercial right; without it you see a dash, never a zero.',
@@ -2958,7 +3058,9 @@
     'copy-devlink': () => { const s = wizSim(), u = `https://outcomes.reka.example/connect/dev/${s ? s.id : ''}`; const done = () => toast('Copied. The developer sees the brief, their key once, and the test result as soon as the link answers.'); try { navigator.clipboard.writeText(u).then(done, done); } catch (err) { done(); } },
     'copy-tpl': () => { const el = $('#w-tpl'); const done = () => toast('Columns copied. Paste them into the first row of the sheet.'); try { navigator.clipboard.writeText(el ? el.textContent : '').then(done, done); } catch (err) { done(); } },
     'w-pickfile': () => { const f = $('#w-file'); if (f) f.click(); },
-    'w-examplefile': () => { state.wiz.sheetFile = 'example-week.csv'; render(); },
+    'w-examplefile': () => { state.wiz.sheetFile = 'example-week.csv'; runTests(); },
+    'w-devdone': () => { runTests(); },
+    'w-test': () => { const w = state.wiz, u = $('#w-url'); if (u) w.url = u.value.trim(); if (!/^https:\/\/\S+\.\S+/.test(w.url)) { if (u) { u.setAttribute('aria-invalid', 'true'); u.focus(); } toast('The address must start with https.'); return; } runTests(); },
     'copy-prompt': () => {
       const fallback = () => { const r = document.createRange(); r.selectNodeContents($('#dev-prompt')); getSelection().removeAllRanges(); getSelection().addRange(r); toast('Selected. Press Ctrl C to copy.'); };
       try { navigator.clipboard.writeText($('#dev-prompt').textContent).then(() => toast('Copied. Send it to the developer.'), fallback); } catch (err) { fallback(); }
@@ -3062,7 +3164,9 @@
     if (d.go) { location.hash = '#' + d.go; return; }
     if (d.sel) { state.approvalSel = d.sel; render(); if (window.innerWidth < 1024) $('#ap-h').scrollIntoView(); return; }
     if (d.kind) { state.newKind = d.kind; render(); return; }
-    if (d.method) { const sol = $('#w-sol'); if (sol) state.wiz.solName = sol.value; state.wiz.method = d.method; state.wiz.tests = []; state.wiz.tested = false; render(); return; }
+    if (d.method) { state.wiz.method = d.method; state.wiz.tests = []; state.wiz.tested = false; render(); return; }
+    if (d.scr) { screenOpen(d.scr); return; }
+    if (d.pmethod) { ['p-name', 'p-sol'].forEach((id) => { const el = $('#' + id); if (el) state[id === 'p-name' ? 'draftProj' : 'draftSol'] = el.value; }); state.newMethod = d.pmethod; render(); return; }
     if (d.keep) { state.wiz.keep[d.keep] = !state.wiz.keep[d.keep]; render(); return; }
     if (d.bmethod) { state.wiz.baseline.method = d.bmethod; render(); return; }
     if (d.sfkind) { readSf(); state.sf.kind = d.sfkind; state.sf.vol = KINDS[d.sfkind].vol; state.sf.base = KINDS[d.sfkind].base.mid; render(); return; }
