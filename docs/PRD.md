@@ -425,7 +425,7 @@ Detailed in [§11](#11-ai-assistance-and-approval-gates).
 | FR-ONB-6 | The baseline is captured inside the connect flow, with "not available yet" as an honest option that blocks only the impact KPI | MVP |
 | FR-ONB-7 | After sending for approval, the solution page shows where it is (connected, approved, first data, report) and what happens next, with no blank screens | MVP |
 | FR-ONB-8 | Progress in the connect flow is saved, so a person can leave while the developer works and come back | MVP |
-| FR-ONB-9 | **Start tracking** is one wizard of four steps (organisation, project, prompt, connection), one question at a time, with keyboard support (Enter moves on) and the focus in the first field. Choosing an organisation and adding one are the same box. The person can leave at the connection step; nothing is lost and they are told when it connects. What to measure, baseline and send follow | MVP |
+| FR-ONB-9 | **Start tracking** is one wizard of six steps (organisation, project, prompt, connection, what to measure, baseline and send) ending on "Sent for approval", one question at a time, in one layout, with keyboard support (Enter moves on) and the focus in the first field. Choosing an organisation and adding one are the same box. The person can leave at the connection step; nothing is lost and they are told when it connects. No browser-default dropdowns: chips, cards and switches | MVP |
 | FR-ONB-9a | Beside the questions, a picture of what is being set up fills in as the person answers (it changes while they type) and then shows the connection's state. On narrow screens it moves below the question | MVP |
 | FR-ONB-10 | A **connection map** at the top of every step draws the solution, the way it shares (the measurement link, AXLE Link or the spreadsheet) and Outcomes, and moves with the connection: not set up, waiting (the middle node breathes), checking (requests travel to the solution and each node lights up as its checks pass), connected (figures flow to Outcomes, with what and how often). It has a text equivalent for screen readers, and holds still when the person has asked for reduced motion | MVP |
 | FR-ONB-11 | Each way of sharing has its own short path: a measurement link sends the brief and tests the address; an AntaraX product picks the product and tests, with nothing to build; a spreadsheet shares the column template and tests an uploaded week. The checks name what was tested ("Found Janka in AXLE", "Columns match the template") | MVP |
@@ -857,7 +857,7 @@ R8 actions are Level 1 only (run now, retry failures, pause, test a provider, ru
 
 A new workspace must lead a person from sign-in to a measured project without reading documentation (FR-ONB).
 
-**Start tracking is one wizard** (owner feedback, 16 Oct 2026): choose or create the organisation → name the project → copy the prompt → the connection. One question at a time on the left. On the right, a picture of what is being set up builds as the person answers (organisation, project, solution, how it shares, Outcomes), then animates as the connection waits, is tested and goes live. What to measure, the baseline and approval follow once it is connected. "Start tracking" is the main action on Overview (first use) and Organisations; "New project" on an organisation opens it at the project step.
+**Start tracking is one wizard, start to finish** (owner feedback, 16 Oct 2026): choose or create the organisation → name the project → copy the prompt → the connection → what to measure → baseline and send, ending on "Sent for approval" in the same layout. One question at a time on the left. On the right, a picture of what is being set up builds as the person answers (organisation, project, solution, how it shares, Outcomes, the KPIs, the baseline, who approves), animates as the connection waits, is tested and goes live, and doubles as the review before sending. No browser-default controls: choices are chips, cards and switches. "Start tracking" is the main action on Overview (first use) and Organisations; "New project" on an organisation opens it at the project step.
 
 | Step | Screen | What happens |
 |---|---|---|
@@ -868,7 +868,9 @@ A new workspace must lead a person from sign-in to a measured project without re
 | 5 | Start tracking 2: the project | The project's name, the kind of work (it steers the KPI suggestions), the solution's name, and how it shares (link, AntaraX product, spreadsheet). The outcome in their words is optional here. Enter creates it |
 | 6 | Start tracking 3: the prompt | The prompt in full. One button copies it, turns green, and moves on by itself; the developer link is the alternative. An AntaraX product picks the product instead; a spreadsheet copies the column template |
 | 6a | Start tracking 4: the connection | Listening for the link, with a pulse; the time the prompt was sent; email when it connects; test an address yourself. The person can leave. When every check passes: the solution is connected, each figure as a chip (ready, note, held back), and "Choose what to measure" |
-| 6b | What to measure, then baseline and send | AI-suggested KPIs to keep or drop. Then the baseline (timed sample, past records, organisation estimate, or not available) and what is being sent, on one page |
+| 6b | Start tracking 5: what to measure | AI-suggested KPIs, each with why and how it is worked out, kept or dropped with a switch; the picture lists the ones kept |
+| 6c | Start tracking 6: baseline and send | Four cards (timed sample, past records, their estimate, not yet), then typical, fastest and slowest minutes with their unit, and the evidence; impossible minutes are marked on the fields. Who approves. The picture is the review |
+| 6d | Sent for approval | What happens next in four lines (approval, the first collection that night, first figures, the report), "Open the solution" and "Start tracking another" |
 | 7 | Solution page | A progress strip (connected, approved, first data, report). Waiting for approval, then waiting for the first nightly collection (with "Collect now" for operators), then the first KPIs and trend |
 | 8 | Schedule the report | One button. The checklist completes |
 
@@ -879,8 +881,7 @@ A new workspace must lead a person from sign-in to a measured project without re
 | Sign in and welcome | `#signin`, `#welcome` | "Sign in to AXLE · Outcomes"; a product staff can start using on their own |
 | Overview, first use | `#home` (fresh workspace) | The first-steps checklist drives the whole setup |
 | New organisation, create project | `#new-organisation`, `#new-project` | Plain forms; the data agreement gate |
-| Start tracking | `#track`, `#track-…` | The four-step wizard: organisation, project, prompt, connection, with the picture building on the right; all three ways of sharing work. `#new-project`, and `#connect` before the solution is connected, open it |
-| Connect a solution | `#connect` | After the connection: what to measure, then baseline and send |
+| Start tracking | `#track`, `#track-…` | The six-step wizard from organisation to "Sent for approval", with the picture building on the right; all three ways of sharing work. `#new-project` and `#connect` open it |
 | All screens (mock only) | `#screens` | Every screen in the order people meet them: the setup path opens in the demo workspace with the guided demo at that step; the rest open in example data. Lists the standard AXLE pages not drawn |
 | Your solution | `#sim-…` | Waiting states, then first figures computed from the baseline you typed |
 | Overview, established | `#home` (example workspace) | The AXLE overview blocks; Needs a person links technical problems to Troubleshoot |

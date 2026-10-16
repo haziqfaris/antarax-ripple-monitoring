@@ -1260,7 +1260,6 @@
 
   pages['new-organisation'] = () => `
     ${head({ crumbs: crumbs(['Organisations', '#organisations'], ['New organisation']), title: 'Add an organisation', lead: 'The organisation whose solution you’ll measure.' })}
-    <div class="wizard">${journey(0)}
     <form id="f-org" class="card narrow grid" style="gap:24px" novalidate>
       <div class="form-grid">
         <div class="field full"><label for="o-name">Organisation name</label><input id="o-name" placeholder="e.g. Teladan Properties" value="${esc(state.draftOrg || (state.orgs.length ? '' : 'Teladan Properties'))}" required><span class="help" id="o-name-help">As it appears on their contract.</span></div>
@@ -1274,7 +1273,7 @@
         <label class="check"><input type="checkbox" id="o-signed" checked><span><b class="ink">The organisation has signed the data agreement</b><br><span class="small muted">Totals only · kept in Singapore · for the contract plus 24 months</span></span></label>
       </div>
       <div class="wfoot"><a class="btn ghost" href="#organisations">Cancel</a><button type="submit" class="btn primary lg">Add organisation and continue</button></div>
-    </form></div>`;
+    </form>`;
   pages['new-organisation'].after = () => {
     $('#o-name').addEventListener('input', (e) => { state.draftOrg = e.target.value; });
     $('#f-org').addEventListener('submit', (e) => {
@@ -1286,49 +1285,6 @@
       state.draftOrg = null;
       log(`Added organisation ${name}`);
       state.trk = Object.assign(trkFresh(), { step: 2, orgId: o.id }); go('track'); toast(`${name} added. Next, the project.`);
-    });
-  };
-
-  pages['new-project'] = () => {
-    if (!state.orgs.length) return `${head({ title: 'Create a project' })}<section class="card"><div class="empty">${emptyArt}<h3>Add an organisation first</h3><p>A project belongs to an organisation.</p><a class="btn primary" href="#new-organisation">Add organisation</a></div></section>`;
-    const K = KINDS[state.newKind], orgId = state.newProjOrg || state.orgs[state.orgs.length - 1].id;
-    return `
-    ${head({ crumbs: crumbs(['Organisations', '#organisations'], ['New project']), title: 'Create a project', lead: 'What you agreed to deliver for the organisation. Its solution is measured against it.' })}
-    <div class="wizard">${journey(1)}
-    <form id="f-proj" class="card narrow grid" style="gap:24px" novalidate>
-      <div class="form-grid">
-        <div class="field"><label for="p-org">Organisation</label><select id="p-org">${state.orgs.map((o) => `<option value="${o.id}" ${o.id === orgId ? 'selected' : ''}>${esc(o.name)}</option>`).join('')}</select></div>
-        <div class="field"><label for="p-name">Project name</label><input id="p-name" value="${esc(state.draftProj || (state.sims.length ? '' : 'Lease abstraction'))}" placeholder="e.g. Lease abstraction" required><span class="help" id="p-name-help">Use the name the organisation uses.</span></div>
-      </div>
-      <div class="grid" style="gap:10px"><span class="ink" style="font-weight:500">What kind of work does it take on?</span><p class="small muted" style="margin-top:-6px">We use this to suggest KPIs that fit. You can change any of them.</p>
-        <div class="grid g2" style="gap:10px">${Object.entries(KINDS).map(([k, x]) => `<button type="button" class="choice" style="grid-template-columns:44px minmax(0,1fr)" data-kind="${k}" aria-pressed="${state.newKind === k}"><span class="ic">${icon(x.icon)}</span><span><b>${x.label}</b><span class="d">${x.d}</span></span></button>`).join('')}</div></div>
-      <div class="form-grid">
-        <div class="field full"><label for="p-obj">The outcome the organisation wants, in their words</label><textarea id="p-obj">${esc(K.objective)}</textarea><span class="help">This goes at the top of every report.</span></div>
-        <div class="field"><label for="p-live">Planned go-live</label><input id="p-live" value="${day(M.addDays(today(), 19))}"></div>
-        <div class="field"><label for="p-cad">Organisation report</label><select id="p-cad"><option>Monthly</option><option>Quarterly</option></select></div>
-      </div>
-      <div class="grid" style="gap:10px;border-top:1px solid var(--line);padding-top:20px"><h3>The solution</h3>
-        <div class="field"><label for="p-sol">Its name</label><input id="p-sol" value="${esc(state.draftSol || (state.sims.length ? K.sol : 'Lease reader'))}"><span class="help">What your team calls the system being measured.</span></div>
-        <span class="ink" style="font-weight:500;margin-top:6px">How will it share its figures?</span><p class="small muted" style="margin-top:-6px">Outcomes only reads daily totals. It never changes anything in the solution.</p>
-        ${methodCards(state.newMethod || 'link', 'data-pmethod')}</div>
-      <div class="wfoot"><a class="btn ghost" href="#organisations">Cancel</a><button type="submit" class="btn primary lg">Create project and continue</button></div>
-    </form></div>`;
-  };
-  pages['new-project'].after = () => {
-    const f = $('#f-proj'); if (!f) return;
-    $('#p-name').addEventListener('input', (e) => { state.draftProj = e.target.value; });
-    $('#p-sol').addEventListener('input', (e) => { state.draftSol = e.target.value; });
-    $('#p-org').addEventListener('change', (e) => { state.newProjOrg = e.target.value; });
-    f.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const name = $('#p-name').value.trim();
-      if (!name) { $('#p-name').setAttribute('aria-invalid', 'true'); const h = $('#p-name-help'); h.textContent = 'Give the project a name to continue.'; h.style.color = 'var(--fault-ink)'; return; }
-      const org = state.orgs.find((o) => o.id === $('#p-org').value);
-      const sol = $('#p-sol').value.trim() || KINDS[state.newKind].sol;
-      const sim = newSim(org, { kind: state.newKind, project: name, objective: $('#p-obj').value.trim(), live: $('#p-live').value, cadence: $('#p-cad').value, sol });
-      state.focusSim = sim.id; state.draftProj = null; state.draftSol = null; state.wiz = Object.assign(freshWizard(), { method: state.newMethod || 'link', solName: sol }); state.newMethod = null;
-      log(`Created project ${name} for ${org.name}`);
-      go('connect-' + sim.id); toast(state.wiz.method === 'link' ? 'Project created. Next, the prompt for the developer.' : 'Project created. Next, connect it.');
     });
   };
 
@@ -1529,66 +1485,13 @@
   const sheetTemplate = (K) => `date,${K.nouns.replace(/\s+/g, '_')}_handled,seconds_per_${K.noun.replace(/\s+/g, '_')},${K.nouns.replace(/\s+/g, '_')}_${K.qual.label.replace(/\s+/g, '_')},people_reviewing\n${M.addDays(today(), -1)},0,0,0,0`;
   // The connection, drawn: the solution, the door it shares through, and Outcomes. It moves as the connection does:
   // waiting (the door breathes), testing (requests travel to the solution), live (figures flow to Outcomes nightly).
-  function connMap(w, s, o) {
-    const m = WMETHODS[w.method], solName = w.solName || s.name, n = w.tests.length, done = w.tests.filter((t) => t[1] === 'ok').length;
-    const st = w.tested ? 'live' : n ? 'test' : w.step >= 2 ? 'wait' : 'idle';
-    const word = st === 'live' ? 'Connected' : st === 'test' ? `Checking, ${done} of ${n}` : st === 'wait' ? ({ link: 'Waiting for the developer', axle: 'Ready to test', sheet: 'Waiting for a file' })[w.method] : 'Not set up yet';
-    const doorOk = st === 'live' || (st === 'test' && done >= Math.ceil(n / 2));
-    const wire = (lab) => `<div class="cwire" aria-hidden="true"><span class="track"></span><i></i><i></i><i></i>${lab ? `<span class="clab">${lab}</span>` : ''}</div>`;
-    return `<div class="cmap" data-st="${st}" role="img" aria-label="${esc(`${solName}, through ${m.door}, to Outcomes: ${word}`)}">
-      <div class="cnode ${st === 'live' ? 'ok' : ''}"><span class="cic">${icon('box')}</span><b>${esc(solName)}</b><span>${esc(o.name)}’s system</span></div>
-      ${wire(st === 'live' ? '6 figures, daily' : '')}
-      <div class="cnode door ${doorOk ? 'ok' : ''}"><span class="cic">${icon(m.ic)}</span><b>${m.door}</b><span>${m.sub}</span><span class="cword">${word}</span></div>
-      ${wire(st === 'live' ? (w.method === 'sheet' ? 'Each week' : 'Each night, 06:00') : '')}
-      <div class="cnode ${st === 'live' ? 'ok' : ''}"><span class="cic"><img src="assets/antarax-mark.svg" alt=""></span><b>Outcomes</b><span>Reads totals, changes nothing</span></div>
-    </div>`;
-  }
   const foundChips = (K) => `<div class="found">${foundFor(K).map(([n, , , st], i) => `<span class="fchip ${st}" style="--i:${i}">${icon(st === 'ok' ? 'check' : st === 'warn' ? 'alerts' : 'lock', 'sm')}${esc(n)}</span>`).join('')}</div>`;
   const foundList = (K) => `<div class="list">${foundFor(K).map(([n, k, kind, st, note]) => `<div class="row"><span class="ico ${st}">${icon(st === 'ok' ? 'check' : st === 'warn' ? 'alerts' : 'lock', 'sm')}</span><div><div class="what">${esc(n)}</div><div class="meta"><span>${kind}</span><span class="mono">${k}</span></div>${note ? `<div class="small" style="margin-top:4px;color:var(--${st}-ink)">${esc(note)}</div>` : ''}</div><span class="pill ${st}">${st === 'ok' ? 'Ready' : st === 'warn' ? 'Note' : 'Held back'}</span></div>`).join('')}</div>`;
 
-  // The whole way from nothing to first figures, shown on every setup page so people always know where they are.
-  const JOURNEY = ['Organisation', 'Project', 'Prompt', 'Connection', 'What to measure', 'Baseline and send', 'Approval', 'First figures'];
-  const journey = (cur) => `<ol class="journey" aria-label="Setting up a project">${JOURNEY.map((l, i) => `<li class="${i < cur ? 'done' : i === cur ? 'now' : ''}" ${i === cur ? 'aria-current="step"' : ''}><b>${i < cur ? icon('check', 'sm') : i + 1}</b><span>${l}</span></li>`).join('')}</ol>`;
-  const methodCards = (cur, attr) => `<div class="choice-grid methods">${Object.entries(WMETHODS).map(([k, x]) => `<button type="button" class="choice method" ${attr}="${k}" aria-pressed="${cur === k}"><span class="ic">${icon(x.ic)}</span><b>${x.t}</b><span class="d">${x.d}</span><span class="effort">${icon('clock', 'sm')}${x.effort}</span>${x.tag ? `<span class="pill info tag">${x.tag}</span>` : ''}</button>`).join('')}</div>`;
   function copyText(text, msg) { const done = () => toast(msg); try { navigator.clipboard.writeText(text).then(done, done); } catch (err) { done(); } }
 
-  pages.connect = (id) => {
-    if (id) state.focusSim = id;
-    let s = wizSim();
-    if (!s || s.stage !== 'draft') { s = state.sims.find((x) => x.stage === 'draft'); if (s) { state.focusSim = s.id; state.wiz = freshWizard(); } }
-    if (!s) return `${head({ title: 'Connect a solution' })}<section class="card"><div class="empty">${emptyArt}<h3>${state.orgs.length ? 'Create a project first' : 'Add the organisation and project first'}</h3><p>A solution is measured against a project’s outcome, so we need both before connecting.</p><a class="btn primary" href="${state.orgs.length ? '#new-project' : '#new-organisation'}">${state.orgs.length ? 'Create project' : 'New organisation'}</a></div></section>`;
-    const w = state.wiz, o = orgOf(s), K = kindOf(s), solName = w.solName || s.name, m = WMETHODS[w.method];
-    if (!w.baseline) w.baseline = { method: 'sample', mid: K.base.mid, low: K.base.low, high: K.base.high, n: 20, period: `${day(M.addDays(today(), 5))} to ${day(M.addDays(today(), 9))}`, note: '' };
-    const back = w.step > 1 ? `<button type="button" class="btn ghost" data-act="w-back">${icon('back', 'sm')}Back</button>` : `<a class="btn ghost" href="#organisation-${o.id}">Later</a>`;
-    const foot = (label, disabled, extra = '') => `<div class="wfoot">${back}<span class="head-actions">${extra}<button type="button" class="btn primary lg" data-act="w-next" ${disabled ? 'disabled' : ''}>${label}</button></span></div>`;
-    const props = kpiProposals(s), testing = w.tests.length && !w.tested;
-    // Content animates in only when it changes (a new step, the test finishing, the suggestions arriving), never on each tick.
-    const shown = `${w.step}:${w.tested}:${!!w.proposals}:${w.method}`, enter = w.shown !== shown; w.shown = shown;
-    const lastOk = w.tests.filter((t) => t[1] === 'ok').length - 1;
-    const change = `<details class="more"><summary>Shares by ${m.t.toLowerCase()}. Change</summary><div style="margin-top:10px">${methodCards(w.method, 'data-method')}</div></details>`;
-    let panel = '';
-    if (w.step === 3) panel = !w.proposals ? `<div class="thinking" style="padding:8px 0"><img src="${SPARK}" alt=""><span>Reading 4 figures and suggesting KPIs for ${esc(s.project.name)}…</span></div><div class="grid" style="gap:10px"><div class="skel" style="height:72px"></div><div class="skel" style="height:72px"></div><div class="skel" style="height:72px"></div></div>` : `
-        <div class="card-head" style="margin:0"><div><h2>Choose what to measure</h2><p class="small muted" style="margin-top:4px">Suggested from what ${esc(solName)} shares and what the project is for.</p></div>${aiMark()}</div>
-        ${props.map((p, i) => `<div class="pick ${w.keep[p.id] ? 'on' : 'off'}" style="--i:${i}"><div class="top"><div><h3>${esc(p.name)}</h3><div class="meta-line" style="margin-top:6px"><span class="pill idle">${p.kind}</span>${q(p.quality)}</div></div><button type="button" class="switch" role="switch" aria-checked="${!!w.keep[p.id]}" aria-label="Measure ${esc(p.name)}" data-keep="${p.id}"></button></div><p class="why">${esc(p.why)}</p><details class="more"><summary>How it’s worked out</summary><div class="small">${esc(p.formula)}</div></details>${p.needsBaseline && w.keep[p.id] ? `<div class="callout warn" style="padding:10px 12px">${icon('target', 'sm')}<span>Needs a baseline. You’ll set it next.</span></div>` : ''}</div>`).join('')}
-        <div class="callout ai">${icon('insight')}<span style="flex:1"><b>Accuracy</b> would be worth measuring, but the solution doesn’t count reviewer corrections yet.</span><button type="button" class="btn sm" data-act="add-gap">Ask the developer</button></div>
-        <details class="more"><summary>What ${esc(solName)} shares</summary><div style="margin-top:10px">${foundList(K)}</div></details>
-        ${foot(`Continue with ${Object.values(w.keep).filter(Boolean).length} KPIs`, !Object.values(w.keep).some(Boolean))}`;
-    if (w.step === 4) {
-      const kept = props.filter((p) => w.keep[p.id]), b = w.baseline;
-      panel = `${w.keep.impact ? `<div><h2>How long does a ${K.noun} take by hand?</h2><p class="small muted" style="margin-top:4px">Hours saved compares today with before. Agree this with ${esc(o.name)}: it appears in every report.</p></div>
-        <div class="grid g2" style="gap:10px">${[['sample', 'clock', 'Time a sample', `Someone times 20 or more ${K.nouns} by hand. Most trusted.`], ['history', 'documents', 'Use past records', 'From the organisation’s own system, if it logged the time.'], ['estimate', 'people', 'The organisation’s estimate', 'Quickest. Reports label it as an estimate.'], ['none', 'target', 'Not available yet', 'Hours saved shows “needs a baseline” until you add one.']].map(([k, ic, t, d]) => `<button type="button" class="choice" style="grid-template-columns:44px minmax(0,1fr)" data-bmethod="${k}" aria-pressed="${b.method === k}"><span class="ic">${icon(ic)}</span><span><b>${t}</b><span class="d">${d}</span></span></button>`).join('')}</div>
-        ${b.method !== 'none' ? `<div class="form-grid">
-          <div class="field"><label for="b-mid">Typical minutes per ${K.noun}</label><input id="b-mid" type="number" inputmode="decimal" value="${b.mid}"></div>
-          <div class="field"><label for="b-low">Fastest and slowest</label><div class="with-btn"><input id="b-low" type="number" aria-label="Fastest, minutes" value="${b.low}"><input id="b-high" type="number" aria-label="Slowest, minutes" value="${b.high}"></div><span class="help">Reports show hours saved as a range from these.</span></div>
-          ${b.method === 'sample' ? `<div class="field"><label for="b-n">${cap(K.nouns)} timed</label><input id="b-n" type="number" value="${b.n}"></div><div class="field"><label for="b-period">When</label><input id="b-period" value="${esc(b.period)}"><span class="help">Before go-live, so it reflects the old way.</span></div>` : ''}
-          <div class="field full"><label for="b-note">Evidence</label><input id="b-note" placeholder="e.g. Timing sheet signed by Farah Idris" value="${esc(b.note)}"></div></div>` : ''}` : `<div><h2>Send for approval</h2></div><div class="callout info">${icon('check')}<span>None of the KPIs you chose need a baseline.</span></div>`}
-        <section class="review"><h3>What you’re sending</h3>${kv([['Solution', `${esc(solName)} · ${esc(o.name)}`], ['Shares by', esc(m.t)], ['Collects', w.method === 'sheet' ? 'When the weekly file is uploaded' : 'Every night at 06:00 MYT · health every 15 minutes'], ['KPIs', kept.map((p) => esc(p.name)).join('<br>')], ['Baseline', w.keep.impact ? (b.method === 'none' ? 'Not available yet' : `${b.mid} min per ${K.noun}, ${b.low} to ${b.high} · ${({ sample: `timed sample of ${b.n} ${K.nouns}`, history: 'past records', estimate: 'organisation estimate' })[b.method]}`) : '–'], ['Held back', `${cap(K.nouns)} by customer name`]], 120)}
-        <div class="field" style="margin-top:12px"><label for="w-appr">Who approves</label><select id="w-appr"><option>Aisyah Rahman · Admin</option></select><span class="help">You can’t approve what you set up yourself. Collection starts once they do.</span></div></section>
-        ${foot('Send for approval')}`;
-    }
-    return `${head({ crumbs: crumbs(['Organisations', '#organisations'], [o.name, '#organisation-' + o.id], [s.project.name], ['Connect']), title: `Connect ${esc(solName)}`, topTitle: 'Connect a solution', lead: `${esc(s.project.name)} · ${esc(o.name)}` })}
-      <div class="wizard">${journey(w.step + 1)}<div class="card wpanel${enter ? ' enter' : ''}" id="wpanel">${connMap(w, s, o)}${panel}</div></div>`;
-  };
+  // Connecting happens in Start tracking; this address opens it (see render). Without a project, say what comes first.
+  pages.connect = () => `${head({ title: 'Connect a solution' })}<section class="card"><div class="empty">${emptyArt}<h3>Start with the organisation and project</h3><p>A solution is measured against a project’s outcome. Start tracking takes you through both, then the connection.</p><a class="btn primary" href="#track">Start tracking</a></div></section>`;
   pages.connect.after = () => {
     const w = state.wiz;
     const map = { 'b-mid': 'mid', 'b-low': 'low', 'b-high': 'high', 'b-n': 'n', 'b-period': 'period', 'b-note': 'note' };
@@ -1620,29 +1523,37 @@
       return;
     }
     if (w.step === 2) { if (!w.tested) { if (w.method === 'axle') runTests(); return; } }
-    if (w.step === 4 && w.keep.impact && w.baseline.method !== 'none' && !(w.baseline.low <= w.baseline.mid && w.baseline.mid <= w.baseline.high && w.baseline.mid > 0)) { toast('Check the minutes: fastest ≤ typical ≤ slowest.'); return; }
+    if (w.step === 4 && w.keep.impact && w.baseline.method !== 'none' && !(w.baseline.low <= w.baseline.mid && w.baseline.mid <= w.baseline.high && w.baseline.mid > 0)) {
+      ['b-low', 'b-mid', 'b-high'].forEach((id) => { const el = $('#' + id); if (el) { el.closest('.tk-unit, .field').classList.add('bad'); el.addEventListener('input', () => $$('.bad').forEach((x) => x.classList.remove('bad')), { once: true }); } });
+      toast('Check the minutes: fastest ≤ typical ≤ slowest.'); return;
+    }
     if (w.step === 4) { finishWizard(); return; }
     w.step++; render(); window.scrollTo(0, 0);
   }
   // ------------------------------------------------------------------ START TRACKING (one wizard: organisation, project, prompt, connection)
   // One question at a time on the left; on the right, what is being set up builds itself as you answer, then the
   // connection animates as it waits, is tested and goes live. KPIs and the baseline follow on the connect page.
-  const TRK_STEPS = ['Organisation', 'Project', 'Prompt', 'Connection'];
+  const TRK_STEPS = ['Organisation', 'Project', 'Prompt', 'Connection', 'What to measure', 'Baseline and send'];
   const trkFresh = () => ({ step: 1, orgId: null, isNew: false, q: '', industry: 'Property and real estate', signed: true, name: '', kind: 'documents', sol: '', solTouched: false, method: 'link', objective: '', simId: null, copied: false });
   const trkSim = () => { const t = state.trk; return t && t.simId ? simById(t.simId) : null; };
   // Where the person is: steps 1 and 2 before anything exists, then the wizard's own steps for the solution.
-  function trkStep() { const t = state.trk, s = trkSim(); return s && s.stage === 'draft' ? 2 + Math.min(state.wiz.step, 2) : t.step; }
+  function trkStep() { const t = state.trk, s = trkSim(); return t.sent && s ? 7 : s && s.stage === 'draft' ? 2 + state.wiz.step : t.step; }
   function trkVisual(n) {
     const t = state.trk, s = trkSim(), w = state.wiz, o = s ? orgOf(s) : t.orgId ? state.orgs.find((x) => x.id === t.orgId) : null;
     const orgName = o ? o.name : t.isNew && t.q.trim() ? t.q.trim() : '', K = KINDS[t.kind], projName = s ? s.project.name : t.name.trim(), solName = s ? (w.solName || s.name) : (t.sol.trim() || K.sol);
     const m = WMETHODS[s ? w.method : t.method], tests = s ? w.tests : [], done = tests.filter((x) => x[1] === 'ok').length;
     const st = !s ? 'idle' : w.tested ? 'live' : tests.length ? 'test' : n >= 4 ? 'wait' : 'idle';
     const seen = t.vis || {}; t.vis = {};
+    const props = s && w.proposals ? kpiProposals(s).filter((p) => w.keep[p.id]) : [], b = w.baseline, Kx = s ? kindOf(s) : K;
+    const kpiVal = !s || n < 5 ? '' : !w.proposals ? 'Suggesting…' : `${props.length} KPI${props.length === 1 ? '' : 's'}`;
+    const kpiSub = props.length ? `<span class="tk-chips">${props.map((p) => `<span>${esc(p.name)}</span>`).join('')}</span>` : '';
+    const baseVal = !s || n < 6 || !b ? '' : !w.keep.impact ? 'Not needed' : b.method === 'none' ? 'Not available yet' : `${b.mid} min per ${Kx.noun}`;
+    const baseSub = baseVal && w.keep.impact && b.method !== 'none' ? `${b.low} to ${b.high} min · ${({ sample: `timed sample of ${b.n}`, history: 'past records', estimate: 'their estimate' })[b.method]}` : '';
     const node = (id, ic, label, val, sub, on, cls = '') => { t.vis[id] = !!val; return `<div class="tnode ${on ? 'on' : ''} ${val && !seen[id] ? 'pop' : ''} ${cls}" id="${id}"><span class="cic">${icon(ic)}</span><span class="tl">${label}</span><b class="nm">${val ? esc(val) : '<span class="ph">Not chosen yet</span>'}</b>${sub ? `<span class="sub">${sub}</span>` : ''}</div>`; };
     const link = (on) => `<div class="twire ${on ? 'on' : ''}" aria-hidden="true"><span class="track"></span></div>`;
     const flow = `<div class="cwire" aria-hidden="true"><span class="track"></span><i></i><i></i><i></i></div>`;
     const word = st === 'live' ? 'Connected' : st === 'test' ? `Checking, ${done} of ${tests.length}` : st === 'wait' ? ({ link: 'Waiting for the developer', axle: 'Ready to test', sheet: 'Waiting for a file' })[w.method] : 'Not connected yet';
-    return `<aside class="tvis" aria-label="What you are setting up"><div class="tvis-head"><span class="eyebrow">What you’re setting up</span>${st === 'live' ? '<span class="pill ok"><span class="dot"></span>Live</span>' : ''}</div>
+    return `<aside class="tvis" aria-label="What you are setting up"><div class="tvis-head"><span class="eyebrow">What you’re setting up</span>${n === 7 ? '<span class="pill info"><span class="dot"></span>Sent for approval</span>' : st === 'live' ? '<span class="pill ok"><span class="dot"></span>Connected</span>' : ''}</div>
       ${node('tv-org', 'organisation', 'Organisation', orgName, o ? (o.signed === false ? 'Data agreement not signed' : 'Data agreement signed') : t.isNew && orgName ? 'New' : '', !!orgName)}
       ${link(!!orgName && !!projName)}
       ${node('tv-proj', 'projects', 'Project', projName, projName ? esc(K.label) : '', !!projName)}
@@ -1653,33 +1564,41 @@
         <div class="tnode door ${st === 'live' || (st === 'test' && done >= Math.ceil(tests.length / 2)) ? 'ok on' : ''}"><span class="cic">${icon(m.ic)}</span><span class="tl">How it shares</span><b class="nm">${m.door}</b><span class="cword">${word}</span></div>
         ${flow}
         <div class="tnode out ${st === 'live' ? 'ok on' : ''}"><span class="cic"><img src="assets/antarax-mark.svg" alt=""></span><span class="tl">Outcomes</span><b class="nm">Collects ${s && w.method === 'sheet' ? 'each week' : 'every night'}</b><span class="sub">Reads totals, changes nothing</span></div>
-      </div></aside>`;
+      </div>
+      ${link(n >= 5)}
+      ${node('tv-kpi', 'target', 'What it measures', kpiVal, kpiSub, n >= 5 && !!kpiVal)}
+      ${link(n >= 6)}
+      ${node('tv-base', 'clock', 'Baseline', baseVal, baseSub, n >= 6)}
+      ${link(n >= 7)}
+      ${node('tv-appr', 'people', 'Approval', n >= 6 ? 'Aisyah Rahman' : '', n === 7 ? '<span class="cword">Waiting for approval</span>' : n >= 6 ? 'Approves before anything counts' : '', n >= 6, n === 7 ? 'waiting' : '')}
+    </aside>`;
   }
   pages.track = (id) => {
     if (id && simById(id) && (!state.trk || state.trk.simId !== id)) { state.trk = Object.assign(trkFresh(), { simId: id }); state.focusSim = id; }
     state.trk = state.trk || trkFresh();
     const t = state.trk, n = trkStep(), s = trkSim(), w = state.wiz, K = KINDS[t.kind];
-    if (s && s.stage !== 'draft') { state.trk = trkFresh(); return pages.track(); }
+    if (s && s.stage !== 'draft' && !t.sent) { state.trk = trkFresh(); return pages.track(); }
+    if (s && !w.baseline) { const Kb = kindOf(s); w.baseline = { method: 'sample', mid: Kb.base.mid, low: Kb.base.low, high: Kb.base.high, n: 20, period: `${day(M.addDays(today(), 5))} to ${day(M.addDays(today(), 9))}`, note: '' }; }
     const shown = `${n}:${s ? w.tested : ''}:${s ? w.method : t.isNew}`, enter = t.shown !== shown; t.shown = shown;
-    const steps = `<ol class="tsteps">${TRK_STEPS.map((l, i) => `<li class="${i + 1 < n ? 'done' : i + 1 === n ? 'now' : ''}" ${i + 1 === n ? 'aria-current="step"' : ''}><b>${i + 1 < n ? icon('check', 'sm') : i + 1}</b><span>${l}</span></li>`).join('')}<li class="then"><span>Then: what to measure, baseline, approval</span></li></ol>`;
-    const back = n > 1 && n !== 3 && !(n === 4 && s && w.tested) ? `<button type="button" class="btn ghost" data-act="trk-back">${icon('back', 'sm')}Back</button>` : n === 3 ? '<span></span>' : `<a class="btn ghost" href="#home">Cancel</a>`;
+    const steps = `<ol class="tsteps">${TRK_STEPS.map((l, i) => `<li class="${i + 1 < n ? 'done' : i + 1 === n ? 'now' : ''}" ${i + 1 === n ? 'aria-current="step"' : ''}><b>${i + 1 < n ? icon('check', 'sm') : i + 1}</b><span>${l}</span></li>`).join('')}<li class="then"><span>Then: approval and first figures</span></li></ol>`;
+    const back = n > 1 && n !== 3 && n !== 7 && !(n === 4 && s && w.tested) ? `<button type="button" class="btn ghost" data-act="trk-back">${icon('back', 'sm')}Back</button>` : n === 3 ? '<span></span>' : `<a class="btn ghost" href="#home">Cancel</a>`;
     const foot = (label, attrs = '', extra = '', cls = 'btn primary lg') => `<div class="wfoot">${back}<span class="head-actions">${extra}<button type="button" class="${cls}" ${attrs}>${label}</button></span></div>`;
     let body = '';
     if (n === 1) {
       const q = t.q.trim(), list = state.orgs, exact = list.some((o) => o.name.toLowerCase() === q.toLowerCase());
-      body = `<div class="tq"><span class="tq-n">1 of 4</span><h2>Which organisation is this for?</h2><p class="muted">Pick one, or type a new name to add it.</p></div>
+      body = `<div class="tq"><span class="tq-n">1 of 6</span><h2>Which organisation is this for?</h2><p class="muted">Pick one, or type a new name to add it.</p></div>
         <div class="field"><label for="tk-q" class="sr-only">Organisation</label><div class="tk-search">${icon('search', 'sm')}<input id="tk-q" autocomplete="off" placeholder="Type an organisation’s name" value="${esc(t.q)}"></div></div>
         <div class="tk-orgs" role="listbox" aria-label="Organisations">
           ${list.map((o) => `<button type="button" class="tk-org" role="option" data-trk-org="${o.id}" aria-selected="${t.orgId === o.id}" data-name="${esc(o.name.toLowerCase())}"><span class="avatar" style="border-radius:10px">${initials(o.name)}</span><span><b class="ink">${esc(o.name)}</b><small>${esc(o.industry)} · ${simsOf(o).length} project${simsOf(o).length === 1 ? '' : 's'}</small></span>${icon('check', 'sm')}</button>`).join('')}
           <button type="button" class="tk-org add" data-trk-new="1" aria-selected="${t.isNew}" ${q && !exact ? '' : 'hidden'} id="tk-add"><span class="avatar" style="border-radius:10px;background:var(--primary-tint);color:var(--primary-ink)">${icon('plus', 'sm')}</span><span><b class="ink">Add “<span id="tk-add-name">${esc(q)}</span>”</b><small>A new organisation</small></span>${icon('check', 'sm')}</button>
         </div>
         ${!list.length && !q ? '<p class="small muted">No organisations yet. Type the first one’s name.</p>' : ''}
-        ${t.isNew ? `<div class="tk-new form-grid"><div class="field"><label for="tk-ind">Industry</label><select id="tk-ind">${['Property and real estate', 'Food and beverage', 'Logistics', 'Manufacturing', 'Healthcare', 'Engineering and construction', 'Retail', 'Other'].map((x) => `<option ${t.industry === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
-          <label class="check" style="align-self:end"><input type="checkbox" id="tk-signed" ${t.signed ? 'checked' : ''}><span><b class="ink">Data agreement signed</b><br><span class="small muted">Nothing is collected until it is</span></span></label></div>` : ''}
+        ${t.isNew ? `<div class="tk-new"><div class="field"><span class="lab">Industry</span><div class="tk-kinds">${['Property and real estate', 'Food and beverage', 'Logistics', 'Manufacturing', 'Healthcare', 'Engineering and construction', 'Retail', 'Other'].map((x) => `<button type="button" class="tk-kind sm" data-trk-ind="${x}" aria-pressed="${t.industry === x}">${x}</button>`).join('')}</div></div>
+          <button type="button" class="tk-toggle" role="switch" aria-checked="${t.signed}" data-trk-signed="1"><span class="switch" aria-hidden="true"></span><span><b class="ink">Data agreement signed</b><span class="small muted">Nothing is collected until it is</span></span></button></div>` : ''}
         ${foot('Continue', `data-act="trk-next" ${t.orgId || (t.isNew && q) ? '' : 'disabled'}`)}`;
     }
     if (n === 2) {
-      body = `<div class="tq"><span class="tq-n">2 of 4</span><h2>What’s the project?</h2><p class="muted">The name ${esc(t.isNew ? t.q.trim() : (state.orgs.find((o) => o.id === t.orgId) || {}).name || 'they')} use for it.</p></div>
+      body = `<div class="tq"><span class="tq-n">2 of 6</span><h2>What’s the project?</h2><p class="muted">The name ${esc(t.isNew ? t.q.trim() : (state.orgs.find((o) => o.id === t.orgId) || {}).name || 'they')} use for it.</p></div>
         <div class="field"><label for="tk-name" class="sr-only">Project name</label><input id="tk-name" class="tk-big" placeholder="e.g. Lease abstraction" value="${esc(t.name)}" autocomplete="off"></div>
         <div class="field"><span class="lab">Kind of work <span class="muted" style="font-weight:400">· steers the KPIs AI suggests</span></span><div class="tk-kinds">${Object.entries(KINDS).map(([k, x]) => `<button type="button" class="tk-kind" data-trk-kind="${k}" aria-pressed="${t.kind === k}">${icon(x.icon, 'sm')}<span>${x.label}</span></button>`).join('')}</div></div>
         <div class="form-grid"><div class="field"><label for="tk-sol">The solution is called</label><input id="tk-sol" value="${esc(t.sol || K.sol)}"></div>
@@ -1689,34 +1608,57 @@
     }
     if (n === 3 && s) {
       const solName = w.solName || s.name;
-      if (w.method === 'link') body = `<div class="tq"><span class="tq-n">3 of 4</span><h2>Send this prompt to the developer</h2><p class="muted">Paste it into Claude Code or Codex, or send it to whoever builds ${esc(solName)}. About a day of work.</p></div>
+      if (w.method === 'link') body = `<div class="tq"><span class="tq-n">3 of 6</span><h2>Send this prompt to the developer</h2><p class="muted">Paste it into Claude Code or Codex, or send it to whoever builds ${esc(solName)}. About a day of work.</p></div>
         <div class="tk-prompt"><div class="code-block prompt" id="dev-prompt">${esc(devPrompt(s))}</div><button type="button" class="btn primary lg tk-copy ${t.copied ? 'copied' : ''}" data-act="trk-copy">${t.copied ? `${icon('check', 'sm')}Copied` : `${icon('copy', 'sm')}Copy prompt`}</button></div>
         <p class="small muted">${icon('link', 'sm')} Or send the <button type="button" class="lnk" data-act="copy-devlink">developer link</button>: the prompt, their own key, and the test runs when they paste the address.</p>
         ${foot('I’ve sent it', 'data-act="w-next"', '', 'btn lg')}`;
-      if (w.method === 'axle') body = `<div class="tq"><span class="tq-n">3 of 4</span><h2>Which product is it?</h2><p class="muted">AntaraX products already share daily totals. Nothing to build, no prompt.</p></div>
+      if (w.method === 'axle') body = `<div class="tq"><span class="tq-n">3 of 6</span><h2>Which product is it?</h2><p class="muted">AntaraX products already share daily totals. Nothing to build, no prompt.</p></div>
         <div class="tk-kinds">${['Yara', 'Janka'].map((p) => `<button type="button" class="tk-kind" data-trk-prod="${p}" aria-pressed="${w.product === p}">${icon('box', 'sm')}<span>${p}</span></button>`).join('')}</div>
         ${foot('Connect', 'data-act="w-next"')}`;
-      if (w.method === 'sheet') body = `<div class="tq"><span class="tq-n">3 of 4</span><h2>Share the spreadsheet template</h2><p class="muted">One row a day, one column a figure. Totals only, no names.</p></div>
+      if (w.method === 'sheet') body = `<div class="tq"><span class="tq-n">3 of 6</span><h2>Share the spreadsheet template</h2><p class="muted">One row a day, one column a figure. Totals only, no names.</p></div>
         <div class="tk-prompt"><div class="code-block" id="w-tpl">${esc(sheetTemplate(kindOf(s)))}</div><button type="button" class="btn primary lg tk-copy ${t.copied ? 'copied' : ''}" data-act="trk-copy">${t.copied ? `${icon('check', 'sm')}Copied` : `${icon('copy', 'sm')}Copy columns`}</button></div>
         ${foot('Next: the first file', 'data-act="w-next"', '', 'btn lg')}`;
     }
     if (n === 4 && s) {
       const solName = w.solName || s.name, testing = w.tests.length && !w.tested, lastOk = w.tests.filter((x) => x[1] === 'ok').length - 1;
       const checks = w.tests.length ? `<div class="checks" aria-live="polite">${w.tests.map(([x, ok], i) => `<div${i === lastOk && !w.tested ? ' class="just"' : ''}><span class="tick ${ok}">${ok === 'ok' ? '✓' : '…'}</span><span>${esc(x)}</span></div>`).join('')}</div>` : '';
-      if (w.tested) body = `<div class="tq"><span class="tq-n">4 of 4</span><h2 class="tk-win">${icon('check')}${esc(solName)} is connected</h2><p class="muted">Every check passed. It shares 6 figures: 4 ready, 1 with a note, 1 held back because it could identify people.</p></div>
+      if (w.tested) body = `<div class="tq"><span class="tq-n">4 of 6</span><h2 class="tk-win">${icon('check')}${esc(solName)} is connected</h2><p class="muted">Every check passed. It shares 6 figures: 4 ready, 1 with a note, 1 held back because it could identify people.</p></div>
         ${foundChips(kindOf(s))}${checks}
-        ${foot(`Choose what to measure${icon('chev', 'sm')}`, 'data-act="trk-measure"', `<a class="btn" href="#organisation-${s.orgId}">Later</a>`)}`;
-      else if (testing) body = `<div class="tq"><span class="tq-n">4 of 4</span><h2>Testing the connection</h2><p class="muted">Checking it is signed and reading one day of figures. Nothing is saved until every check passes.</p></div>${checks}`;
-      else if (w.method === 'sheet') body = `<div class="tq"><span class="tq-n">4 of 4</span><h2>Waiting for the first file</h2><p class="muted">Upload a week of figures saved from the template. It is checked straight away.</p></div>
+        ${foot(`Choose what to measure${icon('chev', 'sm')}`, 'data-act="w-next"', `<a class="btn" href="#organisation-${s.orgId}">Later</a>`)}`;
+      else if (testing) body = `<div class="tq"><span class="tq-n">4 of 6</span><h2>Testing the connection</h2><p class="muted">Checking it is signed and reading one day of figures. Nothing is saved until every check passes.</p></div>${checks}`;
+      else if (w.method === 'sheet') body = `<div class="tq"><span class="tq-n">4 of 6</span><h2>Waiting for the first file</h2><p class="muted">Upload a week of figures saved from the template. It is checked straight away.</p></div>
         <div class="tk-drop" id="tk-drop"><span class="radar">${icon('sheet')}</span><div><b class="ink">Drop the CSV here</b><p class="small muted">or</p><div class="head-actions" style="justify-content:center"><button type="button" class="btn" data-act="w-pickfile">${icon('upload', 'sm')}Choose a file</button><button type="button" class="btn ghost" data-act="w-examplefile">Use the example file</button></div></div><input type="file" id="w-file" accept=".csv,text/csv" hidden></div>
         ${foot('Waiting for the file', 'disabled', `<a class="btn" href="#organisation-${s.orgId}">Leave and come back</a>`)}`;
-      else body = `<div class="tq"><span class="tq-n">4 of 4</span><h2>Waiting for ${esc(solName)}</h2><p class="muted">The developer adds the link and runs the contract test. When they paste the address in their developer link, Outcomes tests it at once and tells you. You can leave this page.</p></div>
+      else body = `<div class="tq"><span class="tq-n">4 of 6</span><h2>Waiting for ${esc(solName)}</h2><p class="muted">The developer adds the link and runs the contract test. When they paste the address in their developer link, Outcomes tests it at once and tells you. You can leave this page.</p></div>
         <div class="tk-listen"><span class="radar">${icon('lock')}</span><div><b class="ink">Listening for the link</b><p class="small muted">Prompt sent ${esc((w.promptAt || now()).replace(' 2026,', ''))} · usually about a day</p><label class="check" style="margin-top:8px"><input type="checkbox" id="w-notify" ${w.notify === false ? '' : 'checked'}><span>Email me when it connects</span></label></div></div>
         <details class="more"><summary>Have the address? Test it now</summary><div class="with-btn" style="margin-top:8px"><input id="w-url" class="mono" aria-label="Link address" value="${esc(w.url)}"><button type="button" class="btn" data-act="w-test">Test</button></div></details>
         <div class="demo-bar"><span class="tag">MOCK CONTROLS</span><button type="button" class="btn sm" data-act="w-devdone">The developer finished</button></div>
         ${foot('Waiting for the connection', 'disabled', `<a class="btn" href="#organisation-${s.orgId}">Leave and come back</a>`)}`;
     }
-    return `${head({ title: 'Start tracking', kind: 'manage', lead: 'Four short steps: the organisation, the project, the prompt for the developer, and the connection.', state: s ? `${esc(orgOf(s).name)} · ${esc(s.project.name)}` : undefined, actions: s ? '<button type="button" class="btn sm ghost" data-act="trk-new">Start another</button>' : '' })}
+    if (n === 5 && s) {
+      const props = kpiProposals(s), solName = w.solName || s.name, kept = props.filter((p) => w.keep[p.id]).length;
+      body = !w.proposals ? `<div class="tq"><span class="tq-n">5 of 6</span><h2>What should we measure?</h2></div><div class="thinking" style="padding:4px 0"><img src="${SPARK}" alt=""><span>Reading what ${esc(solName)} shares and what ${esc(s.project.name)} is for…</span></div><div class="grid" style="gap:10px"><div class="skel" style="height:64px"></div><div class="skel" style="height:64px"></div><div class="skel" style="height:64px"></div></div>`
+        : `<div class="tq"><span class="tq-n">5 of 6</span><h2>What should we measure?</h2><p class="muted">Suggested from what ${esc(solName)} shares and what ${esc(s.project.name)} is for. Keep or drop each.</p>${aiMark('Suggested by AI. You decide.')}</div>
+        <div class="tk-picks">${props.map((p, i) => `<div class="tk-pick ${w.keep[p.id] ? 'on' : ''}" style="--i:${i}"><div class="tk-pick-b"><b class="ink">${esc(p.name)}</b><span class="d">${esc(p.why)}</span><span class="meta-line" style="margin:2px 0 0"><span class="pill idle">${p.kind}</span>${q(p.quality)}${p.needsBaseline ? `<span class="small muted">${icon('target', 'sm')} Needs a baseline, next</span>` : ''}</span><details class="more"><summary>How it’s worked out</summary><div class="small">${esc(p.formula)}</div></details></div><button type="button" class="switch" role="switch" aria-checked="${!!w.keep[p.id]}" aria-label="Measure ${esc(p.name)}" data-keep="${p.id}"></button></div>`).join('')}</div>
+        <div class="tk-gap">${icon('insight', 'sm')}<span><b class="ink">Accuracy</b> would be worth measuring, but ${esc(solName)} doesn’t count corrections yet.</span><button type="button" class="btn sm" data-act="add-gap">Ask the developer</button></div>
+        ${foot(`Continue with ${kept} KPI${kept === 1 ? '' : 's'}`, `data-act="w-next" ${kept ? '' : 'disabled'}`)}`;
+    }
+    if (n === 6 && s) {
+      const b = w.baseline, Ks = kindOf(s), o = orgOf(s);
+      body = `<div class="tq"><span class="tq-n">6 of 6</span><h2>${w.keep.impact ? `How long does a ${Ks.noun} take by hand?` : 'Ready to send'}</h2><p class="muted">${w.keep.impact ? `Hours saved compares today with before. Agree it with ${esc(o.name)}: it appears in every report.` : 'None of the KPIs you chose need a baseline.'}</p></div>
+        ${w.keep.impact ? `<div class="tk-bases">${[['sample', 'clock', 'Time a sample', `20 or more ${Ks.nouns}, timed by hand. Most trusted`], ['history', 'documents', 'Past records', 'From their own system, if it logged the time'], ['estimate', 'people', 'Their estimate', 'Quickest. Labelled as an estimate'], ['none', 'target', 'Not yet', 'Hours saved waits for one']].map(([k, ic, tt, d]) => `<button type="button" class="tk-base" data-bmethod="${k}" aria-pressed="${b.method === k}">${icon(ic, 'sm')}<b>${tt}</b><span>${d}</span></button>`).join('')}</div>
+        ${b.method !== 'none' ? `<div class="tk-mins"><div class="field"><label for="b-mid">Typical</label><div class="tk-unit"><input id="b-mid" type="number" inputmode="decimal" value="${b.mid}"><span>min</span></div></div><div class="field"><label for="b-low">Fastest</label><div class="tk-unit"><input id="b-low" type="number" value="${b.low}"><span>min</span></div></div><div class="field"><label for="b-high">Slowest</label><div class="tk-unit"><input id="b-high" type="number" value="${b.high}"><span>min</span></div></div>${b.method === 'sample' ? `<div class="field"><label for="b-n">Timed</label><div class="tk-unit"><input id="b-n" type="number" value="${b.n}"><span>${esc(Ks.nouns)}</span></div></div>` : ''}</div>
+          <div class="field"><label for="b-note">Evidence</label><input id="b-note" placeholder="${b.method === 'sample' ? 'e.g. Timing sheet signed by the finance lead' : 'Where the number comes from'}" value="${esc(b.note)}"></div>` : ''}` : ''}
+        <div class="tk-appr"><span class="avatar">AR</span><div><b class="ink">Aisyah Rahman approves it</b><span class="small muted">You can’t approve what you set up yourself. Nothing counts until it is approved.</span></div></div>
+        ${foot('Send for approval', 'data-act="w-next"')}`;
+    }
+    if (n === 7 && s) {
+      const x = t.sent;
+      body = `<div class="tq"><h2 class="tk-win">${icon('check')}Sent for approval</h2><p class="muted">${x.kpis} KPI${x.kpis === 1 ? '' : 's'}${x.base ? ' and the baseline' : ''} for ${esc(s.name)} are with Aisyah Rahman. Nothing counts until they are approved.</p></div>
+        <ol class="wait-steps tk-next"><li class="done"><b>${icon('check', 'sm')}</b><span>Connected, and what to measure chosen</span></li><li class="now"><b>2</b><span>Aisyah Rahman approves the KPIs${x.base ? ' and baseline' : ''}</span></li><li><b>3</b><span>The first collection runs that night, 06:00</span></li><li><b>4</b><span>First figures next morning; the report is drafted on the 1st</span></li></ol>
+        <div class="wfoot"><button type="button" class="btn ghost" data-act="trk-new">${icon('plus', 'sm')}Start tracking another</button><a class="btn primary lg" href="#sim-${s.id}">Open ${esc(s.name)}${icon('chev', 'sm')}</a></div>`;
+    }
+    return `${head({ title: 'Start tracking', kind: 'manage', lead: 'From the organisation to what you measure, one question at a time.', state: s ? `${esc(orgOf(s).name)} · ${esc(s.project.name)}` : undefined, actions: s ? '<button type="button" class="btn sm ghost" data-act="trk-new">Start another</button>' : '' })}
       <div class="track">${steps}<div class="track-grid"><section class="card tq-card${enter ? ' enter' : ''}" id="wpanel">${body}</section>${trkVisual(n)}</div></div>`;
   };
   pages.track.after = () => {
@@ -1737,8 +1679,6 @@
       q.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); const v = q.value.trim(), ex = state.orgs.find((o) => o.name.toLowerCase() === v.toLowerCase()); if (ex) { t.orgId = ex.id; t.isNew = false; } else if (v) { t.isNew = true; } render(); const f = $('#tk-q'); if (f) f.focus(); } });
       sync(); if (t.step === 1 && !t.orgId) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); }
     }
-    const ind = $('#tk-ind'); if (ind) ind.addEventListener('change', () => { t.industry = ind.value; });
-    const sg = $('#tk-signed'); if (sg) sg.addEventListener('change', () => { t.signed = sg.checked; render(); });
     const nm = $('#tk-name');
     if (nm) {
       nm.addEventListener('input', () => { t.name = nm.value; const v = $('#tv-proj .nm'); if (v) v.innerHTML = nm.value.trim() ? esc(nm.value.trim()) : '<span class="ph">Not chosen yet</span>'; $('#tv-proj').classList.toggle('on', !!nm.value.trim()); const nx = $('[data-act=trk-next]'); if (nx) nx.disabled = !nm.value.trim(); const sv = $('#tv-sol .nm'); if (sv) sv.innerHTML = nm.value.trim() ? esc(t.sol.trim() || KINDS[t.kind].sol) : '<span class="ph">Not chosen yet</span>'; });
@@ -1748,6 +1688,7 @@
     const so = $('#tk-sol'); if (so) so.addEventListener('input', () => { t.sol = so.value; t.solTouched = true; const v = $('#tv-sol .nm'); if (v && t.name.trim()) v.textContent = so.value.trim() || KINDS[t.kind].sol; });
     const ob = $('#tk-obj'); if (ob) ob.addEventListener('input', () => { t.objective = ob.value; });
     pages.connect.after();
+    ['b-mid', 'b-low', 'b-high', 'b-n'].forEach((id) => { const el = $('#' + id); if (el) el.addEventListener('input', () => { const b = state.wiz.baseline, s = trkSim(), nm = $('#tv-base .nm'), sub = $('#tv-base .sub'); if (nm && s) nm.textContent = `${b.mid} min per ${kindOf(s).noun}`; if (sub) sub.textContent = `${b.low} to ${b.high} min · ${({ sample: `timed sample of ${b.n}`, history: 'past records', estimate: 'their estimate' })[b.method]}`; }); });
     const dz = $('#tk-drop'); if (dz) {
       ['dragenter', 'dragover'].forEach((ev) => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.add('over'); }));
       dz.addEventListener('dragleave', () => dz.classList.remove('over'));
@@ -1777,8 +1718,8 @@
     const n = sendSimForApproval(s, w.keep, false);
     state.approvalSel = state.myApprovals[0] && state.myApprovals[0].id;
     log(`Connected ${s.name} and sent ${n} KPIs to Aisyah Rahman`);
-    state.wiz = freshWizard();
-    go('sim-' + s.id); toast(`Sent ${n} KPIs for approval.`);
+    state.trk = Object.assign(state.trk && state.trk.simId === s.id ? state.trk : trkFresh(), { simId: s.id, sent: { kpis: n, base: !!w.keep.impact && w.baseline.method !== 'none' } });
+    go('track-' + s.id); window.scrollTo(0, 0); toast(`Sent ${n} KPIs for approval.`);
   }
 
   // ------------------------------------------------------------------ APPROVALS
@@ -3132,7 +3073,7 @@
     if (page === 'connect' && demo()) { setWs('real'); }
     if (page === 'connect' && state.mode) {
       const cs = (arg && simById(arg)) || simById(state.focusSim) || state.sims.find((x) => x.stage === 'draft');
-      if (cs && cs.stage === 'draft' && (cs.id !== state.focusSim || state.wiz.step < 3)) {
+      if (cs && cs.stage === 'draft') {
         if (cs.id !== state.focusSim) { state.focusSim = cs.id; state.wiz = freshWizard(); }
         page = 'track'; arg = cs.id; raw = 'track-' + cs.id;
         try { history.replaceState(null, '', '#' + raw); } catch (err) { /* the page still shows the wizard */ }
@@ -3188,8 +3129,8 @@
     'w-examplefile': () => { state.wiz.sheetFile = 'example-week.csv'; runTests(); },
     'w-devdone': () => { runTests(); },
     'trk-next': () => trkNext(),
-    'trk-back': () => { const t = state.trk, n = trkStep(); if (n === 2) t.step = 1; else if (n === 4) { state.wiz.step = 1; t.copied = false; } render(); },
-    'trk-new': () => { state.trk = trkFresh(); go('track'); },
+    'trk-back': () => { const t = state.trk, n = trkStep(); if (n === 2) t.step = 1; else if (n === 4) { state.wiz.step = 1; t.copied = false; } else if (n >= 5) state.wiz.step--; render(); window.scrollTo(0, 0); },
+    'trk-new': () => { state.trk = trkFresh(); state.wiz = freshWizard(); go('track'); },
     'trk-copy': () => {
       const t = state.trk, w = state.wiz, s = wizSim(); if (!s) return;
       copyText(w.method === 'sheet' ? sheetTemplate(kindOf(s)) : devPrompt(s), w.method === 'sheet' ? 'Columns copied. Share them with whoever fills in the sheet.' : 'Prompt copied. Send it to the developer.');
@@ -3197,7 +3138,6 @@
       t.copied = true; render();
       setTimeout(() => { if (state.trk === t && w.step === 1 && /^#track/.test(location.hash)) { w.step = 2; render(); } }, reduceMotion ? 0 : 900);
     },
-    'trk-measure': () => { const s = wizSim(); if (!s) return; state.wiz.step = 3; go('connect-' + s.id); },
     'w-test': () => { const w = state.wiz, u = $('#w-url'); if (u) w.url = u.value.trim(); if (!/^https:\/\/\S+\.\S+/.test(w.url)) { if (u) { u.setAttribute('aria-invalid', 'true'); u.focus(); } toast('The address must start with https.'); return; } runTests(); },
     'copy-prompt': () => {
       const fallback = () => { const r = document.createRange(); r.selectNodeContents($('#dev-prompt')); getSelection().removeAllRanges(); getSelection().addRange(r); toast('Selected. Press Ctrl C to copy.'); };
@@ -3307,9 +3247,10 @@
     if (d.trkOrg) { const t = state.trk, o = state.orgs.find((x) => x.id === d.trkOrg); t.orgId = d.trkOrg; t.isNew = false; t.q = o ? o.name : t.q; render(); return; }
     if (d.trkNew) { const t = state.trk, q = $('#tk-q'); if (q) t.q = q.value; t.isNew = true; t.orgId = null; render(); return; }
     if (d.trkKind) { const t = state.trk; t.kind = d.trkKind; if (!t.solTouched) t.sol = ''; t.objective = ''; render(); return; }
+    if (d.trkInd) { state.trk.industry = d.trkInd; render(); return; }
+    if (d.trkSigned) { state.trk.signed = !state.trk.signed; render(); return; }
     if (d.trkMethod) { state.trk.method = d.trkMethod; render(); return; }
     if (d.trkProd) { state.wiz.product = d.trkProd; render(); return; }
-    if (d.pmethod) { ['p-name', 'p-sol'].forEach((id) => { const el = $('#' + id); if (el) state[id === 'p-name' ? 'draftProj' : 'draftSol'] = el.value; }); state.newMethod = d.pmethod; render(); return; }
     if (d.keep) { state.wiz.keep[d.keep] = !state.wiz.keep[d.keep]; render(); return; }
     if (d.bmethod) { state.wiz.baseline.method = d.bmethod; render(); return; }
     if (d.sfkind) { readSf(); state.sf.kind = d.sfkind; state.sf.vol = KINDS[d.sfkind].vol; state.sf.base = KINDS[d.sfkind].base.mid; render(); return; }

@@ -977,3 +977,68 @@ details.ctx-att[open] .ctx-more { transform: rotate(180deg); }
 .tnode.pop { animation: c-rise .45s var(--ease) both; }
 @media (prefers-reduced-motion: reduce) { .tnode.pop { animation: none; } }
 .tk-search input { border: 0 !important; box-shadow: none !important; background: transparent !important; padding-left: 0 !important; }
+
+/* Start tracking, steps 5 and 6 and the end: same layout, no browser-default controls */
+.tk-kind.sm { padding: 7px 12px; font-size: .8125rem; }
+.tk-new { display: grid; gap: 14px; }
+.tk-toggle { display: flex; gap: 12px; align-items: center; text-align: left; padding: 10px 12px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--surface); cursor: pointer; width: 100%; }
+.tk-toggle > span:last-child { display: grid; gap: 2px; }
+.tk-toggle .switch { pointer-events: none; background: var(--axle-switch-off); }
+.tk-toggle[aria-checked="true"] { border-color: var(--axle-ok-line); }
+.tk-toggle[aria-checked="true"] .switch { background: var(--axle-ok); }
+.tk-toggle[aria-checked="true"] .switch::after { transform: translateX(18px); }
+.tk-picks { display: grid; gap: 10px; }
+.tk-pick { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px; align-items: start; padding: 14px 16px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--surface); transition: border-color .2s var(--ease), background .2s var(--ease), opacity .2s var(--ease); }
+.tk-pick.on { border-color: var(--primary-tint-2); box-shadow: 0 0 0 3px var(--primary-tint); }
+.tk-pick:not(.on) { background: var(--surface-2); }
+.tk-pick:not(.on) .tk-pick-b { opacity: .6; }
+.tk-pick-b { display: grid; gap: 4px; min-width: 0; }
+.tk-pick-b .d { font-size: .875rem; color: var(--body); }
+.tk-pick-b details summary { font-size: .8125rem; }
+.tq-card.enter .tk-pick { animation: c-rise .4s var(--ease) both; animation-delay: calc(var(--i, 0) * 70ms + .1s); }
+.tk-gap { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 12px 14px; border-radius: 12px; background: var(--ai-tint); font-size: .875rem; color: var(--body); }
+.tk-gap > span { flex: 1; min-width: 200px; }
+.tk-gap .i { color: var(--ai); }
+.tk-bases { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.tk-base { display: grid; gap: 4px; align-content: start; text-align: left; padding: 12px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--surface); cursor: pointer; transition: border-color .15s var(--ease), box-shadow .15s var(--ease), transform .15s var(--ease); }
+.tk-base:hover { transform: translateY(-1px); border-color: var(--primary-tint-2); }
+.tk-base .i { color: var(--muted); }
+.tk-base b { font-size: .875rem; color: var(--ink); }
+.tk-base span { font-size: .75rem; color: var(--muted); line-height: 1.35; }
+.tk-base[aria-pressed="true"] { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-tint); }
+.tk-base[aria-pressed="true"] .i { color: var(--primary); }
+.tk-mins { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.tk-unit { display: flex; align-items: center; border: 1.5px solid var(--line-strong); border-radius: 12px; background: var(--surface); padding-right: 12px; transition: border-color .15s var(--ease), box-shadow .15s var(--ease); }
+.tk-unit:focus-within { border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-tint); }
+.tk-unit input { border: 0 !important; box-shadow: none !important; background: transparent !important; font-family: var(--mono); font-size: 1.125rem; min-width: 0; width: 100%; -moz-appearance: textfield; }
+.tk-unit input::-webkit-outer-spin-button, .tk-unit input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.tk-unit span { font-size: .75rem; color: var(--muted); white-space: nowrap; }
+.tk-appr { display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2); }
+.tk-appr > div { display: grid; gap: 2px; }
+.tk-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.tk-chips span { padding: 2px 8px; border-radius: var(--r-pill); background: var(--primary-tint); color: var(--primary-ink); font-size: .6875rem; font-weight: 500; }
+.tnode.waiting { border-style: solid; border-color: var(--axle-warn-line); background: var(--surface); }
+.tnode.waiting .cic { background: var(--warn-tint); color: var(--warn-ink); animation: c-breathe 2s ease-in-out infinite; }
+.tnode.waiting .cword { background: var(--warn-tint); color: var(--warn-ink); }
+.tk-next { margin-top: 4px; }
+.tvis .tnode { padding: 8px 12px; }
+.tvis .twire { height: 16px; }
+.tvis .cmap.vert .cwire { height: 24px; }
+@media (max-width: 760px) { .tk-bases, .tk-mins { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (prefers-reduced-motion: reduce) { .tnode.waiting .cic, .tq-card.enter .tk-pick { animation: none; } }
+.tk-unit.bad { border-color: var(--axle-fault); box-shadow: 0 0 0 4px var(--axle-fault-tint); }
+/* The picture, compact enough to sit beside any step */
+.tvis { padding: 16px; }
+.tvis-head { margin-bottom: 10px; }
+.tvis .tnode { grid-template-columns: 32px minmax(0, 1fr); column-gap: 10px; padding: 7px 10px; border-radius: 12px; }
+.tvis .tnode .cic { width: 32px; height: 32px; border-radius: 9px; }
+.tvis .tnode .cic .i, .tvis .tnode .cic img { width: 16px; height: 16px; }
+.tvis .tnode .nm { font-size: .875rem; }
+.tvis .tnode .tl { font-size: .625rem; }
+.tvis .tnode .sub { font-size: .6875rem; }
+.tvis .tnode .cword { margin-top: 2px; padding: 1px 8px; font-size: .6875rem; }
+.tvis .tnode.ok::after { width: 18px; height: 18px; top: -7px; right: -7px; font-size: .625rem; }
+.tvis .twire { height: 12px; }
+.tvis .twire .track, .tvis .cmap.vert .cwire .track { left: 26px; }
+.tvis .cmap.vert .cwire { height: 18px; }
+.tvis .cmap.vert .cwire i { left: 23px; }
