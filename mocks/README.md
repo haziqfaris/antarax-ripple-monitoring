@@ -21,7 +21,7 @@ Switch in the staff menu (your initials, top right) or Platform → Demo.
 Sign in, skip through welcome, and choose **Watch the guided demo**. It opens the demo workspace and plays 23 steps:
 
 1. A new organisation is added, with a project.
-2. One straight path, shown across the top of every setup page: organisation → project (with the solution and how it shares) → copy the prompt → wait for the connection → what to measure → baseline and send. A map of the connection animates as it waits, is tested and connects. An AntaraX product or a spreadsheet each have their own short path.
+2. **Start tracking** (`#track`): one wizard, one question at a time: choose or add the organisation → name the project → copy the prompt → the connection. On the right, a picture of what you're setting up builds as you answer and animates as the connection waits, is tested and goes live. Then what to measure, and baseline and send. An AntaraX product or a spreadsheet each have their own short path.
 
 **All screens** (staff menu → All screens, or `#screens`) lists every screen in the order people meet them, and opens any one: the setup steps in the demo workspace with the guided demo at that step, the rest in example data.
 3. The KPIs are approved, and the first figures arrive.

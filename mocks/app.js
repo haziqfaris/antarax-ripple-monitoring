@@ -566,7 +566,7 @@
       r8Only: [['Measurement links', 'links', R.links.filter((l) => l.st !== 'ok').length, 'loud']],
     };
   }
-  const NAV_CUR = { 'new-organisation': 'organisations', 'new-project': 'organisations', connect: 'organisations', screens: 'demo', organisation: 'organisations', results: 'results', solution: 'results', sim: 'results', report: 'reports', guide: 'home' };
+  const NAV_CUR = { 'new-organisation': 'organisations', 'new-project': 'organisations', connect: 'organisations', track: 'organisations', screens: 'demo', organisation: 'organisations', results: 'results', solution: 'results', sim: 'results', report: 'reports', guide: 'home' };
   function navHtml(route) {
     const mode = axMode(route), N = navModel();
     const curKey = R8_ROUTES.test(route) ? route.replace(/-.+$/, '') : (NAV_CUR[route] || NAV_CUR[parse()[0]] || route);
@@ -892,8 +892,8 @@
     const s = firstSim(), st = s ? s.stage : null;
     return [
       { t: 'Set up your workspace', d: 'Name, time zone and team.', done: true },
-      { t: 'Add your first organisation', d: 'The organisation, and their data agreement.', done: state.orgs.length > 0, href: '#new-organisation', cta: 'New organisation' },
-      { t: 'Create a project', d: 'What the solution is for, in the organisation’s words.', done: !!s, href: '#new-project', cta: 'Create project' },
+      { t: 'Add your first organisation', d: 'The organisation, and their data agreement.', done: state.orgs.length > 0, href: '#track', cta: 'Start tracking' },
+      { t: 'Create a project', d: 'What the solution is for, in the organisation’s words.', done: !!s, href: '#track', cta: 'Start tracking' },
       { t: 'Connect the solution', d: 'Copy the prompt for the developer and wait for the connection. Then choose KPIs and the baseline.', done: !!s && st !== 'draft', href: '#connect', cta: 'Connect' },
       { t: 'Get the KPIs approved', d: 'Someone else checks every KPI and baseline.', done: st === 'approved' || st === 'collecting', href: s ? '#sim-' + s.id : '#approvals', cta: 'Check status' },
       { t: 'See your first results', d: 'Figures arrive after the first nightly collection.', done: st === 'collecting', href: s ? '#sim-' + s.id : '#home', cta: 'Open solution' },
@@ -1089,7 +1089,7 @@
   pages.organisations = () => {
     const all = companies();
     const lead = 'Every organisation REKA measures for: its stage, setup and what it needs from a person. Its figures are in Results.';
-    if (!all.length) return `${head({ title: 'Organisations', lead, actions: `<a class="btn primary" href="#new-organisation">${icon('plus', 'sm')}New organisation</a>` })}<section class="card"><div class="empty">${emptyArt}<h3>No organisations yet</h3><p>Start with the organisation. You record their data agreement here, because nothing is collected until it is signed.</p><div class="head-actions" style="justify-content:center"><a class="btn primary" href="#new-organisation">${icon('plus', 'sm')}Add organisation</a><button type="button" class="btn" data-act="studio">Try a demo workspace</button></div></div></section>`;
+    if (!all.length) return `${head({ title: 'Organisations', lead, actions: `<a class="btn" href="#new-organisation">${icon('plus', 'sm')}New organisation</a><a class="btn primary" href="#track">Start tracking</a>` })}<section class="card"><div class="empty">${emptyArt}<h3>No organisations yet</h3><p>Start with the organisation. You record their data agreement here, because nothing is collected until it is signed.</p><div class="head-actions" style="justify-content:center"><a class="btn primary" href="#new-organisation">${icon('plus', 'sm')}Add organisation</a><button type="button" class="btn" data-act="studio">Try a demo workspace</button></div></div></section>`;
     const f = state.cf = state.cf || { show: 'all', sort: 'needs', q: '' };
     const days = aWindow(state.range), prevDays = windowDays(state.range, M.addDays(days[0], -1)), hm = mByKey('hours'), vm = mByKey('value');
     let rows = all.map((c) => { const t = coTotals(c, days), tp = coTotals(c, prevDays); return { c, t, h: hm.calc(t), hc: comparable(t, tp) ? chgPct(hm.calc(t), hm.calc(tp)) : null, v: vm.calc(t), needs: coNeeds(c).length, sev: needSeverity(coNeeds(c)), st: coStatus(c) }; });
@@ -1103,7 +1103,7 @@
     if (f.group === 'stage' || f.group === 'industry') { const key = (r) => f.group === 'stage' ? ['live', 'pilot', 'onboarding', 'planning'].indexOf(r.c.stage) : r.c.industry; rows = rows.map((r, i) => [r, i]).sort((a, b) => (key(a[0]) < key(b[0]) ? -1 : key(a[0]) > key(b[0]) ? 1 : a[1] - b[1])).map((x) => x[0]); }
     const wk = weeksOf(aWindow(84));
     const strip = [['all', 'All', all.length], ['needs', 'Need a person', counts.needs], ['live', 'Live', counts.live], ['early', 'Getting started', all.length - counts.live]];
-    return `${head({ title: 'Organisations', lead, actions: `<button type="button" class="btn" data-act="export">Export CSV</button>${demo() ? '' : `<a class="btn primary" href="#new-organisation">${icon('plus', 'sm')}New organisation</a>`}` })}
+    return `${head({ title: 'Organisations', lead, actions: `<button type="button" class="btn" data-act="export">Export CSV</button>${demo() ? '' : `<a class="btn" href="#new-organisation">${icon('plus', 'sm')}New organisation</a><a class="btn primary" href="#track">Start tracking</a>`}` })}
     <section class="strip" aria-label="Organisations by state">${strip.map(([k, l, n]) => `<button type="button" class="strip-b" data-cfshow="${k}" aria-pressed="${f.show === k}"><span>${l}</span><b class="mono">${n}</b></button>`).join('')}
 </section>
     <section class="card" style="padding:14px 18px"><div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
@@ -1285,7 +1285,7 @@
       const o = newOrg(name, $('#o-ind').value, $('#o-signed').checked);
       state.draftOrg = null;
       log(`Added organisation ${name}`);
-      state.newProjOrg = o.id; go('new-project'); toast(`${name} added. Next, the project.`);
+      state.trk = Object.assign(trkFresh(), { step: 2, orgId: o.id }); go('track'); toast(`${name} added. Next, the project.`);
     });
   };
 
@@ -1567,34 +1567,6 @@
     const lastOk = w.tests.filter((t) => t[1] === 'ok').length - 1;
     const change = `<details class="more"><summary>Shares by ${m.t.toLowerCase()}. Change</summary><div style="margin-top:10px">${methodCards(w.method, 'data-method')}</div></details>`;
     let panel = '';
-    if (w.step === 1) {
-      if (w.method === 'link') panel = `<div><h2>Send the developer this prompt</h2><p class="small muted" style="margin-top:4px">Paste it into Claude Code or Codex, or send it to whoever builds ${esc(solName)}. It points to the integration pack, the contract and the test. About a day of work.</p></div>
-        <div class="code-block prompt" id="dev-prompt">${esc(devPrompt(s))}</div>
-        <p class="small muted">${icon('link', 'sm')} Or send the <button type="button" class="lnk" data-act="copy-devlink">developer link</button>: it shows this prompt, gives them their own read-only key once, and tests the connection when they paste the address.</p>
-        ${change}${foot(`${icon('copy', 'sm')}Copy prompt and wait for the connection`)}`;
-      if (w.method === 'axle') panel = `<div><h2>Which product is it?</h2><p class="small muted" style="margin-top:4px">AntaraX products already share daily totals through AXLE. Nothing to build, no prompt to send.</p></div>
-        <div class="field"><label for="w-prod">AntaraX product</label><select id="w-prod">${['Yara', 'Janka'].map((p) => `<option ${w.product === p ? 'selected' : ''}>${p}</option>`).join('')}</select><span class="help">Outcomes finds ${esc(o.name)}’s workspace in it.</span></div>
-        ${change}${foot('Connect')}`;
-      if (w.method === 'sheet') panel = `<div><h2>Share the spreadsheet template</h2><p class="small muted" style="margin-top:4px">One row a day, one column a figure. Totals only, no names. Someone at ${esc(o.name)} or REKA fills it in each week.</p></div>
-        <div class="code-block" id="w-tpl">${esc(sheetTemplate(K))}</div>
-        ${change}${foot(`${icon('copy', 'sm')}Copy the columns and wait for the file`)}`;
-    }
-    if (w.step === 2) {
-      const checks = w.tests.length ? `<div class="checks" aria-live="polite">${w.tests.map(([t, ok], i) => `<div${i === lastOk && !w.tested ? ' class="just"' : ''}><span class="tick ${ok}">${ok === 'ok' ? '✓' : '…'}</span><span>${esc(t)}</span></div>`).join('')}</div>` : '';
-      const result = w.tested ? `<div class="callout ok">${icon('check')}<span><b>Connected.</b> ${esc(solName)} shares 6 figures: 4 ready, 1 with a note, 1 held back because it could identify people.</span></div>${foundChips(K)}<details class="more"><summary>Each figure, explained</summary><div style="margin-top:10px">${foundList(K)}</div></details>` : '';
-      const leave = `<a class="btn" href="#organisation-${o.id}">Leave and come back</a>`;
-      if (w.tested || testing) panel = `<div><h2>${w.tested ? `${esc(solName)} is connected` : 'Testing the connection'}</h2><p class="small muted" style="margin-top:4px">Outcomes checks the connection, then reads one day of figures. Nothing is saved until every check passes.</p></div>${checks}${result}${foot(w.tested ? 'Choose what to measure' : 'Testing…', !w.tested)}`;
-      else if (w.method === 'link') panel = `<div><h2>Waiting for the connection</h2><p class="small muted" style="margin-top:4px">You can leave this page. Outcomes tests the link as soon as the developer gives the address, and tells you when ${esc(solName)} is connected.</p></div>
-        <ol class="wait-steps"><li class="done"><b>${icon('check', 'sm')}</b><span>Prompt copied${w.promptAt ? ` <span class="mono xs muted">${esc(w.promptAt.replace(' 2026,', ''))}</span>` : ''}</span></li><li class="now"><b>2</b><span>The developer adds the link and runs the contract test</span></li><li><b>3</b><span>They paste the address in their developer link</span></li><li><b>4</b><span>Outcomes tests it and tells you</span></li></ol>
-        <label class="check"><input type="checkbox" id="w-notify" ${w.notify === false ? '' : 'checked'}><span>Email me when it connects, or if the test fails</span></label>
-        <details class="more"><summary>Have the address yourself? Test it here</summary><div class="with-btn" style="margin-top:8px"><input id="w-url" class="mono" aria-label="Link address" value="${esc(w.url)}"><button type="button" class="btn" data-act="w-test">Test</button></div></details>
-        <div class="demo-bar"><span class="tag">MOCK CONTROLS</span><button type="button" class="btn sm" data-act="w-devdone">The developer finished</button></div>
-        ${foot('Waiting for the connection', true, leave)}`;
-      else if (w.method === 'sheet') panel = `<div><h2>Waiting for the first file</h2><p class="small muted" style="margin-top:4px">Upload a week of figures saved from the template. Outcomes reads and checks it straight away.</p></div>
-        <div class="head-actions" style="justify-content:flex-start"><button type="button" class="btn" data-act="w-pickfile">${icon('upload', 'sm')}Choose a CSV file</button><button type="button" class="btn ghost" data-act="w-examplefile">Use the example file</button><input type="file" id="w-file" accept=".csv,text/csv" hidden></div>
-        ${foot('Waiting for the file', true, leave)}`;
-      else panel = `<div><h2>Connect ${esc(w.product)}</h2></div>${foot('Connect')}`;
-    }
     if (w.step === 3) panel = !w.proposals ? `<div class="thinking" style="padding:8px 0"><img src="${SPARK}" alt=""><span>Reading 4 figures and suggesting KPIs for ${esc(s.project.name)}…</span></div><div class="grid" style="gap:10px"><div class="skel" style="height:72px"></div><div class="skel" style="height:72px"></div><div class="skel" style="height:72px"></div></div>` : `
         <div class="card-head" style="margin:0"><div><h2>Choose what to measure</h2><p class="small muted" style="margin-top:4px">Suggested from what ${esc(solName)} shares and what the project is for.</p></div>${aiMark()}</div>
         ${props.map((p, i) => `<div class="pick ${w.keep[p.id] ? 'on' : 'off'}" style="--i:${i}"><div class="top"><div><h3>${esc(p.name)}</h3><div class="meta-line" style="margin-top:6px"><span class="pill idle">${p.kind}</span>${q(p.quality)}</div></div><button type="button" class="switch" role="switch" aria-checked="${!!w.keep[p.id]}" aria-label="Measure ${esc(p.name)}" data-keep="${p.id}"></button></div><p class="why">${esc(p.why)}</p><details class="more"><summary>How it’s worked out</summary><div class="small">${esc(p.formula)}</div></details>${p.needsBaseline && w.keep[p.id] ? `<div class="callout warn" style="padding:10px 12px">${icon('target', 'sm')}<span>Needs a baseline. You’ll set it next.</span></div>` : ''}</div>`).join('')}
@@ -1625,7 +1597,7 @@
     const nt = $('#w-notify'); if (nt) nt.addEventListener('change', () => { w.notify = nt.checked; });
     const prod = $('#w-prod'); if (prod) prod.addEventListener('change', () => { w.product = prod.value; render(); });
     const f = $('#w-file'); if (f) f.addEventListener('change', () => { const x = f.files && f.files[0]; if (!x) return; if (!/\.csv$/i.test(x.name)) { toast('Choose a CSV file, saved from the template.'); return; } w.sheetFile = x.name; runTests(); });
-    if (w.step === 3 && !w.proposals) setTimeout(() => { w.proposals = true; if (/^#connect/.test(location.hash)) render(); }, reduceMotion ? 0 : 1500);
+    if (w.step === 3 && !w.proposals) setTimeout(() => { w.proposals = true; if (/^#(connect|track)/.test(location.hash)) render(); }, reduceMotion ? 0 : 1500);
   };
   function runTests() {
     const w = state.wiz, s = wizSim(); if (!s || w.tested || w.tests.length) return;
@@ -1634,8 +1606,8 @@
     lines.forEach((t, i) => setTimeout(() => {
       if (state.wiz !== w) return;
       w.tests[i] = [t, 'ok'];
-      if (i === lines.length - 1) { w.tested = true; log(`${name} connected for ${orgOf(s).name}: every check passed`, 'Collector'); if (!/^#connect/.test(location.hash)) toast(`${name} is connected.`); }
-      if (/^#connect/.test(location.hash)) render();
+      if (i === lines.length - 1) { w.tested = true; log(`${name} connected for ${orgOf(s).name}: every check passed`, 'Collector'); if (!/^#(connect|track)/.test(location.hash)) toast(`${name} is connected.`); }
+      if (/^#(connect|track)/.test(location.hash)) render();
     }, reduceMotion ? 0 : 450 * (i + 1)));
   }
   function wizardNext() {
@@ -1651,6 +1623,152 @@
     if (w.step === 4 && w.keep.impact && w.baseline.method !== 'none' && !(w.baseline.low <= w.baseline.mid && w.baseline.mid <= w.baseline.high && w.baseline.mid > 0)) { toast('Check the minutes: fastest ≤ typical ≤ slowest.'); return; }
     if (w.step === 4) { finishWizard(); return; }
     w.step++; render(); window.scrollTo(0, 0);
+  }
+  // ------------------------------------------------------------------ START TRACKING (one wizard: organisation, project, prompt, connection)
+  // One question at a time on the left; on the right, what is being set up builds itself as you answer, then the
+  // connection animates as it waits, is tested and goes live. KPIs and the baseline follow on the connect page.
+  const TRK_STEPS = ['Organisation', 'Project', 'Prompt', 'Connection'];
+  const trkFresh = () => ({ step: 1, orgId: null, isNew: false, q: '', industry: 'Property and real estate', signed: true, name: '', kind: 'documents', sol: '', solTouched: false, method: 'link', objective: '', simId: null, copied: false });
+  const trkSim = () => { const t = state.trk; return t && t.simId ? simById(t.simId) : null; };
+  // Where the person is: steps 1 and 2 before anything exists, then the wizard's own steps for the solution.
+  function trkStep() { const t = state.trk, s = trkSim(); return s && s.stage === 'draft' ? 2 + Math.min(state.wiz.step, 2) : t.step; }
+  function trkVisual(n) {
+    const t = state.trk, s = trkSim(), w = state.wiz, o = s ? orgOf(s) : t.orgId ? state.orgs.find((x) => x.id === t.orgId) : null;
+    const orgName = o ? o.name : t.isNew && t.q.trim() ? t.q.trim() : '', K = KINDS[t.kind], projName = s ? s.project.name : t.name.trim(), solName = s ? (w.solName || s.name) : (t.sol.trim() || K.sol);
+    const m = WMETHODS[s ? w.method : t.method], tests = s ? w.tests : [], done = tests.filter((x) => x[1] === 'ok').length;
+    const st = !s ? 'idle' : w.tested ? 'live' : tests.length ? 'test' : n >= 4 ? 'wait' : 'idle';
+    const seen = t.vis || {}; t.vis = {};
+    const node = (id, ic, label, val, sub, on, cls = '') => { t.vis[id] = !!val; return `<div class="tnode ${on ? 'on' : ''} ${val && !seen[id] ? 'pop' : ''} ${cls}" id="${id}"><span class="cic">${icon(ic)}</span><span class="tl">${label}</span><b class="nm">${val ? esc(val) : '<span class="ph">Not chosen yet</span>'}</b>${sub ? `<span class="sub">${sub}</span>` : ''}</div>`; };
+    const link = (on) => `<div class="twire ${on ? 'on' : ''}" aria-hidden="true"><span class="track"></span></div>`;
+    const flow = `<div class="cwire" aria-hidden="true"><span class="track"></span><i></i><i></i><i></i></div>`;
+    const word = st === 'live' ? 'Connected' : st === 'test' ? `Checking, ${done} of ${tests.length}` : st === 'wait' ? ({ link: 'Waiting for the developer', axle: 'Ready to test', sheet: 'Waiting for a file' })[w.method] : 'Not connected yet';
+    return `<aside class="tvis" aria-label="What you are setting up"><div class="tvis-head"><span class="eyebrow">What you’re setting up</span>${st === 'live' ? '<span class="pill ok"><span class="dot"></span>Live</span>' : ''}</div>
+      ${node('tv-org', 'organisation', 'Organisation', orgName, o ? (o.signed === false ? 'Data agreement not signed' : 'Data agreement signed') : t.isNew && orgName ? 'New' : '', !!orgName)}
+      ${link(!!orgName && !!projName)}
+      ${node('tv-proj', 'projects', 'Project', projName, projName ? esc(K.label) : '', !!projName)}
+      ${link(!!projName && (n >= 3 || !!s))}
+      <div class="cmap vert" data-st="${st}">
+        ${node('tv-sol', 'box', 'Solution', projName ? solName : '', projName ? `${esc(orgName || 'Their')}’s system` : '', !!s && st === 'live', st === 'live' ? 'ok' : '')}
+        ${flow}
+        <div class="tnode door ${st === 'live' || (st === 'test' && done >= Math.ceil(tests.length / 2)) ? 'ok on' : ''}"><span class="cic">${icon(m.ic)}</span><span class="tl">How it shares</span><b class="nm">${m.door}</b><span class="cword">${word}</span></div>
+        ${flow}
+        <div class="tnode out ${st === 'live' ? 'ok on' : ''}"><span class="cic"><img src="assets/antarax-mark.svg" alt=""></span><span class="tl">Outcomes</span><b class="nm">Collects ${s && w.method === 'sheet' ? 'each week' : 'every night'}</b><span class="sub">Reads totals, changes nothing</span></div>
+      </div></aside>`;
+  }
+  pages.track = (id) => {
+    if (id && simById(id) && (!state.trk || state.trk.simId !== id)) { state.trk = Object.assign(trkFresh(), { simId: id }); state.focusSim = id; }
+    state.trk = state.trk || trkFresh();
+    const t = state.trk, n = trkStep(), s = trkSim(), w = state.wiz, K = KINDS[t.kind];
+    if (s && s.stage !== 'draft') { state.trk = trkFresh(); return pages.track(); }
+    const shown = `${n}:${s ? w.tested : ''}:${s ? w.method : t.isNew}`, enter = t.shown !== shown; t.shown = shown;
+    const steps = `<ol class="tsteps">${TRK_STEPS.map((l, i) => `<li class="${i + 1 < n ? 'done' : i + 1 === n ? 'now' : ''}" ${i + 1 === n ? 'aria-current="step"' : ''}><b>${i + 1 < n ? icon('check', 'sm') : i + 1}</b><span>${l}</span></li>`).join('')}<li class="then"><span>Then: what to measure, baseline, approval</span></li></ol>`;
+    const back = n > 1 && n !== 3 && !(n === 4 && s && w.tested) ? `<button type="button" class="btn ghost" data-act="trk-back">${icon('back', 'sm')}Back</button>` : n === 3 ? '<span></span>' : `<a class="btn ghost" href="#home">Cancel</a>`;
+    const foot = (label, attrs = '', extra = '', cls = 'btn primary lg') => `<div class="wfoot">${back}<span class="head-actions">${extra}<button type="button" class="${cls}" ${attrs}>${label}</button></span></div>`;
+    let body = '';
+    if (n === 1) {
+      const q = t.q.trim(), list = state.orgs, exact = list.some((o) => o.name.toLowerCase() === q.toLowerCase());
+      body = `<div class="tq"><span class="tq-n">1 of 4</span><h2>Which organisation is this for?</h2><p class="muted">Pick one, or type a new name to add it.</p></div>
+        <div class="field"><label for="tk-q" class="sr-only">Organisation</label><div class="tk-search">${icon('search', 'sm')}<input id="tk-q" autocomplete="off" placeholder="Type an organisation’s name" value="${esc(t.q)}"></div></div>
+        <div class="tk-orgs" role="listbox" aria-label="Organisations">
+          ${list.map((o) => `<button type="button" class="tk-org" role="option" data-trk-org="${o.id}" aria-selected="${t.orgId === o.id}" data-name="${esc(o.name.toLowerCase())}"><span class="avatar" style="border-radius:10px">${initials(o.name)}</span><span><b class="ink">${esc(o.name)}</b><small>${esc(o.industry)} · ${simsOf(o).length} project${simsOf(o).length === 1 ? '' : 's'}</small></span>${icon('check', 'sm')}</button>`).join('')}
+          <button type="button" class="tk-org add" data-trk-new="1" aria-selected="${t.isNew}" ${q && !exact ? '' : 'hidden'} id="tk-add"><span class="avatar" style="border-radius:10px;background:var(--primary-tint);color:var(--primary-ink)">${icon('plus', 'sm')}</span><span><b class="ink">Add “<span id="tk-add-name">${esc(q)}</span>”</b><small>A new organisation</small></span>${icon('check', 'sm')}</button>
+        </div>
+        ${!list.length && !q ? '<p class="small muted">No organisations yet. Type the first one’s name.</p>' : ''}
+        ${t.isNew ? `<div class="tk-new form-grid"><div class="field"><label for="tk-ind">Industry</label><select id="tk-ind">${['Property and real estate', 'Food and beverage', 'Logistics', 'Manufacturing', 'Healthcare', 'Engineering and construction', 'Retail', 'Other'].map((x) => `<option ${t.industry === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
+          <label class="check" style="align-self:end"><input type="checkbox" id="tk-signed" ${t.signed ? 'checked' : ''}><span><b class="ink">Data agreement signed</b><br><span class="small muted">Nothing is collected until it is</span></span></label></div>` : ''}
+        ${foot('Continue', `data-act="trk-next" ${t.orgId || (t.isNew && q) ? '' : 'disabled'}`)}`;
+    }
+    if (n === 2) {
+      body = `<div class="tq"><span class="tq-n">2 of 4</span><h2>What’s the project?</h2><p class="muted">The name ${esc(t.isNew ? t.q.trim() : (state.orgs.find((o) => o.id === t.orgId) || {}).name || 'they')} use for it.</p></div>
+        <div class="field"><label for="tk-name" class="sr-only">Project name</label><input id="tk-name" class="tk-big" placeholder="e.g. Lease abstraction" value="${esc(t.name)}" autocomplete="off"></div>
+        <div class="field"><span class="lab">Kind of work <span class="muted" style="font-weight:400">· steers the KPIs AI suggests</span></span><div class="tk-kinds">${Object.entries(KINDS).map(([k, x]) => `<button type="button" class="tk-kind" data-trk-kind="${k}" aria-pressed="${t.kind === k}">${icon(x.icon, 'sm')}<span>${x.label}</span></button>`).join('')}</div></div>
+        <div class="form-grid"><div class="field"><label for="tk-sol">The solution is called</label><input id="tk-sol" value="${esc(t.sol || K.sol)}"></div>
+          <div class="field"><span class="lab">It shares figures by</span><div class="seg tk-seg" role="group" aria-label="How it shares">${Object.entries(WMETHODS).map(([k, x]) => `<button type="button" data-trk-method="${k}" aria-pressed="${t.method === k}">${{ link: 'Link', axle: 'AntaraX product', sheet: 'Spreadsheet' }[k]}</button>`).join('')}</div><span class="help">${esc(WMETHODS[t.method].effort)}${t.method === 'link' ? '. Best for anything REKA builds' : ''}</span></div></div>
+        <details class="more"><summary>The outcome, in their words (you can add it later)</summary><div class="field" style="margin-top:8px"><textarea id="tk-obj" rows="2">${esc(t.objective || K.objective)}</textarea></div></details>
+        ${foot(t.method === 'link' ? 'Create and get the prompt' : 'Create and connect', `data-act="trk-next" ${t.name.trim() ? '' : 'disabled'}`)}`;
+    }
+    if (n === 3 && s) {
+      const solName = w.solName || s.name;
+      if (w.method === 'link') body = `<div class="tq"><span class="tq-n">3 of 4</span><h2>Send this prompt to the developer</h2><p class="muted">Paste it into Claude Code or Codex, or send it to whoever builds ${esc(solName)}. About a day of work.</p></div>
+        <div class="tk-prompt"><div class="code-block prompt" id="dev-prompt">${esc(devPrompt(s))}</div><button type="button" class="btn primary lg tk-copy ${t.copied ? 'copied' : ''}" data-act="trk-copy">${t.copied ? `${icon('check', 'sm')}Copied` : `${icon('copy', 'sm')}Copy prompt`}</button></div>
+        <p class="small muted">${icon('link', 'sm')} Or send the <button type="button" class="lnk" data-act="copy-devlink">developer link</button>: the prompt, their own key, and the test runs when they paste the address.</p>
+        ${foot('I’ve sent it', 'data-act="w-next"', '', 'btn lg')}`;
+      if (w.method === 'axle') body = `<div class="tq"><span class="tq-n">3 of 4</span><h2>Which product is it?</h2><p class="muted">AntaraX products already share daily totals. Nothing to build, no prompt.</p></div>
+        <div class="tk-kinds">${['Yara', 'Janka'].map((p) => `<button type="button" class="tk-kind" data-trk-prod="${p}" aria-pressed="${w.product === p}">${icon('box', 'sm')}<span>${p}</span></button>`).join('')}</div>
+        ${foot('Connect', 'data-act="w-next"')}`;
+      if (w.method === 'sheet') body = `<div class="tq"><span class="tq-n">3 of 4</span><h2>Share the spreadsheet template</h2><p class="muted">One row a day, one column a figure. Totals only, no names.</p></div>
+        <div class="tk-prompt"><div class="code-block" id="w-tpl">${esc(sheetTemplate(kindOf(s)))}</div><button type="button" class="btn primary lg tk-copy ${t.copied ? 'copied' : ''}" data-act="trk-copy">${t.copied ? `${icon('check', 'sm')}Copied` : `${icon('copy', 'sm')}Copy columns`}</button></div>
+        ${foot('Next: the first file', 'data-act="w-next"', '', 'btn lg')}`;
+    }
+    if (n === 4 && s) {
+      const solName = w.solName || s.name, testing = w.tests.length && !w.tested, lastOk = w.tests.filter((x) => x[1] === 'ok').length - 1;
+      const checks = w.tests.length ? `<div class="checks" aria-live="polite">${w.tests.map(([x, ok], i) => `<div${i === lastOk && !w.tested ? ' class="just"' : ''}><span class="tick ${ok}">${ok === 'ok' ? '✓' : '…'}</span><span>${esc(x)}</span></div>`).join('')}</div>` : '';
+      if (w.tested) body = `<div class="tq"><span class="tq-n">4 of 4</span><h2 class="tk-win">${icon('check')}${esc(solName)} is connected</h2><p class="muted">Every check passed. It shares 6 figures: 4 ready, 1 with a note, 1 held back because it could identify people.</p></div>
+        ${foundChips(kindOf(s))}${checks}
+        ${foot(`Choose what to measure${icon('chev', 'sm')}`, 'data-act="trk-measure"', `<a class="btn" href="#organisation-${s.orgId}">Later</a>`)}`;
+      else if (testing) body = `<div class="tq"><span class="tq-n">4 of 4</span><h2>Testing the connection</h2><p class="muted">Checking it is signed and reading one day of figures. Nothing is saved until every check passes.</p></div>${checks}`;
+      else if (w.method === 'sheet') body = `<div class="tq"><span class="tq-n">4 of 4</span><h2>Waiting for the first file</h2><p class="muted">Upload a week of figures saved from the template. It is checked straight away.</p></div>
+        <div class="tk-drop" id="tk-drop"><span class="radar">${icon('sheet')}</span><div><b class="ink">Drop the CSV here</b><p class="small muted">or</p><div class="head-actions" style="justify-content:center"><button type="button" class="btn" data-act="w-pickfile">${icon('upload', 'sm')}Choose a file</button><button type="button" class="btn ghost" data-act="w-examplefile">Use the example file</button></div></div><input type="file" id="w-file" accept=".csv,text/csv" hidden></div>
+        ${foot('Waiting for the file', 'disabled', `<a class="btn" href="#organisation-${s.orgId}">Leave and come back</a>`)}`;
+      else body = `<div class="tq"><span class="tq-n">4 of 4</span><h2>Waiting for ${esc(solName)}</h2><p class="muted">The developer adds the link and runs the contract test. When they paste the address in their developer link, Outcomes tests it at once and tells you. You can leave this page.</p></div>
+        <div class="tk-listen"><span class="radar">${icon('lock')}</span><div><b class="ink">Listening for the link</b><p class="small muted">Prompt sent ${esc((w.promptAt || now()).replace(' 2026,', ''))} · usually about a day</p><label class="check" style="margin-top:8px"><input type="checkbox" id="w-notify" ${w.notify === false ? '' : 'checked'}><span>Email me when it connects</span></label></div></div>
+        <details class="more"><summary>Have the address? Test it now</summary><div class="with-btn" style="margin-top:8px"><input id="w-url" class="mono" aria-label="Link address" value="${esc(w.url)}"><button type="button" class="btn" data-act="w-test">Test</button></div></details>
+        <div class="demo-bar"><span class="tag">MOCK CONTROLS</span><button type="button" class="btn sm" data-act="w-devdone">The developer finished</button></div>
+        ${foot('Waiting for the connection', 'disabled', `<a class="btn" href="#organisation-${s.orgId}">Leave and come back</a>`)}`;
+    }
+    return `${head({ title: 'Start tracking', kind: 'manage', lead: 'Four short steps: the organisation, the project, the prompt for the developer, and the connection.', state: s ? `${esc(orgOf(s).name)} · ${esc(s.project.name)}` : undefined, actions: s ? '<button type="button" class="btn sm ghost" data-act="trk-new">Start another</button>' : '' })}
+      <div class="track">${steps}<div class="track-grid"><section class="card tq-card${enter ? ' enter' : ''}" id="wpanel">${body}</section>${trkVisual(n)}</div></div>`;
+  };
+  pages.track.after = () => {
+    const t = state.trk; if (!t) return;
+    const q = $('#tk-q');
+    if (q) {
+      // Filter and name the new organisation without re-rendering, so typing never loses focus.
+      const sync = () => {
+        const v = q.value.trim(), lv = v.toLowerCase(); t.q = q.value;
+        $$('.tk-org[data-trk-org]').forEach((b) => { b.hidden = !!lv && !b.dataset.name.includes(lv); });
+        const add = $('#tk-add'), exact = state.orgs.find((o) => o.name.toLowerCase() === lv);
+        if (add) { add.hidden = !v || !!exact; $('#tk-add-name').textContent = v; }
+        if (t.isNew && (!v || exact)) { t.isNew = false; }
+        const nm = $('#tv-org .nm'); if (nm) nm.innerHTML = (t.isNew && v) ? esc(v) : t.orgId ? esc((state.orgs.find((o) => o.id === t.orgId) || {}).name || '') : '<span class="ph">Not chosen yet</span>';
+        const nx = $('[data-act=trk-next]'); if (nx) nx.disabled = !(t.orgId || (t.isNew && v));
+      };
+      q.addEventListener('input', () => { if (t.orgId) { t.orgId = null; $$('.tk-org').forEach((b) => b.setAttribute('aria-selected', 'false')); } sync(); });
+      q.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); const v = q.value.trim(), ex = state.orgs.find((o) => o.name.toLowerCase() === v.toLowerCase()); if (ex) { t.orgId = ex.id; t.isNew = false; } else if (v) { t.isNew = true; } render(); const f = $('#tk-q'); if (f) f.focus(); } });
+      sync(); if (t.step === 1 && !t.orgId) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); }
+    }
+    const ind = $('#tk-ind'); if (ind) ind.addEventListener('change', () => { t.industry = ind.value; });
+    const sg = $('#tk-signed'); if (sg) sg.addEventListener('change', () => { t.signed = sg.checked; render(); });
+    const nm = $('#tk-name');
+    if (nm) {
+      nm.addEventListener('input', () => { t.name = nm.value; const v = $('#tv-proj .nm'); if (v) v.innerHTML = nm.value.trim() ? esc(nm.value.trim()) : '<span class="ph">Not chosen yet</span>'; $('#tv-proj').classList.toggle('on', !!nm.value.trim()); const nx = $('[data-act=trk-next]'); if (nx) nx.disabled = !nm.value.trim(); const sv = $('#tv-sol .nm'); if (sv) sv.innerHTML = nm.value.trim() ? esc(t.sol.trim() || KINDS[t.kind].sol) : '<span class="ph">Not chosen yet</span>'; });
+      nm.addEventListener('keydown', (e) => { if (e.key === 'Enter' && nm.value.trim()) { e.preventDefault(); trkNext(); } });
+      if (!nm.value) nm.focus();
+    }
+    const so = $('#tk-sol'); if (so) so.addEventListener('input', () => { t.sol = so.value; t.solTouched = true; const v = $('#tv-sol .nm'); if (v && t.name.trim()) v.textContent = so.value.trim() || KINDS[t.kind].sol; });
+    const ob = $('#tk-obj'); if (ob) ob.addEventListener('input', () => { t.objective = ob.value; });
+    pages.connect.after();
+    const dz = $('#tk-drop'); if (dz) {
+      ['dragenter', 'dragover'].forEach((ev) => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.add('over'); }));
+      dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+      dz.addEventListener('drop', (e) => { e.preventDefault(); dz.classList.remove('over'); const x = e.dataTransfer.files[0]; if (!x || !/\.csv$/i.test(x.name)) { toast('Drop a CSV file, saved from the template.'); return; } state.wiz.sheetFile = x.name; runTests(); });
+    }
+  };
+  function trkNext() {
+    const t = state.trk;
+    if (t.step === 1) { if (!(t.orgId || (t.isNew && t.q.trim()))) return; t.step = 2; render(); return; }
+    if (t.step === 2 && !t.simId) {
+      if (!t.name.trim()) { const el = $('#tk-name'); if (el) { el.setAttribute('aria-invalid', 'true'); el.focus(); } return; }
+      state.mode = 'new';
+      let org = state.orgs.find((o) => o.id === t.orgId);
+      if (!org) { org = newOrg(t.q.trim(), t.industry, t.signed); log(`Added organisation ${org.name}`); }
+      const sol = t.sol.trim() || KINDS[t.kind].sol;
+      const sim = newSim(org, { kind: t.kind, project: t.name.trim(), objective: (t.objective || '').trim() || KINDS[t.kind].objective, sol });
+      log(`Created project ${sim.project.name} for ${org.name}`);
+      t.simId = sim.id; t.orgId = org.id; state.focusSim = sim.id;
+      state.wiz = Object.assign(freshWizard(), { method: t.method, solName: sol });
+      go('track-' + sim.id); return;
+    }
   }
   function finishWizard() {
     const w = state.wiz, s = wizSim();
@@ -2840,11 +2958,11 @@
   const tsim = () => simById(T.simId);
   const TOUR = [
     { t: 'Meet Outcomes', d: 'REKA builds AI solutions for organisations. Outcomes shows each organisation what their solution changed. Let’s take a new organisation from nothing to their first report.', go() { setWs('sandbox'); resetWorkspace(true); go('home'); } },
-    { t: 'Add the organisation', d: 'Everything starts with the organisation and their signed data agreement. Nothing is collected until it’s signed.', mark: '#f-org', go() { state.draftOrg = 'Harapan Foods'; go('new-organisation'); } },
-    { t: 'Create the project', d: 'Harapan Foods is in, and Outcomes goes straight on to the project. The kind of work steers which KPIs AI suggests; the outcome is in the organisation’s words; and you say how the solution will share its figures.', mark: '#f-proj', go() { if (!T.orgId) { const o = newOrg('Harapan Foods', 'Food and beverage'); T.orgId = o.id; log('Added organisation Harapan Foods'); } state.newKind = 'documents'; state.draftProj = 'Supplier invoices'; state.draftSol = 'Invoice reader'; state.newMethod = 'link'; state.newProjOrg = T.orgId; go('new-project'); } },
-    { t: 'Copy the prompt', d: 'The project is created and Outcomes goes straight to the prompt for the developer, or for Claude Code or Codex. One button copies it. The map shows what is being connected.', mark: '#wpanel', go() { if (!T.simId) { const s = newSim(state.orgs.find((o) => o.id === T.orgId), { kind: 'documents', project: 'Supplier invoices', sol: 'Invoice reader', vol: 220, history: 14 }); T.simId = s.id; state.focusSim = s.id; state.wiz = freshWizard(); log('Created project Supplier invoices for Harapan Foods'); } wizTo(1); } },
-    { t: 'Wait for the connection', d: 'The developer adds a small read-only link, about a day of work. The map waits. You can leave: Outcomes tests the link as soon as it answers and tells you.', mark: '#wpanel', go() { wizTo(2); } },
-    { t: 'Connected', d: 'Outcomes checks the link is signed and reads one day of figures; each part of the map lights up as it passes. Every figure is explained, and anything that could identify people is held back.', mark: '#wpanel', go() { wizTo(2); setTimeout(() => { if (state.tour === 5) runTests(); }, 300); } },
+    { t: 'Start tracking: the organisation', d: 'One wizard, four short steps. Type the organisation’s name: pick it if it exists, or add it. The picture on the right builds as you answer.', mark: '#wpanel', go() { state.trk = Object.assign(trkFresh(), { q: 'Harapan Foods', isNew: true, industry: 'Food and beverage' }); go('track'); } },
+    { t: 'Name the project', d: 'The project’s name, the kind of work (it steers which KPIs AI suggests), the solution and how it shares its figures.', mark: '#wpanel', go() { state.trk = Object.assign(trkFresh(), { step: 2, q: 'Harapan Foods', isNew: true, industry: 'Food and beverage', name: 'Supplier invoices', kind: 'documents', sol: 'Invoice reader', solTouched: true }); go('track'); } },
+    { t: 'Copy the prompt', d: 'Outcomes writes the prompt for the developer, or for Claude Code or Codex. One button copies it and moves on to the connection.', mark: '#wpanel', go() { if (!T.simId && state.trk && state.trk.simId && simById(state.trk.simId)) { T.simId = state.trk.simId; T.orgId = simById(T.simId).orgId; } if (!T.orgId) { const o = newOrg('Harapan Foods', 'Food and beverage'); T.orgId = o.id; log('Added organisation Harapan Foods'); } if (!T.simId) { const s = newSim(state.orgs.find((o) => o.id === T.orgId), { kind: 'documents', project: 'Supplier invoices', sol: 'Invoice reader', vol: 220, history: 14 }); T.simId = s.id; state.focusSim = s.id; state.wiz = freshWizard(); log('Created project Supplier invoices for Harapan Foods'); } wizTo(1); } },
+    { t: 'Wait for the connection', d: 'The developer adds a small read-only link, about a day of work. Outcomes listens for it; you can leave and are told when it connects.', mark: '#wpanel', go() { wizTo(2); } },
+    { t: 'Connected', d: 'Outcomes checks the link is signed and reads one day of figures; each part of the picture lights up as it passes. Anything that could identify people is held back. Then on to what to measure.', mark: '#wpanel', go() { wizTo(2); setTimeout(() => { if (state.tour === 5) runTests(); }, 300); } },
     { t: 'AI suggests the KPIs', d: 'AI reads the figures and the project, and suggests what to measure and why. People keep or drop each one.', mark: '#wpanel', go() { wizTo(3); } },
     { t: 'Agree the baseline', d: 'Hours saved needs how long the work took by hand. Here, a timed sample of 30 invoices. Below it, everything being sent for approval.', mark: '#wpanel', go() { wizTo(4); Object.assign(state.wiz.baseline, { method: 'sample', mid: 16, low: 12, high: 21, n: 30 }); render(); } },
     { t: 'Send for approval', d: 'Someone other than the person who set it up approves every KPI and the baseline.', go() { if (tsim().stage === 'draft') { wizTo(4); finishWizard(); } else go('sim-' + T.simId); } },
@@ -2870,7 +2988,7 @@
     if (n === 2 && state.tour === 4) { w.tested = false; w.tests = []; }
     if (n >= 4) w.proposals = true;
     w.step = n; w.solName = 'Invoice reader';
-    go('connect-' + s.id);
+    if (n < 3) { state.trk = Object.assign(trkFresh(), { simId: s.id, copied: n > 1 }); go('track-' + s.id); } else go('connect-' + s.id);
   }
   function tourHtml() {
     const i = state.tour, st = TOUR[i];
@@ -2893,10 +3011,10 @@
   const SCREENS = [
     ['Setting up a project, in order', 'Opens in the demo workspace, with the guided demo at that step. Your own workspace is not touched.', true, [
       ['home', 'Overview, first use', 'The checklist from nothing to a first report', 0],
-      ['organisation', 'New organisation', 'Name, contact and the signed data agreement', 1],
-      ['projects', 'New project', 'The outcome, the kind of work, the solution and how it shares', 2],
-      ['copy', 'Copy the prompt', 'One button copies what the developer needs', 3],
-      ['clock', 'Wait for the connection', 'The map waits; you can leave', 4],
+      ['organisation', 'Start tracking: organisation', 'Pick one, or type a new name to add it', 1],
+      ['projects', 'Start tracking: project', 'Name, kind of work, solution and how it shares', 2],
+      ['copy', 'Start tracking: prompt', 'One button copies it and moves on', 3],
+      ['clock', 'Start tracking: connection', 'Listening for the link; you can leave', 4],
       ['link', 'Connected', 'Each check lights up; what it shares', 5],
       ['target', 'What to measure', 'AI suggests KPIs; keep or drop each', 6],
       ['savings', 'Baseline and send', 'Time by hand, and what goes for approval', 7],
@@ -2987,11 +3105,11 @@
     const old = /^(?:client|org)-(.+)$/.exec(h);
     if (old) h = 'organisation-' + old[1]; else if (OLD[h]) h = OLD[h];
     if (was && h !== was) { try { history.replaceState(null, '', '#' + h); } catch (err) { /* file pages may refuse; the alias still works */ } }
-    for (const p of ['organisation', 'results', 'solution', 'sim', 'connect', 'report', 'troubleshoot']) if (h.startsWith(p + '-')) return [p, h.slice(p.length + 1), h];
+    for (const p of ['organisation', 'results', 'solution', 'sim', 'connect', 'track', 'report', 'troubleshoot']) if (h.startsWith(p + '-')) return [p, h.slice(p.length + 1), h];
     return [h, null, h];
   }
   let last = '';
-  const TITLES = { results: 'Results', analytics: 'Analytics', ask: 'Ask', signin: 'Sign in', welcome: 'Welcome', home: 'Overview', organisations: 'Organisations', 'new-organisation': 'New organisation', 'new-project': 'New project', connect: 'Connect a solution', approvals: 'Approvals', reports: 'Reports', report: 'Report', settings: 'Settings', guide: 'AXLE guide', adoption: 'Adoption', demo: 'Demo', audit: 'Audit', staff: 'Staff', r8: 'Overview', incidents: 'Incidents', troubleshoot: 'Troubleshoot', jobs: 'Jobs', providers: 'Providers', services: 'Services', configuration: 'Configuration', 'ops-audit': 'Operations audit', links: 'Measurement links', context: 'Client context', screens: 'All screens' };
+  const TITLES = { results: 'Results', analytics: 'Analytics', ask: 'Ask', signin: 'Sign in', welcome: 'Welcome', home: 'Overview', organisations: 'Organisations', 'new-organisation': 'New organisation', 'new-project': 'New project', connect: 'Connect a solution', approvals: 'Approvals', reports: 'Reports', report: 'Report', settings: 'Settings', guide: 'AXLE guide', adoption: 'Adoption', demo: 'Demo', audit: 'Audit', staff: 'Staff', r8: 'Overview', incidents: 'Incidents', troubleshoot: 'Troubleshoot', jobs: 'Jobs', providers: 'Providers', services: 'Services', configuration: 'Configuration', 'ops-audit': 'Operations audit', links: 'Measurement links', context: 'Client context', screens: 'All screens', track: 'Start tracking' };
   // "How this page works" for the standard pages (SPEC §3.6). Pages may pass their own.
   const HOW = {
     home: 'Start with <b>Needs a person</b>: each row says what is wrong and links to the fix; a technical problem opens Troubleshoot in R8. Every figure is worked out from the solutions’ daily figures and opens the list behind it. Hours saved and value are estimates against agreed baselines, always shown with a likely range. Fees need the Commercial right; without it you see a dash, never a zero.',
@@ -3012,6 +3130,15 @@
     if (page === 'sim' && (demo() || !simById(arg))) { page = demo() ? 'home' : 'organisations'; raw = page; }
     if (page === 'report' && arg && (demo() || !simById(arg))) { page = 'reports'; raw = page; }
     if (page === 'connect' && demo()) { setWs('real'); }
+    if (page === 'connect' && state.mode) {
+      const cs = (arg && simById(arg)) || simById(state.focusSim) || state.sims.find((x) => x.stage === 'draft');
+      if (cs && cs.stage === 'draft' && (cs.id !== state.focusSim || state.wiz.step < 3)) {
+        if (cs.id !== state.focusSim) { state.focusSim = cs.id; state.wiz = freshWizard(); }
+        page = 'track'; arg = cs.id; raw = 'track-' + cs.id;
+        try { history.replaceState(null, '', '#' + raw); } catch (err) { /* the page still shows the wizard */ }
+      }
+    }
+    if (page === 'new-project' && state.mode) { state.trk = Object.assign(trkFresh(), { step: state.newProjOrg ? 2 : 1, orgId: state.newProjOrg || null }); state.newProjOrg = null; page = 'track'; arg = null; raw = 'track'; try { history.replaceState(null, '', '#track'); } catch (err) { /* fine */ } }
     if (!pages[page]) { page = 'home'; raw = 'home'; }
     if (state.playing && /^(new-|connect)/.test(page)) { clearInterval(state.playing); state.playing = null; }
     const root = $('#root');
@@ -3060,13 +3187,24 @@
     'w-pickfile': () => { const f = $('#w-file'); if (f) f.click(); },
     'w-examplefile': () => { state.wiz.sheetFile = 'example-week.csv'; runTests(); },
     'w-devdone': () => { runTests(); },
+    'trk-next': () => trkNext(),
+    'trk-back': () => { const t = state.trk, n = trkStep(); if (n === 2) t.step = 1; else if (n === 4) { state.wiz.step = 1; t.copied = false; } render(); },
+    'trk-new': () => { state.trk = trkFresh(); go('track'); },
+    'trk-copy': () => {
+      const t = state.trk, w = state.wiz, s = wizSim(); if (!s) return;
+      copyText(w.method === 'sheet' ? sheetTemplate(kindOf(s)) : devPrompt(s), w.method === 'sheet' ? 'Columns copied. Share them with whoever fills in the sheet.' : 'Prompt copied. Send it to the developer.');
+      if (w.method === 'link') { w.promptAt = now(); log(`Copied the developer prompt for ${w.solName || s.name}`); }
+      t.copied = true; render();
+      setTimeout(() => { if (state.trk === t && w.step === 1 && /^#track/.test(location.hash)) { w.step = 2; render(); } }, reduceMotion ? 0 : 900);
+    },
+    'trk-measure': () => { const s = wizSim(); if (!s) return; state.wiz.step = 3; go('connect-' + s.id); },
     'w-test': () => { const w = state.wiz, u = $('#w-url'); if (u) w.url = u.value.trim(); if (!/^https:\/\/\S+\.\S+/.test(w.url)) { if (u) { u.setAttribute('aria-invalid', 'true'); u.focus(); } toast('The address must start with https.'); return; } runTests(); },
     'copy-prompt': () => {
       const fallback = () => { const r = document.createRange(); r.selectNodeContents($('#dev-prompt')); getSelection().removeAllRanges(); getSelection().addRange(r); toast('Selected. Press Ctrl C to copy.'); };
       try { navigator.clipboard.writeText($('#dev-prompt').textContent).then(() => toast('Copied. Send it to the developer.'), fallback); } catch (err) { fallback(); }
     },
     'add-gap': () => toast('Added to the developer’s list.'),
-    'proj-for': (d) => { state.newProjOrg = d.org; go('new-project'); },
+    'proj-for': (d) => { state.trk = Object.assign(trkFresh(), { step: 2, orgId: d.org }); go('track'); },
     'sim-approve': (d) => { approveSim(simById(d.sim)); render(); toast('Aisyah approved the KPIs.'); },
     'sim-pull': (d) => { collectNow(simById(d.sim)); render(); toast('First figures collected.'); },
     'schedule-report': (d) => { const s = simById(d.sim) || firstSim(); s.reportScheduled = true; log(`Scheduled the ${s.project.cadence.toLowerCase()} report for ${orgOf(s).name}`); render(); toast('Report scheduled.'); },
@@ -3166,6 +3304,11 @@
     if (d.kind) { state.newKind = d.kind; render(); return; }
     if (d.method) { state.wiz.method = d.method; state.wiz.tests = []; state.wiz.tested = false; render(); return; }
     if (d.scr) { screenOpen(d.scr); return; }
+    if (d.trkOrg) { const t = state.trk, o = state.orgs.find((x) => x.id === d.trkOrg); t.orgId = d.trkOrg; t.isNew = false; t.q = o ? o.name : t.q; render(); return; }
+    if (d.trkNew) { const t = state.trk, q = $('#tk-q'); if (q) t.q = q.value; t.isNew = true; t.orgId = null; render(); return; }
+    if (d.trkKind) { const t = state.trk; t.kind = d.trkKind; if (!t.solTouched) t.sol = ''; t.objective = ''; render(); return; }
+    if (d.trkMethod) { state.trk.method = d.trkMethod; render(); return; }
+    if (d.trkProd) { state.wiz.product = d.trkProd; render(); return; }
     if (d.pmethod) { ['p-name', 'p-sol'].forEach((id) => { const el = $('#' + id); if (el) state[id === 'p-name' ? 'draftProj' : 'draftSol'] = el.value; }); state.newMethod = d.pmethod; render(); return; }
     if (d.keep) { state.wiz.keep[d.keep] = !state.wiz.keep[d.keep]; render(); return; }
     if (d.bmethod) { state.wiz.baseline.method = d.bmethod; render(); return; }
