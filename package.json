@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "next dev --port 3200",
     "build": "next build",
+    "vercel-build": "tsc --noEmit -p . && vitest run tests/unit && next build",
     "start": "next start --port 3200",
     "typecheck": "tsc --noEmit -p .",
     "test": "vitest run",

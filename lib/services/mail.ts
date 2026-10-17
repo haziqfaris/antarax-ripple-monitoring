@@ -1,5 +1,7 @@
-// E-mail (V-27): every message goes to the outbox first, so nothing is lost and tests can read it.
-// With RESEND_API_KEY set, flushOutbox sends it; without, it stays in the outbox for staff to see.
+// E-mail (V-27). Alerts go to the outbox first, so nothing is lost and tests can read it; with RESEND_API_KEY set,
+// flushOutbox sends them, without it they stay in the outbox for staff to see. Sign-in links never touch the outbox.
+import { appendFile, mkdir } from "node:fs/promises";
+import { dirname } from "node:path";
 import type { Tx } from "../db";
 import { inScope } from "../db";
 import { env } from "../env";
@@ -26,4 +28,23 @@ export async function flushOutbox(fetcher: typeof fetch = fetch): Promise<{ sent
     }
     return { sent, failed, skipped };
   });
+}
+
+/**
+ * Sent at once, never through the outbox: a sign-in link must not sit where other staff can read it (the Jobs page
+ * shows the outbox). Without Resend, tests write to MAIL_CAPTURE_FILE and development prints to the server's console.
+ */
+export async function sendNow(to: string, subject: string, text: string, fetcher: typeof fetch = fetch): Promise<void> {
+  const e = env();
+  if (e.RESEND_API_KEY) {
+    const res = await fetcher("https://api.resend.com/emails", { method: "POST", headers: { authorization: `Bearer ${e.RESEND_API_KEY}`, "content-type": "application/json" }, body: JSON.stringify({ from: e.MAIL_FROM, to: [to], subject, text }), signal: AbortSignal.timeout(15_000) });
+    if (!res.ok) throw new Error(`Resend answered ${res.status}`);
+  } else if (e.MAIL_CAPTURE_FILE) {
+    await mkdir(dirname(e.MAIL_CAPTURE_FILE), { recursive: true });
+    await appendFile(e.MAIL_CAPTURE_FILE, JSON.stringify({ to, subject, text, at: new Date().toISOString() }) + "\n");
+  } else if (process.env.NODE_ENV !== "production") {
+    console.info(`[e-mail to ${to}] ${subject}\n${text}`);
+  } else {
+    throw new Error("E-mail is not set up: set RESEND_API_KEY.");
+  }
 }

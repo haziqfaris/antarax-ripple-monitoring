@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 import { noBrowserControls, noOverflow, signIn } from "./helpers";
 
 test("pages fit a phone", async ({ page }) => {
-  await signIn(page, "nurul@reka.example", "operator password 1");
+  await signIn(page, "nurul@reka.example");
   const app = await page.locator("table a.name").first().getAttribute("href");
   for (const path of ["/applications", "/applications/new", app!, "/organisations", "/approvals", "/reports", "/jobs"]) {
     await page.goto(path);

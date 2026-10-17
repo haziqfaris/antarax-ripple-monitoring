@@ -1,19 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { hashPassword, verifyPassword } from "@/lib/auth/password";
 import { totpAt, verifyTotp, newTotpSecret } from "@/lib/auth/totp";
 import { canDecide } from "@/lib/auth/roles";
 import { linkState } from "@/domain/link-state";
 import { parseCsv } from "@/domain/csv";
 import { devPrompt } from "@/domain/prompt";
-
-describe("passwords", () => {
-  it("hashes and verifies, and refuses short ones", async () => {
-    const h = await hashPassword("correct horse battery");
-    expect(await verifyPassword("correct horse battery", h)).toBe(true);
-    expect(await verifyPassword("wrong horse battery", h)).toBe(false);
-    await expect(hashPassword("short")).rejects.toThrow();
-  });
-});
 
 describe("two-step codes (RFC 6238 test vector, SHA-1)", () => {
   // RFC 6238 appendix B: secret "12345678901234567890", T = 59 → 94287082 (8 digits); 6 digits → 287082.

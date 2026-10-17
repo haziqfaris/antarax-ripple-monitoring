@@ -30,9 +30,9 @@ const d = { fetch: fetcher, now: NOW };
 
 beforeAll(async () => {
   db = await freshDb();
-  op = { id: await addStaff("nurul@reka.example", "Nurul Aina", "operator", "operator password 1"), label: "Nurul Aina", role: "operator", email: "nurul@reka.example" };
-  ap = { id: await addStaff("aisyah@reka.example", "Aisyah Rahman", "approver", "approver password 1"), label: "Aisyah Rahman", role: "approver", email: "aisyah@reka.example" };
-  viewer = { id: await addStaff("v@reka.example", "Vi Ewer", "viewer", "viewer password 11"), label: "Vi Ewer", role: "viewer", email: "v@reka.example" };
+  op = { id: await addStaff("nurul@reka.example", "Nurul Aina", "operator"), label: "Nurul Aina", role: "operator", email: "nurul@reka.example" };
+  ap = { id: await addStaff("aisyah@reka.example", "Aisyah Rahman", "approver"), label: "Aisyah Rahman", role: "approver", email: "aisyah@reka.example" };
+  viewer = { id: await addStaff("v@reka.example", "Vi Ewer", "viewer"), label: "Vi Ewer", role: "viewer", email: "v@reka.example" };
 });
 afterAll(async () => db.drop());
 
@@ -153,7 +153,7 @@ describe("the monthly report (V-26, A6)", () => {
     await expect(decide(ap, p.id, "approved", "fine")).rejects.toThrow(/someone else/);
   });
   it("freezes the approved page with its hash", async () => {
-    const approver2: StaffActor = { id: await addStaff("lim@reka.example", "Daniel Lim", "approver", "approver password 2"), label: "Daniel Lim", role: "approver", email: "lim@reka.example" };
+    const approver2: StaffActor = { id: await addStaff("lim@reka.example", "Daniel Lim", "approver"), label: "Daniel Lim", role: "approver", email: "lim@reka.example" };
     const p = (await listApprovals(org)).find((x) => x.subject === "report" && x.status === "waiting")!;
     const { hash } = await decide(approver2, p.id, "approved", "Figures match the console");
     const r = await getReport(id);

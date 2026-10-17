@@ -6,9 +6,10 @@ How to put the console on Vercel with its database on Supabase (V-02). Each step
 
 - **A Vercel Pro team.** The health check runs hourly, and Hobby allows scheduled jobs at most once a day; a Hobby deployment with `vercel.json` as it is fails. Hobby is also for non-commercial use.
 - **A Supabase organisation on Pro.** The free plan has no daily backups and pauses quiet projects.
+- **A Resend account** and a sending domain whose DNS you can change. Sign-in is by e-mailed link, so without e-mail nobody can sign in.
 - **On your machine:** Node 22, this repository with `npm ci` run, `openssl`, and `psql` and `pg_dump` of the same major version as the Supabase project (step 9).
 - **A password manager** for the secrets below. Never paste them into chat, an issue or a commit.
-- **The code on the branch Vercel deploys.** Version 1 is on `claude/practical-thompson-qsu01b`; merge it to `main` first, or point Vercel's production branch at it.
+- **The code on the branch Vercel deploys**, normally `main`, and `main` set as the repository's default branch on GitHub.
 
 ## 1 Create the Supabase project
 
@@ -24,7 +25,7 @@ How to put the console on Vercel with its database on Supabase (V-02). Each step
    export MIGRATE_DATABASE_URL='postgresql://postgres.<project-ref>:<owner password>@<pooler host>:5432/postgres?sslmode=require'
    npm run db:migrate
    ```
-   You should see `applied 0001_init.sql` and `applied 0002_close_data_api.sql`. Running it again prints `nothing to apply`.
+   You should see `applied` for `0001_init.sql`, `0002_close_data_api.sql` and `0003_sign_in_links.sql`. Running it again prints `nothing to apply`.
 
 ## 3 Create the console's own login
 
@@ -43,9 +44,15 @@ The console must not connect as `postgres`, which bypasses row-level security; i
    ```
    "Tenant or user not found" means the `.<project-ref>` part is missing.
 
-## 4 Create the Vercel project
+## 4 Set up e-mail
 
-1. **Add New, Project**, import `haziqfaris/antarax-ripple-monitoring`. Vercel detects Next.js; leave the build settings alone. Node 22 comes from `package.json`.
+In Resend, add and verify the sending domain (it shows the DNS records), then make an API key with **sending access** only. `MAIL_FROM` must be on that domain, for example `Outcomes <outcomes@reka.re>`.
+
+Sign-in links are sent at once and never kept in the outbox; alerts go through the outbox and leave on the next scheduled run. The console refuses to start in production without `RESEND_API_KEY`.
+
+## 5 Create the Vercel project
+
+1. **Add New, Project**, import `haziqfaris/antarax-ripple-monitoring`. Vercel detects Next.js; leave the build settings alone. It runs `vercel-build` from `package.json`: the typecheck and unit tests, then the build, so a failing test stops the deployment. Node 22 comes from `package.json`. There is no GitHub Actions: run `npm run check` and `bash scripts/e2e.sh` before pushing.
 2. Before the first deploy, add these variables for **Production only**. Leave Preview and Development empty, so a preview deployment can never reach the production database.
 
    | Variable | Value |
@@ -55,19 +62,19 @@ The console must not connect as `postgres`, which bypasses row-level security; i
    | `CRON_SECRET` | `openssl rand -hex 24`. Vercel sends it to the scheduled jobs |
    | `APP_URL` | The console's public address, for example `https://outcomes.reka.re`. Use the `.vercel.app` address until the domain is set |
    | `ALERT_TO` | Who is e-mailed when a link stops answering, comma separated |
-   | `RESEND_API_KEY`, `MAIL_FROM` | Optional, step 8. Without them e-mail waits in the outbox on the Jobs page |
+   | `RESEND_API_KEY`, `MAIL_FROM` | From step 4. Needed: sign-in links go by e-mail |
 
-   **Never** set `ALLOW_LOCAL_HTTP_LINKS` or `ALLOW_OWNER_CONNECTION`: they exist for tests and scripts.
+   **Never** set `ALLOW_LOCAL_HTTP_LINKS`, `ALLOW_OWNER_CONNECTION` or `MAIL_CAPTURE_FILE`: they exist for tests and scripts. `MAIL_CAPTURE_FILE` would write sign-in links to a file instead of sending them.
 3. **Deploy.** `vercel.json` puts the functions in `sin1`, next to the database, and registers the two jobs: collection at 22:00 UTC (06:00 MYT) and the health check at quarter past every hour.
 4. **Deployment Protection:** keep Vercel Authentication on for previews.
 
 A change to a variable only takes effect after a redeploy.
 
-## 5 The domain
+## 6 The domain
 
-Add the domain under **Settings, Domains**, set the DNS record Vercel shows, then change `APP_URL` to it and redeploy. Developer links and e-mails use `APP_URL`.
+Add the domain under **Settings, Domains**, set the DNS record Vercel shows, then change `APP_URL` to it and redeploy. Sign-in links, developer links and e-mails use `APP_URL`, so a wrong value sends people to the wrong address.
 
-## 6 Add the first people
+## 7 Add the first people
 
 Staff are added from your machine, through `outcomes_web` like the console:
 
@@ -75,25 +82,21 @@ Staff are added from your machine, through `outcomes_web` like the console:
 vercel link
 vercel env pull .env.production.local --environment=production
 set -a; . ./.env.production.local; set +a
-STAFF_PASSWORD='<at least 12 characters>' npm run staff:add -- --email you@reka.re --name "Your Name" --role operator
+npm run staff:add -- --email you@reka.re --name "Your Name" --role operator
 rm .env.production.local
 ```
 
-Add at least **two approvers** as well: whoever proposed or edited a baseline or report can't approve it. Give each person their password by a separate channel. They set up two-step with an authenticator app at first sign-in.
+Add at least **two approvers** as well: whoever proposed or edited a baseline or report can't approve it. There are no passwords to hand out. Each person enters their work e-mail on the sign-in page, opens the link it sends (it works once, for 15 minutes), and sets up two-step with an authenticator app the first time. To stop someone signing in, set `disabled_at` on their `staff` row: their links and sessions stop working at once.
 
-## 7 Check it works
+## 8 Check it works
 
-1. Sign in, set up two-step, and open every page in the menu, including on a phone.
+1. Ask for a sign-in link, open it, set up two-step, and open every page in the menu, including on a phone. Open the same link again: it should say it can't be used.
 2. **Settings, Cron Jobs:** run the health check by hand, then look at the Jobs page for the run.
 3. Confirm a job refuses a stranger. This should print `404`:
    ```sh
    curl -s -o /dev/null -w '%{http_code}\n' https://<your domain>/api/cron/health
    ```
-4. **Logs:** no `Environment:` or `DATABASE_URL connects as a role that bypasses` errors.
-
-## 8 E-mail (optional)
-
-In Resend, verify the sending domain and make an API key that can only send. Set `RESEND_API_KEY` and `MAIL_FROM` (for example `Outcomes <outcomes@reka.re>`, on the verified domain), and redeploy. Anything already in the outbox goes on the next scheduled run; the Jobs page shows each message as sent or with its error.
+4. **Logs:** no `Environment:`, `sign-in e-mail not sent` or `DATABASE_URL connects as a role that bypasses` errors.
 
 ## 9 Backups
 
@@ -118,3 +121,6 @@ In Resend, verify the sending domain and make an API key that can only send. Set
 | `prepared statement … does not exist` or a scope that seems lost | The string uses the transaction pooler (6543); use the session pooler (5432) |
 | Scheduled jobs return 404 | `CRON_SECRET` was added or changed without a redeploy |
 | Everyone's two-step and keys stop working | `SEAL_KEY` changed. Put the old value back |
+| No sign-in e-mail arrives, and the logs say `sign-in e-mail not sent: Resend answered 403` | The sending domain isn't verified, or `MAIL_FROM` isn't on it |
+| No sign-in e-mail, nothing in the logs | The address isn't a staff account, or it was disabled. The page says the same either way, on purpose |
+| "This link can't be used" at once | The link was already used or is over 15 minutes old. Ask for a new one |

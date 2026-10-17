@@ -1,23 +1,39 @@
 import { redirect } from "next/navigation";
-import { headers, cookies } from "next/headers";
-import { signIn, rateLimit, proposeSecret } from "@/lib/services/staff";
-import { setSessionCookie, sessionToken } from "@/lib/auth/session";
-import { actorFor } from "@/lib/services/staff";
-import { seal } from "@/lib/seal";
+import { headers } from "next/headers";
+import { requestLink, rateLimit, actorFor, LINK_MINUTES } from "@/lib/services/staff";
+import { sendNow } from "@/lib/services/mail";
+import { sessionToken } from "@/lib/auth/session";
+import { env } from "@/lib/env";
 import { Submit } from "../_components/controls";
 import { Notice, sp } from "../_components/ui";
 
 export const metadata = { title: "Sign in" };
 
-async function signInAction(form: FormData) {
+const SENT = `If that address belongs to a staff account, a sign-in link is on its way. It works once, for ${LINK_MINUTES} minutes.`;
+
+async function sendLinkAction(form: FormData) {
   "use server";
   const ip = (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
+  const email = String(form.get("email") ?? "").trim().toLowerCase();
   if (!(await rateLimit(`sign-in:${ip}`, 30, 900))) redirect("/sign-in?e=" + encodeURIComponent("Too many attempts from here. Try again in 15 minutes."));
-  const r = await signIn(String(form.get("email") ?? ""), String(form.get("password") ?? ""));
-  if ("error" in r) redirect("/sign-in?e=" + encodeURIComponent(r.error));
-  await setSessionCookie(r.token);
-  if (r.needsSetup) (await cookies()).set("outcomes_totp_setup", await seal(proposeSecret()), { httpOnly: true, sameSite: "strict", secure: process.env.NODE_ENV === "production", path: "/sign-in", maxAge: 900 });
-  redirect("/sign-in/two-step");
+  // The same answer whether or not the address has an account, and whether or not this address asked too often.
+  if (await rateLimit(`sign-in-link:${email}`, 5, 900)) {
+    const link = await requestLink(email);
+    if (link) {
+      const url = `${env().APP_URL}/sign-in/link?t=${link.token}`;
+      try {
+        await sendNow(link.email, "Your sign-in link for AXLE · Outcomes", [
+          `Hello ${link.name},`, "",
+          `Use this link to sign in to AXLE · Outcomes. It works once, for ${LINK_MINUTES} minutes:`, "", url, "",
+          "You'll then enter the code from your authenticator app.",
+          "If you didn't ask for this, ignore this e-mail: nobody can sign in without your authenticator code as well.",
+        ].join("\n"));
+      } catch (err) {
+        console.error("sign-in e-mail not sent:", err instanceof Error ? err.message : "failed");
+      }
+    }
+  }
+  redirect("/sign-in?ok=" + encodeURIComponent(SENT));
 }
 
 export default async function SignIn({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
@@ -25,14 +41,13 @@ export default async function SignIn({ searchParams }: { searchParams: Promise<R
   const q = await searchParams;
   return (
     <main className="auth">
-      <form action={signInAction} className="card form" aria-labelledby="h">
+      <form action={sendLinkAction} className="card form" aria-labelledby="h">
         <div><span className="axle-tag">AXLE</span></div>
         <h1 id="h">Sign in to AXLE · Outcomes</h1>
-        <p className="muted small">For authorised REKA staff. Every action is recorded.</p>
+        <p className="muted small">For authorised REKA staff. We e-mail you a link, then ask for the code from your authenticator app. Every action is recorded.</p>
         <Notice e={sp(q.e)} ok={sp(q.ok)} />
-        <div className="field"><label htmlFor="email">Work email</label><input className="input" id="email" name="email" type="email" autoComplete="username" required /></div>
-        <div className="field"><label htmlFor="password">Password</label><input className="input" id="password" name="password" type="password" autoComplete="current-password" required minLength={12} /></div>
-        <Submit primary>Continue</Submit>
+        <div className="field"><label htmlFor="email">Work email</label><input className="input" id="email" name="email" type="email" autoComplete="email" required maxLength={254} /></div>
+        <Submit primary>Email me a sign-in link</Submit>
       </form>
     </main>
   );

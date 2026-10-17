@@ -17,7 +17,8 @@ This repository holds the product requirements and mocks for Performance Intelli
 - Numbers come from `domain/kpi.ts`, never from a page or AI. A missing day is a gap, never a zero.
 - Never edit `vendor/lapisan/`; sync it from antarax-api (`npm run vendor:sync`).
 - No browser-default controls: dropdowns and dates use `app/_components/controls.tsx`. Colours only from `app/axle-tokens.css`.
-- Before pushing: `npm run check`, and `bash scripts/e2e.sh` for anything a person sees.
+- Before pushing: `npm run check`, and `bash scripts/e2e.sh` for anything a person sees. There is no GitHub Actions; don't add a workflow.
+- Sign-in is an e-mailed link, then a two-step code; there are no passwords. A sign-in link is sent at once (`sendNow`), never through the outbox, which staff can read.
 
 ## Brand
 

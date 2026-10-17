@@ -198,7 +198,7 @@ details[open] > summary::before { transform: rotate(45deg); }
 /* ---------------------------------------------------------------- sign-in */
 .auth { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; background: var(--axle-bar); }
 .auth .card { width: min(420px, 100%); }
-.auth h1 { font-size: 20px; }
+.auth h1 { font-size: 20px; overflow-wrap: anywhere; }
 
 /* ---------------------------------------------------------------- phones (AXLE §13): the sidebar becomes a drawer */
 @media (max-width: 900px) {

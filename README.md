@@ -20,8 +20,8 @@ REKA's console for measuring what its client AI solutions actually deliver: whet
 ```bash
 npm install
 npm run db:local          # Postgres 16 on :54329; prints the two URLs for .env.local (see .env.example)
-STAFF_PASSWORD="a long password" npm run staff:add -- --email you@reka.example --name "Your Name" --role approver
-npm run dev               # http://localhost:3200
+npm run staff:add -- --email you@reka.example --name "Your Name" --role approver
+npm run dev               # http://localhost:3200; without Resend, sign-in links print in this terminal
 AX_MEASURE_KEY=<the key the console shows> npm run example-link   # a stand-in application on :4010
 ```
 
@@ -30,9 +30,11 @@ AX_MEASURE_KEY=<the key the console shows> npm run example-link   # a stand-in a
 | Typecheck, unit, separation and the whole loop against real Postgres | `npm run check` |
 | The loop in a browser, phones and accessibility | `bash scripts/e2e.sh` |
 
+There is no hosted CI (no GitHub Actions): run both before pushing. Each Vercel deployment runs the typecheck and unit tests before it builds (`vercel-build`), and a failure stops the deployment.
+
 | Code | What it is |
 |---|---|
-| `app/` | The console (Next.js): sign-in with two-step, Applications and tracking one, an application's page, Results, Approvals, Reports, Jobs, the developer link, the scheduled jobs |
+| `app/` | The console (Next.js): sign-in by e-mailed link then a two-step code, Applications and tracking one, an application's page, Results, Approvals, Reports, Jobs, the developer link, the scheduled jobs |
 | `domain/` | Pure logic: the KPI engine, link states, the spreadsheet parser, the developer prompt |
 | `lib/` | Database access inside a scope, sealing, audit, sign-in, and the services the pages call |
 | `db/migrations/` | The schema, row-level security and the append-only audit |

@@ -8,7 +8,9 @@ const schema = z.object({
   RESEND_API_KEY: z.string().optional(),
   MAIL_FROM: z.string().default("Outcomes <outcomes@localhost>"),
   ALERT_TO: z.string().default(""),
-});
+  /** Tests only: sign-in e-mails are written to this file instead of sent. Never set it in a deployment. */
+  MAIL_CAPTURE_FILE: z.string().optional(),
+}).refine((e) => process.env.NODE_ENV !== "production" || e.RESEND_API_KEY || e.MAIL_CAPTURE_FILE, { message: "RESEND_API_KEY is needed: sign-in is by e-mailed link", path: ["RESEND_API_KEY"] });
 
 export type Env = z.infer<typeof schema>;
 let cached: Env | null = null;

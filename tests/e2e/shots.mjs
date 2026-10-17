@@ -6,7 +6,10 @@ const dir = process.argv[2] ?? "test-results/shots", width = Number(process.argv
 const keys = JSON.parse(readFileSync("test-results/.two-step-keys.json", "utf8"));
 const b = await chromium.launch(); const page = await b.newPage({ viewport: { width, height: width > 600 ? 950 : 844 }, baseURL: "http://localhost:3200" });
 await page.goto("http://localhost:3200/sign-in");
-await page.getByLabel("Work email").fill("aisyah@reka.example"); await page.getByLabel("Password").fill("approver password 1");
+await page.getByLabel("Work email").fill("aisyah@reka.example"); await page.getByRole("button", { name: "Email me a sign-in link" }).click();
+await page.getByText(/on its way/).waitFor();
+const mail = readFileSync("test-results/mail.jsonl", "utf8").trim().split("\n").map((l) => JSON.parse(l)).filter((m) => m.to === "aisyah@reka.example").at(-1);
+await page.goto(mail.text.match(/https?:\/\/\S+\/sign-in\/link\?t=\w+/)[0]);
 await page.getByRole("button", { name: "Continue" }).click(); await page.waitForURL(/two-step/);
 await page.getByLabel("Six-digit code").fill(await totpAt(keys["aisyah@reka.example"], Math.floor(Date.now() / 1000)));
 await page.getByRole("button", { name: "Continue" }).click(); await page.waitForURL(/applications/);

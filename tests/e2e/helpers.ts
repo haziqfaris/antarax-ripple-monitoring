@@ -8,11 +8,26 @@ const FILE = "test-results/.two-step-keys.json";
 const load = (): Record<string, string> => { try { return JSON.parse(readFileSync(FILE, "utf8")); } catch { return {}; } };
 const secrets = { get: (e: string) => load()[e], set: (e: string, v: string) => { mkdirSync("test-results", { recursive: true }); writeFileSync(FILE, JSON.stringify({ ...load(), [e]: v })); } };
 
-/** Sign in, setting up two-step the first time (the key is read from the page, as a person would). */
-export async function signIn(page: Page, email: string, password: string): Promise<void> {
+// Sign-in e-mails, written by the console to MAIL_CAPTURE_FILE (scripts/e2e.sh sets it) instead of sent.
+export const MAIL_FILE = process.env.MAIL_CAPTURE_FILE ?? "test-results/mail.jsonl";
+const mails = (to: string): { text: string }[] => { try { return readFileSync(MAIL_FILE, "utf8").trim().split("\n").filter(Boolean).map((l) => JSON.parse(l)).filter((m) => m.to === to); } catch { return []; } };
+
+/** Ask for a link as a person would, and read it from the newest e-mail to that address. */
+export async function emailedLink(page: Page, email: string): Promise<string> {
+  const before = mails(email).length;
   await page.goto("/sign-in");
   await page.getByLabel("Work email").fill(email);
-  await page.getByLabel("Password").fill(password);
+  await page.getByRole("button", { name: "Email me a sign-in link" }).click();
+  await expect(page.getByText(/a sign-in link is on its way/)).toBeVisible();
+  await expect.poll(() => mails(email).length).toBeGreaterThan(before);
+  const link = mails(email).at(-1)!.text.match(/https?:\/\/\S+\/sign-in\/link\?t=[A-Za-z0-9]+/)?.[0];
+  if (!link) throw new Error(`No sign-in link in the e-mail to ${email}`);
+  return link;
+}
+
+/** Sign in with an e-mailed link, setting up two-step the first time (the key is read from the page, as a person would). */
+export async function signIn(page: Page, email: string): Promise<void> {
+  await page.goto(await emailedLink(page, email));
   await page.getByRole("button", { name: "Continue" }).click();
   await page.waitForURL(/two-step/);
   const shown = page.getByTestId("totp-secret");

@@ -2,7 +2,7 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { createHash } from "node:crypto";
-import { choose, noBrowserControls, signIn, signOut } from "./helpers";
+import { choose, emailedLink, noBrowserControls, signIn, signOut } from "./helpers";
 
 test.describe.configure({ mode: "serial" });
 
@@ -16,7 +16,7 @@ async function axe(page: import("@playwright/test").Page) {
 }
 
 test("an operator tracks an application and connects it", async ({ page, request }) => {
-  await signIn(page, "nurul@reka.example", "operator password 1");
+  await signIn(page, "nurul@reka.example");
   await expect(page.getByRole("heading", { level: 1, name: "Applications", exact: true })).toBeVisible();
   await noBrowserControls(page);
   await axe(page);
@@ -70,7 +70,7 @@ test("an operator tracks an application and connects it", async ({ page, request
 });
 
 test("someone else approves, and the figures count", async ({ page }) => {
-  await signIn(page, "aisyah@reka.example", "approver password 1");
+  await signIn(page, "aisyah@reka.example");
   await page.getByRole("link", { name: /Approvals/ }).click();
   for (let n = 0; n < 2; n++) {
     await page.getByLabel("Your reason").fill("Checked against the timed sample and the figures.");
@@ -87,7 +87,7 @@ test("someone else approves, and the figures count", async ({ page }) => {
 
 test("a monthly report is written, approved by a third person, and frozen", async ({ page, browser }) => {
   // Aisyah is still signed in from the last test's page context? Each test has its own page: sign in again.
-  await signIn(page, "aisyah@reka.example", "approver password 1");
+  await signIn(page, "aisyah@reka.example");
   await page.goto(appUrl + "#reports");
   await page.getByRole("button", { name: "Draft it" }).click();
   await page.waitForURL(/\/reports\/[0-9a-f-]{36}/);
@@ -102,7 +102,7 @@ test("a monthly report is written, approved by a third person, and frozen", asyn
 
   const ctx = await browser.newContext();
   const p2 = await ctx.newPage();
-  await signIn(p2, "daniel@reka.example", "approver password 2");
+  await signIn(p2, "daniel@reka.example");
   await p2.goto("/approvals");
   await p2.getByLabel("Your reason").fill("Figures match the console.");
   await p2.getByRole("button", { name: "Approve" }).click();
@@ -126,7 +126,7 @@ test("the scheduled jobs refuse a call without the secret, and run with it", asy
 });
 
 test("the developer link shows the prompt and never the key", async ({ page }) => {
-  await signIn(page, "nurul@reka.example", "operator password 1");
+  await signIn(page, "nurul@reka.example");
   await page.goto(appUrl);
   await page.getByText("Connection, figures, KPIs and baseline").click();
   await page.getByRole("button", { name: "Make a new developer link" }).click();
@@ -136,5 +136,24 @@ test("the developer link shows the prompt and never the key", async ({ page }) =
   await expect(page.getByRole("heading", { name: /Measurement Link for Document workflow/ })).toBeVisible();
   await expect(page.locator("body")).not.toContainText("ax_msr_A");
   expect(await page.locator("body").textContent()).not.toMatch(/ax_msr_[A-Za-z0-9]{32}/);
+  await axe(page);
+});
+
+test("a sign-in link works once, and a stranger is told the same as staff", async ({ page }) => {
+  await page.goto("/sign-in");
+  await axe(page);
+  await page.getByLabel("Work email").fill("stranger@example.com");
+  await page.getByRole("button", { name: "Email me a sign-in link" }).click();
+  await expect(page.getByText(/If that address belongs to a staff account, a sign-in link is on its way/)).toBeVisible();
+
+  const link = await emailedLink(page, "daniel@reka.example");
+  await page.goto(link);
+  await expect(page.getByRole("heading", { name: "Sign in as daniel@reka.example" })).toBeVisible();
+  await page.goto(link); // opening it again, as a mail scanner would, spends nothing
+  await page.getByRole("button", { name: "Continue" }).click();
+  await page.waitForURL(/two-step/);
+  await expect(page.getByLabel("Six-digit code")).toBeVisible();
+  await page.goto(link);
+  await expect(page.getByRole("heading", { name: "This link can't be used" })).toBeVisible();
   await axe(page);
 });
