@@ -1,11 +1,11 @@
 # Performance Intelligence: product requirements
 
-**Version 0.7, draft, 15 Oct 2026.** 0.2 added first use and onboarding (§8.12, §12.3) and the light AntaraX look (§12.1). 0.3 records the owner's decision to keep that look (D13), and adds the measure library (§10.6), your own measures (§8.13), Ask (§8.14, §11.4), standard analytics (§8.15) and the demo studio (§8.16). 0.4 records two more owner decisions: RM45 an hour for value of time freed (D15), and demo workspaces with Demo studio as a product feature in the MVP (D17, §8.16). 0.5 organises the console by client: one client list, one client page template, and client → project → solution throughout (§8.6, §12.2, §12.4); it also renames organisation to client on screen and in this document. 0.6 puts the console on the AXLE standard v1.0 (`haziqfaris/AntaraX-Dashboard-kit`), because it is an internal REKA tool: AXLE · Outcomes, dark bars around a light page, the standard menu with an Outcomes-only box, an R8 mode for the machinery, and "organisation" on screen as the standard requires (§12.1, §12.2, D13, D18). It also adds exploring other measures for a live project (§8.17). 0.7 makes setup one Start tracking wizard (organisation → project → prompt → connection, then the rest) with a picture that builds as you answer and animates the connection (§12.3, FR-ONB-9 to 12). It also adds the generated blueprint (§8.19) and client context (§8.18): what organisations tell the account team and what they give them (notes, documents, photos, voice notes and links), recorded by BD and account managers, kept REKA only, and read by AI as quoted words when suggesting measures and answering Ask. Working name throughout. Owner: Muhammad Haziq Faris (Founder). Status: for review at the next design workshop.
+**Version 0.8, draft, 17 Oct 2026.** 0.2 added first use and onboarding (§8.12, §12.3) and the light AntaraX look (§12.1). 0.3 records the owner's decision to keep that look (D13), and adds the measure library (§10.6), your own measures (§8.13), Ask (§8.14, §11.4), standard analytics (§8.15) and the demo studio (§8.16). 0.4 records two more owner decisions: RM45 an hour for value of time freed (D15), and demo workspaces with Demo studio as a product feature in the MVP (D17, §8.16). 0.5 organises the console by client: one client list, one client page template, and client → project → solution throughout (§8.6, §12.2, §12.4); it also renames organisation to client on screen and in this document. 0.6 puts the console on the AXLE standard v1.0 (`haziqfaris/AntaraX-Dashboard-kit`), because it is an internal REKA tool: AXLE · Outcomes, dark bars around a light page, the standard menu with an Outcomes-only box, an R8 mode for the machinery, and "organisation" on screen as the standard requires (§12.1, §12.2, D13, D18). It also adds exploring other measures for a live project (§8.17). 0.7 makes setup one Start tracking wizard (organisation → project → prompt → connection, then the rest) with a picture that builds as you answer and animates the connection (§12.3, FR-ONB-9 to 12). It also adds the generated blueprint (§8.19) and client context (§8.18): what organisations tell the account team and what they give them (notes, documents, photos, voice notes and links), recorded by BD and account managers, kept REKA only, and read by AI as quoted words when suggesting measures and answering Ask. 0.8 says who measures usage, capacity, availability and cost, for AntaraX products and for REKA-built client solutions (§6.5), with the gap as open decision D22, and brings AX Frame up to date with the AXLE kit 1.4.0 (§6.4, D6). Working name throughout. Owner: Muhammad Haziq Faris (Founder). Status: for review at the next design workshop.
 
 | | |
 |---|---|
 | **Source brief** | [MASTER_BRIEF.md](MASTER_BRIEF.md), version 0.1, 15 Oct 2026 |
-| **Aligned with** | AntaraX brand kit 1.4 (`haziqfaris/AntaraX-brand-kit`), AXLE standard 0.1 (`haziqfaris/AntaraX-Dashboard-kit/axle/SPEC.md`), AntaraX API framework v0.6.0 (`haziqfaris/antarax-api`), website strategy (`haziqfaris/antarax-ai/docs/strategy/`) |
+| **Aligned with** | AntaraX brand kit 1.4 (`haziqfaris/AntaraX-brand-kit`), AXLE standard v1.0 and kit 1.4.0 (`haziqfaris/AntaraX-Dashboard-kit`, default branch `claude/beautiful-newton-siixyo`: `axle/SPEC.md`, `capacity/`), AntaraX API framework v0.6.0 (`haziqfaris/antarax-api`), website strategy (`haziqfaris/antarax-ai/docs/strategy/`) |
 | **Mocks** | [../mocks/](../mocks/README.md): a clickable product, from sign-in through first project to the example workspace |
 | **Decision rules** | Where this PRD and the brief disagree, the PRD records why and lists the point in [§20 Open decisions](#20-open-decisions). Nothing here is decided until the owner signs it off. Brand decisions are recorded in the brand kit, not here. |
 
@@ -204,11 +204,32 @@ Recommendation: build Performance Intelligence on the AXLE standard and plan for
 
 ### 6.4 AX Frame
 
-The brief says Frame may supply infrastructure monitoring. Today AX Frame does something different. It is a ledger of the digital estate: subscriptions, AI APIs, domains, hosting and renewals. It deliberately does no auto-discovery or uptime monitoring (brand kit 02, antarax-ai brief §6.1). So:
+The brief says Frame may supply infrastructure monitoring. When this PRD was first written, Frame was a ledger of the digital estate with no uptime checks. By the AXLE kit 1.4.0 (16 Oct 2026) it does two things that matter here:
 
-- **Technical health** comes from each solution's own `health` endpoint (§9) and, for AntaraX products, AXLE Link `health`. Frame is not the source.
-- **Frame is useful for the commercial domain.** It knows what a solution's estate costs to run (hosting, AI APIs). With the client's and REKA's agreement, Performance Intelligence may read a solution's run cost from Frame's Context API (`frame:estate:read`) for REKA-only service cost and margin.
-- If Frame later adds health signals ("Pulse"), Frame becomes a **linked provider** for them, never a second copy. See D6.
+- **It is the source of truth for what REKA pays for:** domains, hosting, cloud accounts, SaaS and licences, each with its cost and renewal (kit `capacity/README.md`, "With AX Frame"). A plan in a project's `capacity.json` carries its Frame asset id (`ast_…`) instead of repeating its cost: "never keep a plan's cost in two places".
+- **It runs daily site checks** and shows whether each site is up as daily bars (AXLE SPEC §8, the products table; kit `inventory/ax-frame`).
+
+So:
+
+- **Technical health** still comes from each solution's own `health` endpoint (§9) and, for AntaraX products, AXLE Link `health`. Frame's site check says whether a site answers, not whether the solution is doing its work. Where a solution's site is in Frame, Outcomes may show Frame's check beside the solution's own health, read from Frame as a **linked provider**, never a second copy (D6).
+- **Cost is Frame's.** With the client's and REKA's agreement, Performance Intelligence reads a solution's run cost from Frame's Context API (`frame:estate:read`) for REKA-only service cost and margin. It never keeps a cost of its own.
+- **Capacity** (how close a solution is to the limits of what it runs on) is §6.5.
+
+### 6.5 Who measures what
+
+Outcomes measures **business outcomes**: KPIs, baselines, time freed and value. It does not re-measure what another product owns; it reads it and links to it. For everything else:
+
+| | AntaraX products (Yara, Janka and so on) | REKA-built client solutions |
+|---|---|---|
+| **Business outcomes** | Outcomes, where REKA runs the product for a client | **Outcomes**, and nobody else |
+| **Usage** (people, work handled) | AXLE: Adoption and AI usage. Outcomes reads AXLE Link `usage` (FR-INT-8) | Outcomes, through the Measurement Link figures (§9) |
+| **Health** | AXLE R8: Services, Providers, Errors. Outcomes reads AXLE Link `health` | Outcomes reads the solution's own `health` (§9) |
+| **Availability** (an outside check) | AXLE R8 → Capacity's outside check | **Nobody shows it today.** Frame's site check, where the site is in Frame (§6.4) |
+| **Capacity:** database, files, transfer, requests, compute, connections, jobs, messages, backups | AXLE R8 → Capacity, from the product's `capacity.json` (AXLE SPEC §10.13) | **Nobody shows it today.** The kit asks every REKA client project for a `capacity.json` too, but a client project has no AXLE to draw it (D22) |
+| **AI tokens and cost** | AXLE: AI usage (the Finance right) | **Nobody, as a standard figure.** The `ai` class of `capacity.json` covers it once shown (D22) |
+| **Run cost** (what REKA pays) | AX Frame. AXLE's planned Costs page should read it from Frame, not keep its own | AX Frame, where the estate is recorded and the client agrees (§6.4) |
+
+This keeps the non-goal in §3.2: Outcomes shows daily figures and limits, never traces, logs or per-request metrics.
 
 ## 7 Domain model
 
@@ -697,7 +718,7 @@ The generated parts are built from `antarax-api` (`npm run measure:pack`), so th
 | OAuth2 client credentials | AXLE Link's HMAC signing with a per-integration `ax_msr_` key; OAuth2 as an exception | House pattern; one key per client, not one for all |
 | Local offsets in `period_start` | UTC with `Z`, local date and zone alongside | antarax-api 03 moments rule |
 | `cursor` pagination | Same, with the house list shape and `next` | antarax-api 03 |
-| Frame for infrastructure monitoring | Solution `health` and AXLE Link for health; Frame for run cost | What Frame does today |
+| Frame for infrastructure monitoring | Solution `health` and AXLE Link for health; Frame for what REKA pays and, beside health, its site check; capacity per §6.5 | What Frame does today (§6.4, D22) |
 | Hourly pull example | Daily observations, 15-minute health by default | Aggregates are daily in the brief's sample; health needs to be quicker |
 
 ## 10 Measurement and impact methodology
@@ -1141,7 +1162,7 @@ The brief's §16, extended with points this review raised. Each needs the owner.
 | D3 | **Contract path and id**: `/internal/measure/v1` for REKA-built solutions; for AntaraX products, extend AXLE Link with `metrics` and `observations`? | Yes to both. **Written and tested** as antarax-api docs/14, decision 0013 (proposed), with the kit and contract test |
 | D4 | **Authentication**: AXLE Link's HMAC signing with a per-integration `ax_msr_` key by default, bearer token for third parties, OAuth2 only on request? | Yes (decision 0013, proposed) |
 | D5 | **Data residency, contractual permissions, retention and publication approval** | Singapore; the retention table in §16; a template data agreement before Phase 1 |
-| D6 | **Frame**: authoritative for anything? | Run cost only, REKA-only, with agreement; health stays with the solution |
+| D6 | **Frame**: authoritative for anything? | Yes, for what REKA pays: every plan's and asset's cost and renewal (AXLE kit 1.4.0), read REKA-only with agreement. Health stays with the solution; Frame's site check may sit beside it as a linked provider (§6.4) |
 | D7 | **Hosting and AI provider**, and costs after pilot volumes | §15.2; cost review at the end of Phase 1 |
 | D8 | **Report format, branding and cadence** | Light AntaraX layout, "Run by REKA as part of Managed AI.", monthly for live, quarterly summary |
 | D9 | **First two pilots**, their process owners and baseline evidence | One document automation and one non-document workflow (brief §14) |
@@ -1157,6 +1178,7 @@ The brief's §16, extended with points this review raised. Each needs the owner.
 | D19 | **Where the product-only box sits** (AXLE SPEC §20 question 12) | For Outcomes: first, as client data, with the standard groups after it as "Managing Outcomes" (owner feedback, 15 Oct 2026; §12.2). Record it in the AXLE kit, mocked beside the standard pages, before any other product follows |
 | D20 | **Who reads client context** (§8.18): every staff member, or only the organisation's account team, its REKA owner and their manager? | All staff with the Support rung, as the mock shows, so the delivery team sees what the organisation cares about. Decide before the first pilot's entries are written |
 | D21 | **Speech to text** for client-context voice notes (FR-CTX-13): which provider, given Malay and mixed-language speech, where the audio is processed, and that it keeps nothing | Shortlist two providers that process in Singapore and keep no audio; test both on ten real voice notes recorded by the account team, with their agreement. Until then, voice notes are attached and played but not read |
+| D22 | **Who shows a REKA-built client solution's capacity, availability and AI cost** (§6.5)? For AntaraX products AXLE R8 → Capacity does, from `capacity.json`. The kit asks client projects for the same file, but they have no AXLE, so today nobody shows it, against Managed AI's promise to host, watch and keep the AI reliable | **Outcomes shows it**, as a REKA-only **Capacity** tab on each application: the project's own `capacity.json` and nightly snapshots, with the kit's classes, thresholds (80% of a limit or a runway under 30 days needs a person) and decisions unchanged. Outcomes adds no classes and measures nothing itself. The snapshots and the outside check reach it through an optional Measurement Link endpoint, a minor version of antarax-api docs/14; then the developer prompt asks for it and the blueprint draws it. Each plan's cost comes from Frame through its `asset` id. The alternative is to wait for client projects to appear in AXLE Central. Decide before the first pilot connects |
 
 ## 21 Appendices
 
