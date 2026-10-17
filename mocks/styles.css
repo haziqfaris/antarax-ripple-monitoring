@@ -1318,3 +1318,8 @@ button.csel-add { width: 100%; background: none; border: 0; border-top: 1px soli
 .rep-mini li .name { font-weight: 500; font-size: .9375rem; }
 .rep-mini li .xs { grid-column: 1; }
 .rep-mini li .pill { grid-column: 2; grid-row: 1 / span 2; }
+/* Approvals grouped by organisation */
+.ap-g { display: flex; align-items: center; gap: 8px; padding: 10px 2px 2px; font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.ap-g:first-child { padding-top: 0; }
+.ap-g > span:first-child { flex: 1; min-width: 0; }
+.ap-g .btn { font-family: var(--sans, inherit); letter-spacing: 0; text-transform: none; font-size: .75rem; min-height: 30px; padding: 4px 8px; }

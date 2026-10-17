@@ -2152,10 +2152,27 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
   }
 
   // ------------------------------------------------------------------ APPROVALS
+  // Approvals follow the organisation scope too: "Approvals for" is the top bar's picker. Scoped, one organisation's
+  // queue; all organisations, the same queue grouped by organisation, waiting first.
+  const apAll = () => demo() ? state.approvals : state.myApprovals;
+  function apOrgId(a) {
+    if (a.org) return a.org;
+    const s = a.simId && simById(a.simId); if (s) return s.orgId;
+    const pj = a.projId && projById(a.projId), c = pj && orgOfProj(pj); if (c) return c.id;
+    const n = companies().find((x) => x.name === a.projOrg || x.short === a.projOrg); return n ? n.id : null;
+  }
+  const apScoped = () => { const one = state.scope && coById(state.scope); return one ? apAll().filter((a) => apOrgId(a) === one.id) : apAll(); };
   pages.approvals = () => {
-    const list = demo() ? state.approvals : state.myApprovals;
-    if (!list.length) return `${head({ title: 'Approvals', lead: 'KPIs, baselines and reports wait here until someone other than the proposer approves them.' })}<section class="card"><div class="empty">${emptyArt}<h3>Nothing to approve</h3><p>When you connect a solution, its KPIs come here for a second person to check.</p></div></section>`;
-    const sel = list.find((a) => a.id === state.approvalSel) || list[0];
+    const all = apAll(), one = state.scope && coById(state.scope), list = apScoped(), cos = companies();
+    const waitN = (xs) => xs.filter((a) => a.status === 'waiting').length;
+    const bar = `<section class="card ctx-scopebar"><div class="ask-scope" style="border:0;padding:0"><div class="field"><label for="ap-scope">Approvals for</label><select id="ap-scope"><option value="" ${!one ? 'selected' : ''}>All organisations (${waitN(all)} waiting)</option>${cos.map((c) => { const xs = all.filter((a) => apOrgId(a) === c.id); return `<option value="${c.id}" ${one && one.id === c.id ? 'selected' : ''}>${esc(c.short)} (${waitN(xs)} waiting${xs.length > waitN(xs) ? `, ${xs.length} in all` : ''})</option>`; }).join('')}</select></div>
+      <p class="xs muted">${one ? `Only ${esc(one.short)}’s KPIs, baselines, measures and reports.` : 'Every organisation’s, grouped. Choose one to work through its queue.'} The same as the organisation picker in the top bar.</p></div></section>`;
+    const title = one ? `Approvals · ${esc(one.short)}` : 'Approvals';
+    if (!list.length) return `${head({ title, lead: 'KPIs, baselines and reports wait here until someone other than the proposer approves them.' })}${all.length || one ? bar : ''}<section class="card"><div class="empty">${emptyArt}<h3>${one ? `Nothing to approve for ${esc(one.short)}` : 'Nothing to approve'}</h3><p>${one ? `When ${esc(one.short)}’s applications propose KPIs, baselines or measures, or a report is drafted, they come here for a second person to check.` : 'When you connect a solution, its KPIs come here for a second person to check.'}</p>${one && all.length ? '<button type="button" class="btn sm" data-setscope="">Show all organisations</button>' : ''}</div></section>`;
+    const order = (xs) => xs.slice().sort((x, y) => (x.status === 'waiting' ? 0 : 1) - (y.status === 'waiting' ? 0 : 1));
+    const loose = one ? [] : list.filter((a) => !cos.some((c) => c.id === apOrgId(a)));
+    const shown = one ? order(list) : cos.flatMap((c) => order(list.filter((a) => apOrgId(a) === c.id))).concat(order(loose));
+    const sel = list.find((a) => a.id === state.approvalSel) || shown.find((a) => a.status === 'waiting') || shown[0] || list[0];
     state.approvalSel = sel.id;
     const orgName = (a) => a.projOrg || (a.simId ? orgOf(simById(a.simId)).name : orgById(a.org).short);
     const mine = sel.proposer === state.role || sel.editedBy === state.role;
@@ -2163,10 +2180,13 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
     const why = sel.status === 'blocked' ? 'Needs a baseline first' : mine ? 'You set this up, so someone else approves it.' : !has('Approve') ? 'You can comment, but not approve.' : '';
     const sp = (a) => ({ waiting: '<span class="pill warn"><span class="dot"></span>Waiting</span>', blocked: '<span class="pill fault"><span class="dot"></span>Blocked</span>', approved: '<span class="pill ok"><span class="dot"></span>Approved</span>', changes: '<span class="pill info">Changes asked</span>', declined: '<span class="pill idle">Declined</span>' })[a.status];
     const who = (id) => id === 'ai' ? `<span class="ai-mark"><img src="${SPARK}" alt="">Suggested by AI</span>` : id === 'collector' ? 'Spotted automatically' : M.staff[id].name;
-    return `${head({ title: 'Approvals', lead: 'Nothing is measured or shown to an organisation until someone other than the proposer approves it.', meta: `<span>${list.filter((a) => a.status === 'waiting').length} waiting</span><span>${list.filter((a) => a.status === 'blocked').length} blocked</span>` })}
+    const item = (a) => `<button type="button" class="choice" style="grid-template-columns:minmax(0,1fr);gap:6px" data-sel="${a.id}" aria-pressed="${a.id === sel.id}"><span class="meta-line" style="margin:0">${sp(a)}<span class="pill idle">${a.type}</span></span><b>${esc(a.title)}</b><span class="d">${one ? '' : esc(orgName(a)) + ' · '}${esc(a.since.replace(' 2026,', ''))}</span></button>`;
+    const groups = one ? order(list).map(item).join('') : cos.map((c) => { const xs = list.filter((a) => apOrgId(a) === c.id); return xs.length ? `<div class="ap-g"><span>${esc(c.short)}</span>${waitN(xs) ? `<span class="ax-count loud" aria-label="${waitN(xs)} waiting">${waitN(xs)}</span>` : ''}<button type="button" class="btn sm ghost" data-setscope="${c.id}">Only ${esc(c.short)}</button></div>${order(xs).map(item).join('')}` : ''; }).join('') + (loose.length ? `<div class="ap-g"><span>Other</span></div>${order(loose).map(item).join('')}` : '');
+    return `${head({ title, lead: one ? `${esc(one.short)}’s KPIs, baselines, measures and reports. Nothing is measured or shown to ${esc(one.short)} until someone other than the proposer approves it.` : 'Nothing is measured or shown to an organisation until someone other than the proposer approves it.', meta: `<span>${waitN(list)} waiting</span><span>${list.filter((a) => a.status === 'blocked').length} blocked</span>`, actions: one ? `<a class="btn sm ghost" href="#results-${one.id}">${icon('analytics', 'sm')}Results</a>` : '' })}
+    ${bar}
     ${!demo() && state.role === 'daniel' && list.some((a) => a.status === 'waiting' && a.editedBy === 'daniel') ? `<div class="callout info">${icon('people')}<span>You set these up, so Aisyah Rahman approves them. To try it, switch to Aisyah from your profile menu.</span></div>` : ''}
     <div class="grid ap-split" id="ap-split">
-      <div class="grid" style="gap:8px;align-content:start">${list.map((a) => `<button type="button" class="choice" style="grid-template-columns:minmax(0,1fr);gap:6px" data-sel="${a.id}" aria-pressed="${a.id === sel.id}"><span class="meta-line" style="margin:0">${sp(a)}<span class="pill idle">${a.type}</span></span><b>${esc(a.title)}</b><span class="d">${esc(orgName(a))} · ${esc(a.since.replace(' 2026,', ''))}</span></button>`).join('')}</div>
+      <div class="grid" style="gap:8px;align-content:start">${groups}</div>
       <section class="card" aria-labelledby="ap-h">
         <div class="meta-line" style="margin:0 0 8px">${sp(sel)}<span class="pill idle">${sel.type}</span></div><h2 id="ap-h">${esc(sel.title)}</h2>
         <p class="ink" style="margin-top:6px">${esc(sel.summary)}</p>
@@ -2181,6 +2201,7 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
     </div>`;
   };
   pages.approvals.after = () => {
+    const sc = $('#ap-scope'); if (sc) sc.addEventListener('change', (e) => { state.approvalSel = null; setScope(e.target.value, true); });
     const f = $('#f-decide'); if (!f) return;
     let dec = 'approved';
     $$('button[data-dec]', f).forEach((b) => b.addEventListener('click', () => { dec = b.dataset.dec; }));
@@ -2188,13 +2209,13 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
       e.preventDefault();
       const reason = $('#d-reason').value.trim();
       if (!reason) { const t = $('#d-reason'); t.setAttribute('aria-invalid', 'true'); t.placeholder = 'Add a short reason first. It’s kept in the audit trail.'; t.focus(); return; }
-      const list = demo() ? state.approvals : state.myApprovals, a = list.find((x) => x.id === state.approvalSel), prev = a.status;
+      const list = apAll(), a = list.find((x) => x.id === state.approvalSel), prev = a.status;
       a.status = dec;
       if (a.report && dec === 'approved') state.reportApproved = true;
       if (a.cmId) { const pj = projById(a.projId), cm = pj && pj.custom().find((x) => x.id === a.cmId); if (cm) cm.status = { approved: 'live', changes: 'changes', declined: 'declined' }[dec]; }
       if (a.simId && !a.cmId) { const s = simById(a.simId), its = list.filter((x) => x.simId === s.id); if (s.stage === 'review' && !its.some((x) => x.status === 'waiting') && its.some((x) => x.status === 'approved')) s.stage = 'approved'; }
       log(`${({ approved: 'Approved', changes: 'Asked for changes to', declined: 'Declined' })[dec]} “${a.title}”: ${reason}`);
-      const nxt = list.find((x) => x.status === 'waiting'); if (nxt) state.approvalSel = nxt.id;
+      state.approvalSel = null;
       render();
       toast(({ approved: 'Approved', changes: 'Changes requested', declined: 'Declined' })[dec] + '.', () => { a.status = prev; auditList().shift(); render(); });
     });

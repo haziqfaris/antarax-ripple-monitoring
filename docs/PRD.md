@@ -405,6 +405,7 @@ Detailed in [§11](#11-ai-assistance-and-approval-gates).
 | FR-APR-3 | Decisions are approve, request changes, or decline, each with a reason. The proposer cannot approve their own item | MVP |
 | FR-APR-4 | Client visibility and report delivery need the project's Approve right; personal-data authorisation needs Admin and a second person | MVP |
 | FR-APR-5 | Queue counters in the navigation follow AXLE §6: orange when action is due | MVP |
+| FR-APR-6 | **Approvals, one organisation at a time** (owner, 17 Oct 2026). "Approvals for" is the same value as the top bar's organisation picker. Scoped, the page is that organisation's queue, waiting first; after a decision the next waiting item in the same organisation opens. "All organisations" keeps the queue but groups it by organisation, each with its waiting count and "Only <organisation>" | MVP |
 
 ### 8.9 Reports and delivery
 
