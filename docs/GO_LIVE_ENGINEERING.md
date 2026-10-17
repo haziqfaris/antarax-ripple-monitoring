@@ -1,233 +1,178 @@
-# Going live: the engineering work
+# Going live: lean version 1
 
-**Draft, 17 Oct 2026.** The code needed to take Outcomes (Performance Intelligence, working name) from the clickable mock to the Phase 1 internal MVP in [PRD §18](PRD.md#18-release-plan), and to pass the MVP acceptance in §18.1. Code only: pilot selection, data agreements, legal review and training are left out, except where an open decision blocks code (section 2).
+**Draft, 17 Oct 2026, rewritten the same day as the lean version 1 at the owner's request.** The code needed to put Outcomes (Performance Intelligence, working name) in front of two pilot organisations, and no more. Code only: pilot selection, data agreements, legal review and training are left out, except where an open decision blocks code (section 2).
 
-Each task has an id (`E-…`) so it can become a ticket, the PRD requirements it delivers, and a rough size: **S** up to 3 days, **M** about a week, **L** two weeks or more, for one engineer. Sizes are estimates for planning, not commitments.
+## 1 What version 1 is
 
-## 1 Where it stands
+**One loop, done properly:** connect an application, collect its daily figures, work out a few KPIs against a baseline, have a second person approve them, show them, and produce a monthly report.
 
-| What | State | Use it as |
-|---|---|---|
-| `mocks/` (about 4,000 lines of plain JavaScript, simulated data) | Every screen and flow, tested at 1440px and 390px by 23 Playwright scripts | **The specification**, not code to ship. Rebuild each page from it; port the scripts as end-to-end tests |
-| `docs/PRD.md` v0.8 | Requirements, data model (§7), contract (§9), stack (§15.2), retention (§16) | The source of every task below |
-| Measurement Link 1.1.0 (`antarax-api`: docs/14, `packages/lapisan-core/src/measure`) | Written and tested: kit, signing, checks, OpenAPI, contract test, optional `/capacity` | Vendor it; never rewrite it (antarax-api AGENTS rule 15) |
-| `integrations/measure/` | The pack a developer gets: contract test CLI, examples, Claude Code instruction | Ship as is; the console links to it |
-| AXLE standard v1.0 (`AntaraX-Dashboard-kit`) | HTML mocks, `tokens.css`, SPEC §19 release checks; **no React components yet** | Copy `tokens.css`; build the shell components here, then offer them back to the kit |
-| `antarax-api` (`@lapisan/core`, `@lapisan/postgres`, `apps/console`) | Next.js 16 and React 19 conventions, door, service signing, AXLE Link, Postgres migrations | Match its stack, tooling and conventions |
-| Production code for Outcomes | **None** | Everything in section 4 |
+Everything else in the PRD and the mock waits until a pilot shows it is needed (section 7). The mock and the PRD stay as the roadmap.
+
+**Kept, even though lean**, because without them the numbers can't be trusted or the product can't be sold:
+
+- **Separation between organisations**, enforced in the database and tested. One client seeing another's figures ends the product.
+- **Signed, read-only connections.** Already built: the Measurement Link kit and contract test in `antarax-api`.
+- **A second person approves baselines and reports**, because "hours saved" is a claim made to a client.
+- **Never a false zero.** A missing day is a gap; a link that stops answering says so.
+
+**Effort.** About **24 engineer-weeks** for sections 4.1 to 4.8: roughly **12 to 13 weeks with two engineers**, including the overhead of working in parallel. Each pilot's own Measurement Link (4.9) is about a week of its developer's time, in its own repository. Sizes: **S** half a week, **M** a week, **L** two weeks, for one engineer. These are planning estimates, not commitments.
+
+For comparison, the full plan this replaces came to about 80 engineer-weeks. Its 13-week timeline assumed more people than it said.
 
 ## 2 Decisions that block code
 
-These need the owner before the code that depends on them is merged. Everything else can start now.
-
 | Decision (PRD §20) | Blocks | Default if not decided by then |
 |---|---|---|
-| D1 product id | The registry entry (E-002), every id prefix | `outcomes`, as the PRD proposes |
-| D3, D4 sign-off of Measurement Link (decision 0013) | Turning on real collection (E-030) | Keep it proposed; build against 1.1.0 |
-| D5 residency and retention periods | Retention jobs (E-016) | §16 periods, Singapore |
-| D7 hosting and AI provider | Infrastructure (E-003) | §15.2: Vercel `sin1`, Supabase Singapore, Anthropic |
-| D16 Ask logging and retention | Ask logs (E-074) | 90 days, staff only |
-| D20 who reads client context | Row-level policy on context (E-012, E-091) | All staff with the Support rung |
-| D21 speech to text | Voice-note transcripts (E-093) | Attach and play only, no transcript |
-| D2 place in AXLE Central | Outcomes' own AXLE Link (E-125) | Its own host; Link built in Phase 2 |
+| D9 the two pilots | Their KPIs and baselines (V-16, V-17), the end-to-end test (V-30), V-31 and V-32 | None: version 1 needs two named pilot applications |
+| D1 product id | The registry entry (V-04), id prefixes | `outcomes` |
+| D3, D4 Measurement Link sign-off (decision 0013) | Collecting from a real pilot (V-12) | Build and test against 1.1.0; switch on when signed |
+| D7 hosting | Environments (V-02) | Vercel `sin1`, Supabase Singapore (§15.2) |
 
 ## 3 Shape of the code
 
-One TypeScript repository (this one), following `antarax-api`:
+One Next.js application, not a set of services. Scheduled work runs as cron routes in the same deployment.
 
 ```
-apps/console        Next.js (App Router, server components), the AXLE shell and every page
-apps/worker         Scheduled and queued work: collector, compute, reports, AI jobs, retention
-packages/domain     Pure logic, no I/O: KPI formulas, rollups, measures, kinds of work, validation rules
-packages/db         SQL migrations, row-level policies, typed queries, seed data
-packages/ui         AXLE shell and components built on tokens.css
-vendor/lapisan      Tagged copy of @lapisan/core (measure kit, service signing, AXLE Link)
+app/                Pages and route handlers (AXLE shell, six pages, cron routes for collection and health)
+domain/             Pure logic, no I/O: KPI formulas, baselines, hours saved, validation
+db/                 SQL migrations, row-level policies, typed queries
+vendor/lapisan/     Tagged copy of @lapisan/core: measure kit, service signing
 integrations/       The developer pack (exists)
-mocks/              The specification (exists, kept until the console replaces it)
+mocks/              The specification and the roadmap (exists)
 ```
 
-Rules carried over: Web Crypto only; zod at every boundary; money as strings with a currency; times stored in UTC; vitest for units; Playwright for end to end.
+House rules carried over from `antarax-api`: TypeScript, Web Crypto only, zod at every boundary, times stored in UTC, money as strings with a currency, vitest and Playwright.
 
-## 4 Workstreams
+## 4 The tasks
 
 ### 4.1 Foundations
 
-| Id | Task | PRD | Size |
-|---|---|---|---|
-| E-001 | Repository scaffold as section 3: workspaces, TypeScript project references, lint, format, vitest, Playwright, `npm run check` | §15.2 | M |
-| E-002 | Registry pull request to `antarax-api`: product id, id prefixes (§7.3), the `ax_msr_` key kind from proposed to active once D3 and D4 are signed | §15.3 | S |
-| E-003 | Environments: development, staging, production. Vercel project in `sin1`; Supabase in Singapore; secrets in the platform store; preview deploys on pull requests | §15.2, §14 | M |
-| E-004 | CI: typecheck, lint, unit, database tests against a real Postgres, end to end on the preview, axe on every page, secret scanning, dependency audit | NFR-5, A8 | M |
-| E-005 | Error, list and time conventions from antarax-api 03: one error shape, the list shape with `next`, UTC storage with zone shown | NFR-7 | S |
-| E-006 | Structured logging, error tracking, request ids; nothing logs a key, a signature or a context attachment's text | §14, NFR-8 | S |
+| Id | Task | Size |
+|---|---|---|
+| V-01 | Scaffold as section 3: Next.js, TypeScript, lint, format, vitest, Playwright, `npm run check`; vendor the measure kit | M |
+| V-02 | Staging and production in Singapore (Vercel `sin1`, Supabase); secrets in the platform store; preview deploys | S |
+| V-03 | CI: typecheck, lint, unit tests, database tests on real Postgres, the end-to-end test (V-30), axe on the six pages | S |
+| V-04 | Registry pull request to `antarax-api`: product id, id prefixes, the `ax_msr_` key kind made active once D3 and D4 are signed | S |
 
-### 4.2 Data model and database
+### 4.2 Data
 
-| Id | Task | PRD | Size |
-|---|---|---|---|
-| E-010 | Migrations for the domain model: tenant, workspace (real or demo), organisation, project, solution, environment, integration, metric definition (versioned with the catalog), observation (partitioned by month), KPI and KPI version, baseline (with provenance and range), approval, report and report version, custom measure, client context and attachment, staff and rights, audit | §7, NFR-2 | L |
-| E-011 | Commercial data (fees, contract, run cost) in its own tables, readable only with the Commercial right | §14 | S |
-| E-012 | Row-level security on `tenant_id` and `organisation_id` for every table; service roles for the worker only | §14 | M |
-| E-013 | Audit as append-only: insert-only grants, before and after values, reason, actor; export | §14, FR-APR | M |
-| E-014 | Isolation tests in CI: one organisation's scope cannot read another's, the client audience never reads commercial or context tables, a demo workspace never reads a real one | A5, §14 | M |
-| E-015 | Seed: the five example organisations from `mocks/data.js` as a demo workspace, labelled example | §8.16 | S |
-| E-016 | Retention jobs per §16: observations reduced to monthly totals after 25 months, logs and AI outputs after 90 days, voice recordings, demo workspaces; deletion of an organisation under the two-person rule | §16, §14 | M |
+| Id | Task | Size |
+|---|---|---|
+| V-05 | Schema: organisation, application, integration, metric (with its catalog version), observation, KPI and version, baseline and version, approval, report and version, staff, audit. Observations as one indexed table (partition when NFR-2 needs it) | M |
+| V-06 | Row-level security on `organisation_id` for every table; isolation tests in CI (one organisation's scope cannot read another's) | M |
+| V-07 | Audit, append-only: who, what, when, reason, before and after | S |
 
-### 4.3 Staff, sign-in and rights
+No fees, contracts or running costs are stored in version 1, so there is nothing commercial to protect yet.
 
-| Id | Task | PRD | Size |
-|---|---|---|---|
-| E-020 | Staff sign-in with two-step verification (Supabase Auth or the shared AntaraX staff identity if one exists by then); session timeout; sign-out everywhere | §4 | M |
-| E-021 | The AXLE rung ladder plus the Measurement, Approve and Commercial rights, enforced on the server for every read and action; disabled controls say what they need | §4.2, D12 | M |
-| E-022 | Separation of duties: whoever proposed or edited an item cannot approve it; the two-person rule for deleting data and for personal-data metrics | FR-APR, §14 | S |
-| E-023 | Organisation view (client audience) enforced on the server: fees, notes, client context, unapproved items and capacity never reach the response | §12, FR-CTX-3 | M |
+### 4.3 Sign-in and roles
 
-### 4.4 Integrations and collection
+| Id | Task | Size |
+|---|---|---|
+| V-08 | Staff sign-in with two-step verification; three roles enforced on the server: **viewer** (reads), **operator** (connects, proposes, drafts), **approver** (approves) | M |
+| V-09 | Separation of duties: whoever proposed or edited an item cannot approve it | S |
 
-The heart of the product. Built on the vendored measure kit; nothing re-implements signing, paging or checks.
+### 4.4 Collection
 
-| Id | Task | PRD | Size |
-|---|---|---|---|
-| E-030 | Integration records and keys: mint `ax_msr_` keys, show once, store sealed in the secret store; rotation with `AX_MEASURE_KEY_NEXT`; revocation | §9.5 | M |
-| E-031 | Connection test (the wizard's "Test it now"): manifest, metrics, health and seven days of observations through the kit's checks; results in words, as the mock shows | FR-ONB, §9.7 | M |
-| E-032 | Scheduler and queue: `pg_cron` enqueues; a worker takes one job per integration so a slow source never delays others; checkpoints so an outage catches up without loss; retries back off and honour `Retry-After`; pause and resume with a reason | FR-COL-1, 3, 4, 8, NFR-3, NFR-4 | L |
-| E-033 | Nightly collection: the last seven days re-read, new days added, at most 92 days a call, corrected days replace earlier values, backfill on request in windows | §9, FR-COL-2, 6, 7 | M |
-| E-034 | Health every 15 minutes; states on time, late, not answering, not connected; a missing day is a gap, never a zero | FR-COL-5, A7 | M |
-| E-035 | Validator: units, dimensions (20 values, no personal data), the contract's rules; a changed `metric_catalog_version` opens a mapping review in Approvals instead of changing figures | §9.3, FR-BP-5 | M |
-| E-036 | Nightly contract test per link, its result on Measurement links (R8) | §9.7 | S |
-| E-037 | Spreadsheet source: the CSV template from the wizard, upload, validation, same observations | FR-ONB-9 | M |
-| E-038 | Simulator source for demo workspaces: per kind-of-work profiles, events, a clock per workspace, through the same validator | §15.1a | M |
-| E-039 | Optional capacity summary: read `/capacity` when the manifest lists it, show it read-only on the Capacity tab, raise nothing | §8.20 | S |
-| E-040 | AXLE Link adapter for AntaraX products (usage, health), reading, never re-measuring | FR-INT-8 | M (Phase 2) |
+| Id | Task | Size |
+|---|---|---|
+| V-10 | Integrations and keys: create an `ax_msr_` key, show it once, store it sealed; rotate with the next key; revoke | M |
+| V-11 | Connection test: manifest, metrics, health and seven days of observations through the kit's own checks, with the result in words | S |
+| V-12 | Nightly collection (cron route): each integration on its own, so one failure never stops the rest; the last seven days re-read; history filled in on first connection; retries that honour `Retry-After` | M |
+| V-13 | Health check every hour; states on time, late, not answering, not connected; a missing day is a gap, never a zero | S |
+| V-14 | A changed metric catalog: new or changed metrics are held and flagged for an operator, never silently counted | S |
+| V-15 | Spreadsheet source: the CSV template, upload, the same validation. The path that needs no developer, so a pilot can start with it | M |
 
-### 4.5 Compute
+### 4.5 KPIs
 
-Deterministic, versioned, reproducible. Every published number comes from here, never from AI.
+| Id | Task | Size |
+|---|---|---|
+| V-16 | KPI engine for three standard KPIs per application (work handled, share needing correction, hours saved), plus one or two per pilot set as configuration from the same operations (sum, ratio, per). Ratios recomputed from their parts, durations re-weighted, distinct counts never added | M |
+| V-17 | Baselines with method, evidence and range; hours saved with its likely range, labelled an estimate; machine time never counted as a person's; a change makes a new version | M |
+| V-18 | Organisation totals: hours added across its applications. Version 1 assumes applications don't overlap, and the PRD's overlap groups come later | S |
+| V-19 | Golden tests: the mock's worked example (§10.3) reproduced to the unit | S |
 
-| Id | Task | PRD | Size |
-|---|---|---|---|
-| E-050 | KPI engine in `packages/domain`: counters summed, ratios recomputed from their parts, durations re-weighted from sum and count, distinct counts never added, money per currency; formulas from a closed set of operations, previewed before approval | §9.4, FR-KPI-3, 4 | L |
-| E-051 | Baselines and hours saved: the formula, machine time never counted as a person's, the likely range from the baseline's spread, estimates labelled; a change to an approved KPI or baseline is a new version | §10.2, §10.3, FR-KPI-5, 7 | M |
-| E-052 | Rollups to project, organisation and portfolio without counting the same work twice (overlap groups) | A5, §10.4 | M |
-| E-053 | The measure library and its catalog version; your own measures (sum, ratio, per, value) with preview and approval | §10.6, §8.13 | M |
-| E-054 | Kinds of work, departments and units as versioned configuration, not code | §10.5a, FR-KIND | S |
-| E-055 | Precomputed values per day and period so dashboards read, never calculate (2 s on a 4G phone) | NFR-1 | M |
-| E-056 | Reproducibility: store the inputs, formula version and baseline version behind every published figure; recompute when a day is recomputed | NFR-9 | M |
-| E-057 | Golden tests: the mock's example figures (for example Contoh Logistik's hours saved) reproduced to the unit | A3 | S |
+### 4.6 Approvals
 
-### 4.6 Approvals and audit
+| Id | Task | Size |
+|---|---|---|
+| V-20 | Approvals for an application's KPI set, its baseline and each report: a reason required, approve, ask for changes or decline; an approved KPI starts counting; all in the audit | M |
 
-| Id | Task | PRD | Size |
-|---|---|---|---|
-| E-060 | Approval objects for KPIs, baselines, mapping changes, measures, requested figures, client visibility and reports; one state machine (waiting, blocked, approved, changes asked, declined); reason required; undo within the toast window | FR-APR | M |
-| E-061 | Approval effects: a KPI starts counting, a baseline applies from its date, a report freezes, a measure goes live; each in the audit with before and after | FR-APR, §14 | M |
-| E-062 | Scoped queue: per organisation, waiting first, the next waiting item in the same organisation after a decision | FR-APR-6 | S |
+### 4.7 Console
 
-### 4.7 The console
+Six pages, rebuilt from the mock's look on the AXLE tokens. Scoping is one organisation filter.
 
-Rebuild each page from `mocks/`, as server components reading precomputed data. The organisation scope is one value in the address (`?org=`) and a cookie, read by every page (AXLE §19 "Links").
+| Id | Task | Size |
+|---|---|---|
+| V-21 | Shell: the AXLE top bar and sidebar with only version 1's pages; `tokens.css`; dropdowns and fields from an accessible headless library (React Aria or Radix) styled with the tokens, never the browser's own | M |
+| V-22 | **Applications**, and adding one: organisation (or a new one, with its data agreement confirmed), the application's name and kind of work, the developer prompt (copy and `.md`), the connection test or a spreadsheet, the KPIs, the baseline, sent for approval | L |
+| V-23 | **Application page**: KPI cards, a trend with a table view, its state and last collection, the baseline behind hours saved | M |
+| V-24 | **Organisations** and one organisation's **results**: its applications, total hours saved, what needs a person | M |
+| V-25 | **Approvals**: the queue, filtered by organisation | S |
+| V-26 | **Reports**: a monthly report per application drafted from the computed figures, edited and approved by a person (no AI); the approved version frozen as HTML with a hash and printed to PDF from the browser | M |
 
-| Id | Task | PRD | Size |
-|---|---|---|---|
-| E-070 | `packages/ui`: the shell (dark top bar with the AXLE tag, the 240px sidebar with the Outcomes-only box grouped Track, Report, Understand; the Dashboard and R8 switch; folding groups; the phone drawer) on `tokens.css` | §12.1, §12.2 | L |
-| E-071 | Components: drawn dropdowns and calendar on an accessible headless library (React Aria or Radix) styled with tokens, never the browser's own; fields; lists with search, filter, sort, group, bulk action and export; state pills; the "never a false zero" dash with its reason | FR-ONB-9g, AXLE §9 | L |
-| E-072 | Charts with a table view for each, gaps shown as gaps, estimates hatched | NFR-5 | M |
-| E-073 | Pages, each with the scope picker where the mock has one: Overview (all and scoped), Applications, Approvals, Results (organisation, project, application with the Outcomes, Measures, Explore, Blueprint, Usage, Health, Data and Capacity tabs), Reports, Analytics, Client context, Ask, Organisations and the account page, Settings, Demo, Audit, Staff | §12.4 | L (several) |
-| E-074 | Track an application: the six-step wizard and "Sent for approval", several at once, each resuming where it was; state saved on the server, not the browser | FR-ONB-9 to 9j | L |
-| E-075 | The developer prompt generated per application (from the integration instruction, kinds of work and department), copy and `.md` download; the developer link page | FR-ONB-9c, 9e | M |
-| E-076 | The blueprint: data model and topology drawn from the manifest and what Outcomes keeps, `.md` with Mermaid | §8.19 | M |
-| E-077 | R8 pages: Overview, Incidents, Troubleshoot, Jobs, Providers, Services, Configuration, Operations audit, Measurement links, Capacity | AXLE §10 | L |
-| E-078 | Find (⌘K) across organisations, applications, reports and pages, respecting rights | AXLE §6 | M |
-| E-079 | Port the 23 mock Playwright scripts into end-to-end tests against the console: the tour, wizard, exit and resume, blueprint, kinds of work, scoping on every page, dropdowns, Ask, client context, capacity | A-all | L |
+### 4.8 Running it
 
-### 4.8 AI
+| Id | Task | Size |
+|---|---|---|
+| V-27 | An e-mail (Resend) when a link stops answering or figures are late | S |
+| V-28 | Backups and one restore drill; security headers; a rate limit on the developer link page | S |
+| V-29 | A simple **Jobs** page for staff: last collection per integration, failures, run again | S |
+| V-30 | End-to-end test of the loop against the pack's example server: add an organisation and an application, connect, collect, approve KPIs and baseline, see the figures, approve a report | M |
 
-Anthropic API, structured outputs, every call logged with count, latency and cost. AI proposes and explains; it never produces a published number.
+### 4.9 Pilots (in their own repositories)
 
-| Id | Task | PRD | Size |
-|---|---|---|---|
-| E-080 | AI service wrapper: model and key from configuration, structured outputs, timeouts, cost per call, an off switch (Settings), demo workspaces included | §11, NFR-8 | M |
-| E-081 | KPI proposals from a manifest and the application's kind of work; "Suggest" from one sentence in the wizard (replaces the mock's word matching) | §11.1, FR-KIND | M |
-| E-082 | Report narratives with a number check: every number in the text must match a computed value or the draft is blocked | §11.2, FR-RPT-2 | M |
-| E-083 | Explore: ideas ranked from the catalog and the organisation's client context, quoting context by role and date, never inventing figures | §8.17, FR-CTX-10 | M |
-| E-084 | Ask: tool calls into the compute service, scoped to one organisation or application, answers cite their sources, never claim a cause; questions logged per D16 | §8.14, §11.4, FR-ASK-1 to 9 | L |
-| E-085 | Untrusted text as data: project names, manifests and client context passed in delimited blocks, never as instructions; tests with injection strings | §11.3 | S |
-| E-086 | Evaluation sets for proposals, narratives, Explore and Ask, run in CI on a schedule, with pass thresholds | §17 | M |
-
-### 4.9 Reports
-
-| Id | Task | PRD | Size |
-|---|---|---|---|
-| E-090 | Report templates per project (month or quarter), drafted at period end from computed values and the narrative; review, edit and approve | FR-RPT-1 to 3 | M |
-| E-091 | Frozen PDF from the same components (server-side Chromium), hashed and stored; the light AntaraX layout, "Run by REKA as part of Managed AI." | FR-RPT-3, 4 | M |
-| E-092 | Evidence footnotes for every figure, estimates labelled, caveats and next steps | FR-RPT-5 | S |
-| E-093 | Reports page scoped per organisation, ready to review first | FR-RPT-10 | S |
-| E-094 | Delivery by e-mail (Resend) to the agreed audience, switched off in demo workspaces at the service layer | FR-RPT-6 | S (Phase 2) |
-
-### 4.10 Client context
-
-| Id | Task | PRD | Size |
-|---|---|---|---|
-| E-100 | Entries per organisation: kind, source, role (never a name), date, what it is about, tags, AI use; scoped page and the results tab | §8.18 | M |
-| E-101 | Attachments in private Singapore storage: signed links that expire in minutes, a malware scan on upload, size and count limits | FR-CTX-12, §15.2 | M |
-| E-102 | Reading attachments with Claude (documents, photos); personal details hidden in what was read; the read text stored with the entry | FR-CTX-13 | M |
-| E-103 | Voice notes: recording and upload; transcripts once D21 picks a provider | FR-CTX-13 | S, then M |
-| E-104 | REKA only, enforced: never in organisation view, reports, exports or the client audience's AI inputs | FR-CTX-3 | S |
-
-### 4.11 Demo workspaces
-
-| Id | Task | PRD | Size |
-|---|---|---|---|
-| E-110 | Demo workspaces in the data model with the same isolation; every outbound channel (e-mail, delivery, share links) off in the service layer | §8.16, §14 | M |
-| E-111 | Demo studio: simulated clock, events, the guided demo | §8.16 | M |
-
-### 4.12 Running Outcomes itself
-
-Outcomes is a product too: it gets its own R8 and capacity, like every AntaraX product.
-
-| Id | Task | PRD | Size |
-|---|---|---|---|
-| E-120 | Collection health and §17 measures: coverage, freshness, time to connect, approval latency, report cycle, AI acceptance | §17 | M |
-| E-121 | Alerts: a link not answering, late figures, a failed job, a blocked narrative; Needs a person, the bell, e-mail | §8.10 | M |
-| E-122 | `capacity.json` for Outcomes, the nightly snapshot, the outside availability check, R8 → Capacity | AXLE §10.13 | M |
-| E-123 | Backups to R2 and a tested restore | §15.2 | S |
-| E-124 | Security headers and content security policy, rate limits on the console and the developer link page, dependency updates | §14 | S |
-| E-125 | Outcomes' own AXLE Link (tenants, usage, health) for AXLE Central | D2 | M (Phase 2) |
-
-### 4.13 Pilot integrations (in the pilots' own repositories)
-
-| Id | Task | PRD | Size |
-|---|---|---|---|
-| E-130 | Measurement Link in pilot application 1, from the pack: adapter only, the contract test passing on staging then production | A1, A2 | M |
-| E-131 | The same in pilot application 2, of a different kind of work | A1, A2 | M |
+| Id | Task | Size |
+|---|---|---|
+| V-31 | Pilot application 1: Measurement Link from the pack (adapter only); contract test passing on staging, then production. Or the spreadsheet route | M |
+| V-32 | Pilot application 2, a different kind of work: the same | M |
 
 ## 5 Order
 
-Rough sequence for two to three engineers. Weeks overlap; the console work runs alongside from week 3.
+Two engineers; rows that overlap run in parallel.
 
-| Weeks | Milestone | Tasks |
+| Weeks | What | Tasks |
 |---|---|---|
-| 1 to 3 | **Foundations**: the repository, environments, schema, isolation, sign-in and rights | E-001 to E-006, E-010 to E-016, E-020 to E-023 |
-| 3 to 6 | **Collection**: keys, connection test, scheduler, nightly collection, health, validator, spreadsheet, simulator | E-030 to E-039 |
-| 4 to 8 | **Compute and approvals**: the KPI engine, baselines, rollups, measures, precomputed values, approvals | E-050 to E-062 |
-| 3 to 11 | **Console**: shell and components first, then pages in the order of the tour: wizard, applications, approvals, results, reports, the rest | E-070 to E-079 |
-| 7 to 11 | **AI, reports, client context, demo** | E-080 to E-111 |
-| 10 to 12 | **Running it**: health, alerts, capacity, backups, hardening | E-120 to E-124 |
-| 8 to 13 | **Pilots connect**, then acceptance | E-130, E-131 |
+| 1 to 3 | Foundations, schema, separation, sign-in | V-01 to V-09 |
+| 3 to 6 | Collection and the spreadsheet source | V-10 to V-15 |
+| 3 to 9 | Console, starting with the shell and adding an application | V-21 to V-25 |
+| 5 to 8 | KPIs, baselines, approvals | V-16 to V-20 |
+| 8 to 11 | Reports, alerts, jobs, backups, the end-to-end test | V-26 to V-30 |
+| 6 to 11 | Pilots connect (their developers) | V-31, V-32 |
+| 11 to 13 | Fixes from the pilots, then the gate (section 6) | |
 
-## 6 Done means (go-live gate)
+## 6 Done means
 
-Every check passes on production, with both pilots connected:
+On production, with both pilots connected:
 
-- **MVP acceptance A1 to A8** (PRD §18.1), each with the evidence named there.
-- **AXLE §19 checks that apply to Outcomes**: Real numbers, Organisation life, Lists, Audit, Rights, Links, Phone, Collapsed groups, R8 switch, R8 jobs, R8 providers, R8 capacity, R8 AI flow, R8 troubleshoot, R8 safety, Backend exists, Look. (Invitation, Tickets and Support session apply once organisations sign in, Phase 3.)
-- **Isolation and commercial separation tests** green (E-014, E-023).
-- **No browser-default control** on any page; axe clean on every page; every page usable at 390px.
-- **End-to-end suite** (E-079) green on staging and production.
-- **AI evaluation sets** at their thresholds; a narrative with a wrong number is blocked.
-- **Restore drill** done from backup.
-- **Nothing in the console invents data**: every example figure is gone from real workspaces, and demo workspaces say they are simulated.
+| # | Check (from PRD §18.1) | In version 1 |
+|---|---|---|
+| A1 | Two different applications connected without changing their data model | Yes |
+| A2 | Each shares at least three useful figures, collected and checked nightly | Yes |
+| A3 | A KPI approved with its baseline's evidence; measured and estimated parts shown apart | Yes |
+| A4 | Both pilots shown by the same pages, by configuration alone | Yes |
+| A5 | Separation between organisations; no double counting | Separation yes; overlap groups later (V-18) |
+| A6 | A monthly report with changes, evidence, caveats and next steps | Yes, written by a person |
+| A7 | A stopped link shows as stopped, never as a zero | Yes |
+| A8 | Contract and authorisation tests pass; no secret or raw data in outputs | Yes |
 
-## 7 Not in the MVP
+Also: the end-to-end test (V-30) green on production, axe clean on the six pages, every page usable at 390px, and the restore drill done.
 
-Phase 2 and later, from §18: AXLE Link adapter (E-040), scheduled report e-mail (E-094), Outcomes' own AXLE Link (E-125), anomaly alerts, third-party adapters, share links, read-only API and embed, Bahasa Malaysia reports, organisation sign-in, tenant self-service and billing.
+## 7 Later, when a pilot needs it
+
+Each comes back from the roadmap (the PRD and the mock) when it earns its place, in roughly this order.
+
+| What | Bring it back when |
+|---|---|
+| Scheduled report e-mail; PDF rendered on the server | Reports go out every month to several people |
+| KPI suggestions and report narratives by AI, with the number check | Drafting by hand takes too long |
+| Measure library and your own measures | A pilot asks for a figure the standard KPIs don't cover, twice |
+| Overlap groups in rollups | Two applications at one organisation handle the same work |
+| Analytics; scoping on every page; Find | More than about five organisations |
+| Ask and Explore | Staff keep asking questions the pages don't answer |
+| Client context, with attachments and voice notes | Account managers start keeping notes elsewhere |
+| Demo workspaces, the simulator, Demo studio, the guided demo | Selling to new organisations, not just running pilots |
+| Fees, contracts and running costs (the Commercial right) | Margin needs tracking per organisation |
+| The R8 pages and Outcomes' own capacity file | Outcomes joins AXLE Central, or collection outgrows the Jobs page |
+| Capacity summary, blueprint, several applications being set up at once | Applications arrive faster than one at a time |
+| Retention jobs (§16) | Before the first period ends: collector run logs at 90 days, observations at 25 months |
+| AXLE Link adapter; Outcomes' own AXLE Link | An AntaraX product is measured, or Central exists |
