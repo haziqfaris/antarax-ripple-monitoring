@@ -1287,3 +1287,29 @@ select.csel-native { position: absolute !important; width: 1px !important; heigh
 .ask-scope p { padding-bottom: 12px; }
 @media (max-width: 640px) { .ask-scope { grid-template-columns: minmax(0, 1fr); } .ask-scope p { padding-bottom: 0; } }
 button.csel-add { width: 100%; background: none; border: 0; border-top: 1px solid var(--line); cursor: pointer; font: inherit; font-size: .875rem; text-align: left; }
+
+/* Client context: one organisation at a time; "All organisations" is an overview */
+.ctx-scopebar { padding: 14px 18px; }
+.ctx-cos { align-items: stretch; }
+.ctx-co { display: grid; gap: 10px; align-content: start; }
+.ctx-co-h { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.ctx-co-h h3 { font-size: 1rem; }
+.ctx-co blockquote { margin: 0; padding-left: 12px; border-left: 3px solid var(--line-strong); color: var(--ink); font-size: .9375rem; line-height: 1.5; }
+.ctx-co .head-actions { margin-top: auto; }
+.csel > svg:first-child:not(.csel-chev) { width: 18px; height: 18px; color: var(--muted); flex: none; }
+.cdate { padding: 10px; width: 300px; max-height: none !important; gap: 6px; }
+.cd-head { display: flex; align-items: center; justify-content: space-between; padding: 2px 2px 6px; }
+.cd-head b { font-size: .9375rem; }
+.cd-nav { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); cursor: pointer; }
+.cd-nav:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
+.cd-nav:disabled { opacity: .35; cursor: not-allowed; }
+.cd-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; }
+.cd-w { font-family: var(--mono); font-size: 10px; letter-spacing: .06em; color: var(--muted); text-align: center; padding: 4px 0; text-transform: uppercase; }
+.cd-day { height: 36px; border: 0; border-radius: 9px; background: none; color: var(--ink); font: inherit; font-size: .875rem; cursor: pointer; font-variant-numeric: tabular-nums; }
+.cd-day:hover:not(:disabled), .cd-day:focus-visible { background: var(--primary-tint); outline: none; }
+.cd-day.today { box-shadow: inset 0 0 0 1.5px var(--line-strong); font-weight: 600; }
+.cd-day.sel { background: var(--primary); color: var(--on-primary); font-weight: 600; box-shadow: none; }
+.cd-day:disabled { color: var(--muted); opacity: .45; cursor: not-allowed; }
+.cd-foot { display: flex; justify-content: flex-end; padding-top: 4px; border-top: 1px solid var(--line); }
+.ctx-addbar { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 14px 18px; }
+.ctx-addbar > div { display: grid; gap: 2px; }

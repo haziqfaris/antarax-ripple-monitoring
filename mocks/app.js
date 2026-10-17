@@ -1247,7 +1247,7 @@
     } else if (tab === 'reports') {
       body = `<section class="card"><div class="card-head"><div><h2>Reports</h2><p class="sub">One per project, on its own schedule</p></div><button type="button" class="btn sm ghost" data-act="reports-for" data-org="${c.id}">All reports for ${esc(c.short)}${icon('chev', 'sm')}</button></div><div class="table-wrap"><table><thead><tr><th>Project</th><th>Cadence</th><th>Status</th><th></th></tr></thead><tbody>${c.projects.length ? c.projects.map((p) => `<tr><td><span class="name">${esc(p.name)}</span></td><td>${esc(p.cadence)}</td><td><span class="pill ${p.report[0]}">${esc(p.report[1])}</span></td><td>${p.report[2] ? `<a class="btn sm" href="${p.report[2]}">Open</a>` : ''}</td></tr>`).join('') : '<tr><td colspan="4" class="muted">No projects yet.</td></tr>'}</tbody></table></div></section>`;
     } else if (tab === 'context') {
-      body = `<div class="callout info">${icon('shield')}<span><b>REKA only.</b> What ${esc(c.short)} told the account team, in their words. AI uses it to suggest measures for ${esc(c.short)}’s solutions; it is never in the organisation view, reports or exports.</span></div>${ctxForm(c.id)}${ctxList(c.id)}`;
+      body = `<div class="callout info">${icon('shield')}<span><b>REKA only.</b> What ${esc(c.short)} told the account team, in their words. AI uses it to suggest measures for ${esc(c.short)}’s solutions; it is never in the organisation view, reports or exports.</span></div>${ctxAddBlock(c.id)}${ctxList(c.id)}`;
     } else if (tab === 'notes') {
       state.notes = state.notes || {};
       const notes = state.notes[c.id] = state.notes[c.id] || (c.id === 'contoh-logistik' ? [['Daniel Lim', '2 Oct 2026, 10:12', 'Finance director asked for a split by document type from October. The new “reason” detail in the data makes that possible.']] : []);
@@ -2434,27 +2434,64 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
         <div class="field"><label for="ctx-kind">Kind</label><select id="ctx-kind">${CTX_KINDS.map(([k, l]) => `<option value="${k}" ${d.kind === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
         <div class="field"><label for="ctx-source">Where it came from</label><select id="ctx-source">${CTX_SOURCES.map((x) => `<option ${d.source === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
         <div class="field"><label for="ctx-from">Who said it, by role</label><input id="ctx-from" placeholder="For example: Finance director" value="${esc(d.from || '')}"></div>
-        <div class="field"><label for="ctx-date">When</label><input id="ctx-date" type="date" value="${d.date || today()}"></div>
+        <div class="field"><label for="ctx-date">When</label><input id="ctx-date" type="date" max="${today()}" value="${d.date || today()}"></div>
         <div class="field full"><span class="lab">What it is about, optional</span><div class="chips">${XP_FOCUS.map(([k, l]) => `<button type="button" class="chip" data-ctx-tag="${k}" aria-pressed="${d.tags.includes(k)}">${l}</button>`).join('')}</div></div>
         <label class="check full"><input type="checkbox" id="ctx-ai" ${d.ai === false ? '' : 'checked'}><span>AI may use this, and what was read from its attachments, when suggesting measures and answering questions about ${esc(c ? c.short : 'this organisation')}. It is never shown to the organisation.</span></label>
-      </div><div class="head-actions" style="margin-top:14px"><button type="submit" class="btn primary">Add to client context</button></div></form>`;
+      </div><div class="head-actions" style="margin-top:14px"><button type="submit" class="btn primary">Add to client context</button>${orgId && state.ctxOpen === orgId && ctxFor(orgId).length ? `<button type="button" class="btn ghost" data-act="ctx-close">Cancel</button>` : ''}</div></form>`;
   }
   // The client context list, for one organisation or all (Outcomes only → Client context, and the Results page's tab).
+  // With context already recorded, what they said comes first and adding is one line that opens the form in place.
+  function ctxAddBlock(orgId) {
+    const d = state.ctxDraft, drafting = d && ((d.text || '').trim() || (d.items || []).length);
+    if (!ctxFor(orgId).length || state.ctxOpen === orgId || drafting || !atLeast('Support')) return ctxForm(orgId);
+    return `<section class="card ctx-addbar"><span class="ico info">${icon('plus', 'sm')}</span><div><b class="ink">Add what they told you or gave you</b><span class="small muted">A note, a document, a photo, a voice note or a link</span></div><button type="button" class="btn primary sm" data-act="ctx-open" data-org="${orgId}">Add</button></section>`;
+  }
   function ctxList(orgId) {
     const f = state.ctxF || { kind: 'all', q: '' }, has = (e) => (ctxBody(e) + ' ' + e.from + ' ' + (e.items || []).map((x) => x.name).join(' ')).toLowerCase().includes(f.q.toLowerCase());
-    const list = ctxAll().filter((e) => !e.archived && (!orgId || e.org === orgId) && (f.kind === 'all' || e.kind === f.kind) && (!f.q || has(e))).sort((a, b) => b.date.localeCompare(a.date));
-    return `<section class="card" style="padding:14px 18px"><div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center"><div class="seg" role="group" aria-label="Kind">${[['all', 'All']].concat(CTX_KINDS).map(([k, l]) => `<button type="button" data-ctxkind="${k}" aria-pressed="${f.kind === k}">${l}</button>`).join('')}</div><div class="field" style="flex:1;min-width:180px"><input id="ctx-q" placeholder="Search what they said, and their files" aria-label="Search client context" value="${esc(f.q)}" autocomplete="off"></div></div></section>
+    const c = orgId && coById(orgId), apps = c ? coSolutions(c) : [], fp = apps.some((x) => x.id === f.proj) || f.proj === '' ? f.proj : 'all';
+    const list = ctxAll().filter((e) => !e.archived && (!orgId || e.org === orgId) && (f.kind === 'all' || e.kind === f.kind) && (!f.q || has(e)) && (fp === 'all' || (fp === '' ? !e.proj : e.proj === fp))).sort((a, b) => b.date.localeCompare(a.date));
+    const about = apps.length ? `<div class="seg" role="group" aria-label="About">${[['all', 'Everything'], ['', 'Whole organisation']].concat(apps.map((x) => [x.id, x.name])).map(([k, l]) => `<button type="button" data-ctxproj="${k}" aria-pressed="${fp === k}">${esc(l)}</button>`).join('')}</div>` : '';
+    return `<section class="card" style="padding:14px 18px"><div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">${about}<div class="seg" role="group" aria-label="Kind">${[['all', 'All']].concat(CTX_KINDS).map(([k, l]) => `<button type="button" data-ctxkind="${k}" aria-pressed="${f.kind === k}">${l}</button>`).join('')}</div><div class="field" style="flex:1;min-width:180px"><input id="ctx-q" placeholder="Search what they said, and their files" aria-label="Search client context" value="${esc(f.q)}" autocomplete="off"></div></div></section>
       ${list.length ? `<section class="grid" style="gap:12px">${list.map((e) => ctxEntry(e, { org: !orgId })).join('')}</section>` : `<section class="card"><div class="empty" style="padding:22px"><h3>${ctxAll().some((e) => !e.archived && (!orgId || e.org === orgId)) ? 'Nothing matches' : 'No client context yet'}</h3><p>After a meeting, a call or a quarterly review, add what they said and anything they gave you. AI uses it to suggest measures that answer their questions.</p></div></section>`}`;
   }
+  // Client context is about one organisation at a time: its own notebook. "All organisations" is an overview:
+  // one card per organisation (who has said what, who has nothing recorded) and the latest entries.
+  const ctxScopeBar = (c, live) => {
+    const cos = companies(), n = (id) => live.filter((e) => e.org === id).length;
+    return `<section class="card ctx-scopebar"><div class="ask-scope" style="border:0;padding:0"><div class="field"><label for="ctx-scope">Context for</label><select id="ctx-scope"${demo() ? '' : ' data-add="org"'}><option value="" ${!c ? 'selected' : ''}>All organisations (${live.length})</option>${cos.map((o) => `<option value="${o.id}" ${c && c.id === o.id ? 'selected' : ''}>${esc(o.short)} (${n(o.id)})</option>`).join('')}</select></div>
+      <p class="xs muted">${c ? `Only what ${esc(c.short)} told or gave the account team. The same as the organisation picker in the top bar.` : 'Choose an organisation to read and add its context. The same as the organisation picker in the top bar.'}</p></div></section>`;
+  };
+  function ctxOverview(live) {
+    const cos = companies();
+    if (!cos.length) return `<section class="card"><div class="empty">${emptyArt}<h3>No organisations yet</h3><p>Context belongs to an organisation. Add one from “Context for” above, or with its details on Organisations.</p><a class="btn sm" href="#new-organisation">${icon('plus', 'sm')}Add an organisation</a></div></section>`;
+    const cards = cos.map((o) => {
+      const es = live.filter((e) => e.org === o.id).sort((a, b) => b.date.localeCompare(a.date)), last = es[0], concerns = es.filter((e) => e.kind === 'concern').length;
+      return `<article class="card ctx-co"><div class="ctx-co-h"><div><h3>${esc(o.short)}</h3><span class="xs muted">${esc(o.industry || '')}</span></div><span class="pill ${es.length ? 'idle' : 'warn'}">${es.length ? `${es.length} entr${es.length === 1 ? 'y' : 'ies'}` : 'Nothing yet'}</span></div>
+        ${last ? `<blockquote>“${esc(last.text.length > 120 ? last.text.slice(0, 118).replace(/\s+\S*$/, '') + '…' : last.text)}”</blockquote><p class="xs muted">${esc(last.from)} · ${dayShort(last.date)}${concerns ? ` · <span class="warn-ink">${concerns} concern${concerns === 1 ? '' : 's'}</span>` : ''}</p>`
+          : `<p class="small muted">Nothing recorded from ${esc(o.short)}. After the next meeting or call, add what they said.</p>`}
+        <div class="head-actions"><button type="button" class="btn sm" data-ctxscope="${o.id}">${es.length ? 'Open' : 'Add the first'}${icon('chev', 'sm')}</button>${es.length && atLeast('Support') ? `<button type="button" class="btn sm ghost" data-ctxscope="${o.id}" data-ctxadd="1">${icon('plus', 'sm')}Add</button>` : ''}</div></article>`;
+    }).join('');
+    const latest = live.slice().sort((a, b) => b.date.localeCompare(a.date)).slice(0, 4);
+    return `<section class="grid g3 ctx-cos">${cards}</section>
+      ${latest.length ? `<section class="grid" style="gap:12px"><div class="card-head" style="margin:8px 0 0"><div><h2>Latest, across organisations</h2><p class="sub">Open an organisation to see all of its context and add to it</p></div></div>${latest.map((e) => ctxEntry(e, { org: true })).join('')}</section>` : ''}`;
+  }
   pages.context = () => {
-    const live = ctxAll().filter((e) => !e.archived), n = live.length, orgs = new Set(live.map((e) => e.org)).size, files = live.reduce((a, e) => a + (e.items || []).length, 0);
-    return `${head({ title: 'Client context', kind: 'data', lead: 'What organisations tell the account team, in their words, and what they give you: documents, photos, voice notes and links. AI uses it to suggest measures that answer their questions. It never reaches the organisation.', state: `${stateWord()} · ${n} entr${n === 1 ? 'y' : 'ies'} from ${orgs} organisation${orgs === 1 ? '' : 's'} · ${files} attachment${files === 1 ? '' : 's'}` })}
+    const live = ctxAll().filter((e) => !e.archived), c = state.scope && coById(state.scope);
+    const mine = c ? live.filter((e) => e.org === c.id) : live, files = mine.reduce((a, e) => a + (e.items || []).length, 0), orgs = new Set(live.map((e) => e.org)).size;
+    if (c) curTitle = `Client context · ${c.short}`;
+    const head1 = head({ title: c ? `Client context · ${esc(c.short)}` : 'Client context', kind: 'data',
+      lead: c ? `What ${esc(c.short)} told the account team, in their words, and what they gave you. AI uses it to suggest measures for ${esc(c.short)}’s applications. It never reaches ${esc(c.short)}.` : 'What each organisation tells the account team, in their words, and what they give you: documents, photos, voice notes and links. AI uses it to suggest measures that answer their questions. It never reaches the organisation.',
+      state: c ? `${stateWord()} · ${mine.length} entr${mine.length === 1 ? 'y' : 'ies'} · ${mine.filter((e) => e.ai).length} used by AI · ${files} attachment${files === 1 ? '' : 's'}${mine.length ? ` · last added ${dayShort(mine.map((e) => e.date).sort().pop())}` : ''}` : `${stateWord()} · ${live.length} entr${live.length === 1 ? 'y' : 'ies'} from ${orgs} organisation${orgs === 1 ? '' : 's'}`,
+      actions: c ? `<a class="btn sm ghost" href="#results-${c.id}">${icon('analytics', 'sm')}Results</a>${coProjs(c).length ? `<button type="button" class="btn sm" data-act="ask-about" data-k="c:${c.id}"><img src="${SPARK}" alt="" style="width:16px">Ask about ${esc(c.short)}</button>` : ''}` : '' });
+    return `${head1}
+      ${ctxScopeBar(c, live)}
       <div class="callout info">${icon('shield')}<span><b>REKA only.</b> Context and its attachments are never shown in the organisation view, reports or exports. AI reads them as quoted words, never as instructions, and never turns a number someone said into a figure.</span></div>
-      ${ctxForm(state.scope && coById(state.scope) ? state.scope : null)}
-      ${ctxList(state.scope && coById(state.scope) ? state.scope : null)}`;
+      ${c ? `${ctxAddBlock(c.id)}${ctxList(c.id)}` : ctxOverview(live)}`;
   };
   pages.context.after = () => ctxAfter();
   function ctxAfter() {
+    const cs = $('#ctx-scope'); if (cs) cs.addEventListener('change', (e) => { ctxReadDraft(); state.ctxF = Object.assign(state.ctxF || { kind: 'all', q: '' }, { proj: 'all' }); setScope(e.target.value, true); });
+    if (state.ctxFocusForm) { state.ctxFocusForm = false; const f = $('#f-ctx'); if (f) { f.scrollIntoView({ block: 'start' }); const t = $('#ctx-text'); if (t) t.focus({ preventScroll: true }); } }
     const qi = $('#ctx-q'); if (qi) qi.addEventListener('input', (e) => { state.ctxF = Object.assign(state.ctxF || { kind: 'all' }, { q: e.target.value }); clearTimeout(state.ctxT); state.ctxT = setTimeout(() => { ctxReadDraft(); render(); const el = $('#ctx-q'); if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); } }, 250); });
     ['ctx-text', 'ctx-from'].forEach((id) => { const el = $('#' + id); if (el) el.addEventListener('input', () => el.removeAttribute('aria-invalid')); });
     const so = $('#ctx-org'); if (so && so.tagName === 'SELECT') so.addEventListener('change', (e) => { ctxReadDraft(); state.ctxOrg = e.target.value; state.ctxDraft.proj = ''; render(); });
@@ -3623,20 +3660,72 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
     btn.addEventListener('keydown', (e) => { if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(e.key)) { e.preventDefault(); cselOpen(btn, sel); } });
     sel.addEventListener('change', () => { if (btn.isConnected) btn.querySelector('.csel-v').textContent = cselLabel(sel); });
   }
-  const cselAll = (root) => (root.querySelectorAll ? root.querySelectorAll('select') : []).forEach(cselEnhance);
-  new MutationObserver((ms) => ms.forEach((m) => m.addedNodes.forEach((n) => { if (n.nodeType !== 1) return; if (n.tagName === 'SELECT') cselEnhance(n); else cselAll(n); }))).observe(document.body, { childList: true, subtree: true });
+  // Dates too: a drawn calendar in the same list, never the browser's own picker. The input becomes hidden and
+  // keeps its YYYY-MM-DD value; max (when set) greys out the days after it.
+  const ymd = (y, m, d) => `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  const dateLabel = (v) => { if (!v) return 'Choose a date'; const [y, m, d] = v.split('-').map(Number); return `${d} ${MON[m - 1]} ${y}`; };
+  function cdateDraw(l) {
+    const inp = l._sel, [y, m] = l._ym, first = new Date(Date.UTC(y, m, 1)).getUTCDay(), days = new Date(Date.UTC(y, m + 1, 0)).getUTCDate(), max = inp.max || '', lead = (first + 6) % 7;
+    const cells = []; for (let i = 0; i < lead; i++) cells.push('<span></span>');
+    for (let d = 1; d <= days; d++) { const v = ymd(y, m, d), off = max && v > max; cells.push(`<button type="button" class="cd-day${v === inp.value ? ' sel' : ''}${v === today() ? ' today' : ''}" data-cd="${v}" ${off ? 'disabled aria-disabled="true"' : ''} aria-label="${d} ${MONTHS[m]} ${y}" aria-pressed="${v === inp.value}">${d}</button>`); }
+    const nextOff = max && ymd(y, m + 1, 1) > max;
+    l.innerHTML = `<div class="cd-head"><button type="button" class="cd-nav" data-cdnav="-1" aria-label="Previous month">${icon('back', 'sm')}</button><b>${MONTHS[m]} ${y}</b><button type="button" class="cd-nav" data-cdnav="1" aria-label="Next month" ${nextOff ? 'disabled' : ''}>${icon('chev', 'sm')}</button></div>
+      <div class="cd-grid" role="grid">${['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map((w) => `<span class="cd-w">${w}</span>`).join('')}${cells.join('')}</div>
+      <div class="cd-foot"><button type="button" class="btn sm ghost" data-cd="${today() <= (max || '9999') ? today() : max}">Today</button></div>`;
+  }
+  function cdateOpen(btn, inp) {
+    cselClose();
+    const l = document.createElement('div'); l.id = 'csel-list'; l.className = 'csel-list cdate'; l.setAttribute('role', 'dialog'); l.setAttribute('aria-label', 'Choose a date');
+    const v = inp.value || today(); l._ym = [+v.slice(0, 4), +v.slice(5, 7) - 1]; l._btn = btn; l._sel = inp;
+    document.body.appendChild(l); cdateDraw(l); cselPlace(l, btn); btn.setAttribute('aria-expanded', 'true');
+    const f = l.querySelector('.cd-day.sel') || l.querySelector('.cd-day.today') || l.querySelector('.cd-day:not([disabled])'); if (f) f.focus({ preventScroll: true });
+  }
+  function cdatePick(inp, v) {
+    inp.value = v; inp.dispatchEvent(new Event('input', { bubbles: true })); inp.dispatchEvent(new Event('change', { bubbles: true }));
+    if (inp._csel) inp._csel.querySelector('.csel-v').textContent = dateLabel(v);
+    cselClose(true);
+  }
+  function cdateEnhance(inp) {
+    if (inp._csel) return;
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'csel'; btn.setAttribute('aria-haspopup', 'dialog'); btn.setAttribute('aria-expanded', 'false');
+    if (inp.id) { btn.id = inp.id + '-btn'; const lab = document.querySelector(`label[for="${inp.id}"]`); if (lab) lab.htmlFor = btn.id; }
+    btn.innerHTML = `${icon('calendar', 'sm')}<span class="csel-v">${dateLabel(inp.value)}</span><svg class="csel-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>`;
+    inp.type = 'hidden'; inp.after(btn); inp._csel = btn;
+    btn.addEventListener('click', () => (btn.getAttribute('aria-expanded') === 'true' ? cselClose(true) : cdateOpen(btn, inp)));
+    btn.addEventListener('keydown', (e) => { if (['ArrowDown', 'Enter', ' '].includes(e.key)) { e.preventDefault(); cdateOpen(btn, inp); } });
+  }
+  document.addEventListener('click', (e) => {
+    const l = $('#csel-list'); if (!l || !l.classList.contains('cdate')) return;
+    const d = e.target.closest('[data-cd]'), n = e.target.closest('[data-cdnav]');
+    if (d && l.contains(d) && !d.disabled) { cdatePick(l._sel, d.dataset.cd); return; }
+    if (n && l.contains(n) && !n.disabled) { let [y, m] = l._ym; m += +n.dataset.cdnav; if (m < 0) { m = 11; y--; } if (m > 11) { m = 0; y++; } l._ym = [y, m]; cdateDraw(l); const f = l.querySelector('.cd-day:not([disabled])'); if (f) f.focus({ preventScroll: true }); }
+  });
+  document.addEventListener('keydown', (e) => {
+    const l = $('#csel-list'); if (!l || !l.classList.contains('cdate')) return;
+    const cur = document.activeElement && document.activeElement.closest && document.activeElement.closest('.cd-day'); if (!cur) return;
+    const step = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 }[e.key]; if (!step) return;
+    e.preventDefault();
+    const dt = new Date(Date.UTC(+cur.dataset.cd.slice(0, 4), +cur.dataset.cd.slice(5, 7) - 1, +cur.dataset.cd.slice(8) + step)), v = ymd(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate());
+    if (l._sel.max && v > l._sel.max) return;
+    if (dt.getUTCMonth() !== l._ym[1]) { l._ym = [dt.getUTCFullYear(), dt.getUTCMonth()]; cdateDraw(l); }
+    const t = l.querySelector(`[data-cd="${v}"]`); if (t) t.focus({ preventScroll: true });
+  });
+
+  const cselAll = (root) => { if (!root.querySelectorAll) return; root.querySelectorAll('select').forEach(cselEnhance); root.querySelectorAll('input[type=date]').forEach(cdateEnhance); };
+  new MutationObserver((ms) => ms.forEach((m) => m.addedNodes.forEach((n) => { if (n.nodeType !== 1) return; if (n.tagName === 'SELECT') cselEnhance(n); else if (n.tagName === 'INPUT' && n.type === 'date') cdateEnhance(n); else cselAll(n); }))).observe(document.body, { childList: true, subtree: true });
   document.addEventListener('click', (e) => {
     const l = $('#csel-list'); if (!l) return;
     const o = e.target.closest('.csel-opt');
     if (o && l.contains(o)) { if (!o.hasAttribute('aria-disabled')) cselPick(l._sel, l._sel.options[+o.dataset.i].value); return; }
     if (e.target.closest('.csel-add')) { cselClose(); return; }
-    if (!l.contains(e.target) && !e.target.closest('.csel')) cselClose();
+    if (e.target.isConnected && !l.contains(e.target) && !e.target.closest('.csel')) cselClose();
   });
   document.addEventListener('keydown', (e) => {
     const l = $('#csel-list'); if (!l) return;
     if (e.key === 'Escape') { e.preventDefault(); cselClose(true); return; }
-    if (e.key === 'Tab') { if (!e.target.closest('.csel-addf')) cselClose(); return; }
-    if (e.target.closest('.csel-addf')) return;
+    if (e.key === 'Tab') { if (!e.target.closest('.csel-addf') && !l.classList.contains('cdate')) cselClose(); return; }
+    if (e.target.closest('.csel-addf') || l.classList.contains('cdate')) return;
     const all = [...l.querySelectorAll('.csel-opt:not([aria-disabled])')], i = all.indexOf(l.querySelector('.csel-opt.on'));
     if (!all.length) return;
     if (e.key === 'ArrowDown') { e.preventDefault(); cselFocus(l, all[Math.min(all.length - 1, i + 1)]); }
@@ -3650,6 +3739,14 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
   window.addEventListener('scroll', (e) => { const l = $('#csel-list'); if (!l || l.contains(e.target)) return; if (!l._btn.isConnected) { cselClose(); return; } const r = l._btn.getBoundingClientRect(); if (r.bottom < 0 || r.top > innerHeight) cselClose(); else cselPlace(l, l._btn); }, true);
 
   // ------------------------------------------------------------------ events
+  // The organisation scope: one value for the top bar's picker and every page that follows it.
+  function setScope(id, quiet) {
+    state.scope = id || null; const wk = demo() ? 'example' : state.ws;
+    state.repFor = id ? { k: wk, id } : null; state.an = Object.assign(state.an || { measure: 'hours', range: 90 }, { proj: id ? 'c:' + id : 'all' });
+    const c = id && coById(id);
+    if (c && /^(home|organisations)$/.test(parse()[0])) location.hash = c.href; else render();
+    if (!quiet) toast(c ? `Scoped to ${c.short}.` : 'Showing all organisations.');
+  }
   const closePops = (except) => ['#new-pop', '#bell-pop', '#user-pop', '#ws-pop', '#scope-pop'].forEach((s) => { const p = $(s); if (p && s !== except) p.hidden = true; });
   const toggle = (sel) => { const p = $(sel); closePops(sel); p.hidden = !p.hidden; };
   const readSf = () => { const f = state.sf; if (!f) return; ['name', 'project', 'vol', 'base'].forEach((k) => { const el = $('#sf-' + k); if (el) f[k] = el.type === 'number' ? +el.value : el.value; }); };
@@ -3765,6 +3862,8 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
     export: () => toast('Exports download in the real product. The mock can\u2019t save files.'),
     'tour-start': () => { tourGo(0); },
     'ask-client': (d) => { askSetScope('c:' + d.org); askSubmit(`How is ${d.name} doing this month?`); },
+    'ctx-open': (d) => { state.ctxOpen = d.org; state.ctxFocusForm = true; render(); },
+    'ctx-close': () => { state.ctxOpen = null; state.ctxDraft = null; render(); },
     'ask-about': (d) => { askSetScope(d.k); go('ask'); },
     'ask-track': () => { state.trk = trkFresh(); go('track'); },
     'to-ctx': (d) => { state.coFor = d.org + 'results'; state.resTab = 'context'; state.audience = 'staff'; go('results-' + d.org); },
@@ -3817,13 +3916,15 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
     if (d.baud) { state.bld.aud = d.baud; render(); return; }
     if (d.aud) { state.audience = d.aud; render(); return; }
     if (d.navgroup !== undefined) { const mode = axMode(parse()[2]); state.navClosed[mode][d.navgroup] = t.getAttribute('aria-expanded') === 'true'; render(); return; }
-    if (d.scope !== undefined) { closePops(); state.scope = d.scope || null; const wk = demo() ? 'example' : state.ws; state.repFor = d.scope ? { k: wk, id: d.scope } : null; state.an = Object.assign(state.an || { measure: 'hours', range: 90 }, { proj: d.scope ? 'c:' + d.scope : 'all' }); const c = d.scope && coById(d.scope); if (c && /^(home|organisations)$/.test(parse()[0])) location.hash = c.href; else render(); toast(c ? `Scoped to ${c.short}.` : 'Showing all organisations.'); return; }
+    if (d.scope !== undefined) { closePops(); setScope(d.scope); return; }
+    if (d.ctxscope !== undefined) { ctxReadDraft(); state.ctxF = Object.assign(state.ctxF || { kind: 'all', q: '' }, { proj: 'all' }); if (d.ctxadd) { state.ctxFocusForm = true; state.ctxOpen = d.ctxscope; } setScope(d.ctxscope, true); return; }
     if (d.incf) { state.incF = d.incf; render(); return; }
     if (d.jobsel) { state.jobSel = d.jobsel; render(); return; }
     if (d.provsel) { state.provSel = d.provsel; render(); return; }
     if (d.cfshow) { state.cf.show = d.cfshow; render(); return; }
     if (d.cotab) { state[state.coView === 'results' ? 'resTab' : 'coTab'] = d.cotab; render(); return; }
     if (d.ctxTag) { ctxReadDraft(); const tg = state.ctxDraft.tags, i = tg.indexOf(d.ctxTag); if (i >= 0) tg.splice(i, 1); else tg.push(d.ctxTag); render(); return; }
+    if (d.ctxproj !== undefined) { ctxReadDraft(); state.ctxF = Object.assign(state.ctxF || { kind: 'all', q: '' }, { proj: d.ctxproj }); render(); return; }
     if (d.ctxkind) { ctxReadDraft(); state.ctxF = Object.assign(state.ctxF || { q: '' }, { kind: d.ctxkind }); render(); return; }
     if (d.repfor) { state.repFor = d.repfor === 'all' ? null : { k: repKey(), id: d.repfor }; render(); return; }
     if (d.tab) { state.solTab = d.tab; render(); return; }
@@ -3882,7 +3983,7 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
       const c = coById(org);
       ctxAll().unshift({ id: 'cn' + state.seq++, org, proj: dr.proj || null, kind: dr.kind || 'feedback', source: dr.source || CTX_SOURCES[0], date: dr.date || today(), from, text, tags: dr.tags.slice(), ai: dr.ai !== false, by: me().name, at: now(), uses: 0, items: dr.items.slice() });
       log(`Added client context from ${c.short} (${from}, ${(dr.source || CTX_SOURCES[0]).toLowerCase()})${dr.items.length ? `, with ${dr.items.length} attachment${dr.items.length === 1 ? '' : 's'}` : ''}`);
-      state.ctxDraft = null; render(); toast(dr.ai !== false ? `Added. AI can use it for ${c.short}.` : 'Added. AI won’t use it.'); return;
+      state.ctxDraft = null; state.ctxOpen = null; render(); toast(dr.ai !== false ? `Added. AI can use it for ${c.short}.` : 'Added. AI won’t use it.'); return;
     }
     if (e.target.id === 'f-note') { e.preventDefault(); const t = ($('#note-t').value || '').trim(); if (!t) return; const id = e.target.dataset.org; state.notes[id].unshift([me().name, now(), t]); log(`Added a note on ${coById(id).short}`); render(); toast('Note added.'); return; }
     if (e.target.id === 'reason-form') { e.preventDefault(); const r = ($('#reason-t').value || '').trim(); if (r.length < 3) { $('#reason-t').setAttribute('aria-invalid', 'true'); $('#reason-t').focus(); return; } r8Do(state.reasonFor, r); return; }
