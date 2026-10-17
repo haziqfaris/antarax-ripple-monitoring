@@ -2215,30 +2215,39 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
       { cid: 'sampel-medik', name: 'Patient enquiry triage', cadence: 'Monthly', period: 'Oct 2026', status: pill('idle', 'Drafts 1 Nov', false), action: '' },
     ];
   }
-  const repKey = () => demo() ? 'example' : state.ws;
-  const repFor = () => { const f = state.repFor; return f && f.k === repKey() && coById(f.id) ? coById(f.id) : null; };
+  // Reports are per organisation, like client context: "Reports for" is the same value as the top bar's picker.
+  // Scoped, one organisation's reports; "All organisations" puts what's ready to review first, then a card each.
   pages.reports = () => {
     const lead = 'Each organisation gets a report on their schedule. It’s drafted for you and goes out only after you check it.';
-    if (!demo() && !state.sims.length) return `${head({ title: 'Reports', lead })}<section class="card"><div class="empty">${emptyArt}<h3>No reports yet</h3><p>Once a solution is collecting data, you can schedule its report here.</p></div></section>`;
-    const all = reportRows(), one = repFor();
-    const opts = companies().filter((c) => all.some((r) => r.cid === c.id) || (one && one.id === c.id));
-    const count = (id) => all.filter((r) => r.cid === id).length;
-    const rows = (one ? all.filter((r) => r.cid === one.id) : all).map((r, i) => ({ r, i, c: coById(r.cid) })).sort((a, b) => opts.indexOf(a.c) - opts.indexOf(b.c) || a.i - b.i);
-    const due = rows.filter((x) => x.r.due).length, cur = one ? one.id : 'all';
-    const pick = opts.length <= 5
-      ? `<div class="seg" role="group" aria-label="Organisation">${[['all', 'All organisations']].concat(opts.map((c) => [c.id, c.short])).map(([k, l]) => `<button type="button" data-repfor="${k}" aria-pressed="${cur === k}">${esc(l)}</button>`).join('')}</div>`
-      : `<div class="field" style="min-width:200px"><select id="rep-for" aria-label="Organisation"><option value="all">All organisations (${all.length})</option>${opts.map((c) => `<option value="${c.id}" ${cur === c.id ? 'selected' : ''}>${esc(c.short)} (${count(c.id)})</option>`).join('')}</select></div>`;
-    const cols = one ? 4 : 5;
+    const all = reportRows(), one = state.scope && coById(state.scope), cos = companies(), count = (id) => all.filter((r) => r.cid === id).length;
+    const rowsOf = (id) => all.filter((r) => r.cid === id);
+    const bar = `<section class="card ctx-scopebar"><div class="ask-scope" style="border:0;padding:0"><div class="field"><label for="rep-scope">Reports for</label><select id="rep-scope"${demo() ? '' : ' data-add="org"'}><option value="" ${!one ? 'selected' : ''}>All organisations (${all.length})</option>${cos.map((c) => `<option value="${c.id}" ${one && one.id === c.id ? 'selected' : ''}>${esc(c.short)} (${count(c.id)})</option>`).join('')}</select></div>
+      <p class="xs muted">${one ? `Only ${esc(one.short)}’s reports.` : 'Choose an organisation to see its reports.'} The same as the organisation picker in the top bar.</p></div></section>`;
+    const table = (rows, withOrg) => `<div class="table-wrap"><table class="report-table"><thead><tr><th>Report</th>${withOrg ? '<th class="rt-client">Organisation</th>' : ''}<th>Period</th><th>Status</th><th></th></tr></thead><tbody>
+      ${rows.map((r) => { const c = coById(r.cid); return `<tr ${r.go ? `class="link" data-go="${r.go}" tabindex="0"` : ''}><td><span class="name">${esc(r.name)}</span><span class="sub">${esc(r.cadence)}</span>${withOrg ? `<span class="sub rt-co">${esc(c.short)}</span>` : ''}</td>${withOrg ? `<td class="rt-client"><span class="name">${esc(c.short)}</span><span class="sub">${esc(c.industry || '')}</span></td>` : ''}<td class="mono">${esc(r.period)}</td><td>${r.status}</td><td>${r.action}</td></tr>`; }).join('')}
+      </tbody></table></div>`;
     const ghost = !demo() && all.some((r) => /First draft/.test(r.status));
-    return `${head({ title: 'Reports', lead })}
-    <section class="card" style="padding:14px 18px"><div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">${pick}<span class="small muted">${rows.length} report${rows.length === 1 ? '' : 's'}${due ? ` · ${due} ready to review` : ''}</span></div></section>
-    <section class="card">${one ? `<div class="card-head"><div><h2>Reports for ${esc(one.short)}</h2><p class="sub">${esc(one.industry)} · ${one.projects.length} project${one.projects.length === 1 ? '' : 's'}</p></div><a class="btn sm ghost" href="${one.href}">Open organisation${icon('chev', 'sm')}</a></div>` : ''}
-      <div class="table-wrap"><table class="report-table"><thead><tr><th>Report</th>${one ? '' : '<th class="rt-client">Organisation</th>'}<th>Period</th><th>Status</th><th></th></tr></thead><tbody>
-      ${rows.length ? rows.map(({ r, c }) => `<tr ${r.go ? `class="link" data-go="${r.go}" tabindex="0"` : ''}><td><span class="name">${esc(r.name)}</span><span class="sub">${esc(r.cadence)}</span>${one ? '' : `<span class="sub rt-co">${esc(c.short)}</span>`}</td>${one ? '' : `<td class="rt-client"><span class="name">${esc(c.short)}</span><span class="sub">${esc(c.industry)}</span></td>`}<td class="mono">${esc(r.period)}</td><td>${r.status}</td><td>${r.action}</td></tr>`).join('')
-        : `<tr><td colspan="${cols}"><div class="empty" style="padding:16px"><p>No reports for ${esc(one.short)} yet. The first is drafted once a solution has a month of figures. <button type="button" class="btn sm ghost" data-repfor="all">Show all organisations</button></p></div></td></tr>`}
-    </tbody></table></div></section>${ghost ? `<div class="demo-bar"><span class="tag">MOCK CONTROLS</span><span>Reports draft on the 1st of each month.</span><button type="button" class="btn sm" data-act="to-month-end">Jump to ${nextMonthStart()}</button></div>` : ''}`;
+    const mock = ghost ? `<div class="demo-bar"><span class="tag">MOCK CONTROLS</span><span>Reports draft on the 1st of each month.</span><button type="button" class="btn sm" data-act="to-month-end">Jump to ${nextMonthStart()}</button></div>` : '';
+    if (one) {
+      const rows = rowsOf(one.id), due = rows.filter((r) => r.due).length;
+      const empty = `<section class="card"><div class="empty">${emptyArt}<h3>No reports for ${esc(one.short)} yet</h3><p>${coProjs(one).length ? 'Schedule one from an application that’s collecting figures. The first is drafted once it has a month of them.' : 'A report needs an application sending figures. Track one, and schedule its report once the first figures arrive.'}</p>${!demo() && !coProjs(one).length ? `<button type="button" class="btn sm" data-act="proj-for" data-org="${one.id}">${icon('plus', 'sm')}Track an application for ${esc(one.short)}</button>` : ''}</div></section>`;
+      return `${head({ title: `Reports · ${esc(one.short)}`, lead: `${esc(one.short)}’s reports, one per project on its own schedule. Each is drafted for you and goes out only after you check it.`,
+          state: `${stateWord()} · ${rows.length} report${rows.length === 1 ? '' : 's'}${due ? ` · ${due} ready to review` : ''}`,
+          actions: `<a class="btn sm ghost" href="#results-${one.id}">${icon('analytics', 'sm')}Results</a>${coProjs(one).length ? `<button type="button" class="btn sm" data-act="ask-about" data-k="c:${one.id}"><img src="${SPARK}" alt="" style="width:16px">Ask about ${esc(one.short)}</button>` : ''}` })}
+        ${bar}${rows.length ? `<section class="card">${table(rows, false)}</section>` : empty}${mock}`;
+    }
+    if (!all.length && !cos.length) return `${head({ title: 'Reports', lead })}${bar}<section class="card"><div class="empty">${emptyArt}<h3>No reports yet</h3><p>Reports belong to an organisation’s applications. Add an organisation and track an application, and its report can be scheduled once figures arrive.</p></div></section>`;
+    const due = all.filter((r) => r.due);
+    const cards = cos.map((c) => { const rs = rowsOf(c.id), d = rs.filter((r) => r.due).length;
+      return `<article class="card ctx-co"><div class="ctx-co-h"><div><h3>${esc(c.short)}</h3><span class="xs muted">${esc(c.industry || '')}</span></div><span class="pill ${d ? 'warn' : rs.length ? 'idle' : 'idle'}">${d ? `${d} to review` : rs.length ? `${rs.length} report${rs.length === 1 ? '' : 's'}` : 'None yet'}</span></div>
+        ${rs.length ? `<ul class="rep-mini">${rs.map((r) => `<li><span class="name">${esc(r.name)}</span><span class="xs muted">${esc(r.cadence)} · <span class="mono">${esc(r.period)}</span></span>${r.status}</li>`).join('')}</ul>` : `<p class="small muted">${coProjs(c).length ? 'No report scheduled yet.' : 'No application sending figures yet.'}</p>`}
+        <div class="head-actions"><button type="button" class="btn sm" data-setscope="${c.id}">Open${icon('chev', 'sm')}</button></div></article>`; }).join('');
+    return `${head({ title: 'Reports', lead, state: `${stateWord()} · ${all.length} report${all.length === 1 ? '' : 's'} for ${new Set(all.map((r) => r.cid)).size} organisation${new Set(all.map((r) => r.cid)).size === 1 ? '' : 's'}${due.length ? ` · ${due.length} ready to review` : ''}` })}
+      ${bar}
+      <section class="card"><div class="card-head"><div><h2>Ready to review</h2><p class="sub">Across organisations · nothing goes out until someone checks it</p></div></div>${due.length ? table(due, true) : '<p class="small muted">Nothing waiting for review.</p>'}</section>
+      <section class="grid g3 ctx-cos">${cards}</section>${mock}`;
   };
-  pages.reports.after = () => { const sel = $('#rep-for'); if (sel) sel.addEventListener('change', (e) => { state.repFor = e.target.value === 'all' ? null : { k: repKey(), id: e.target.value }; render(); }); };
+  pages.reports.after = () => { const sel = $('#rep-scope'); if (sel) sel.addEventListener('change', (e) => setScope(e.target.value, true)); };
   const paper = (o) => `<article class="paper" aria-label="Report preview">
       <header class="paper-head"><div class="top"><span class="eyebrow"><img src="${SPARK}" alt="">Performance report</span><img class="reka" src="assets/reka-lockup.svg" alt="REKA"></div>
         <h1>${esc(o.title)}</h1>
@@ -3741,8 +3750,8 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
   // ------------------------------------------------------------------ events
   // The organisation scope: one value for the top bar's picker and every page that follows it.
   function setScope(id, quiet) {
-    state.scope = id || null; const wk = demo() ? 'example' : state.ws;
-    state.repFor = id ? { k: wk, id } : null; state.an = Object.assign(state.an || { measure: 'hours', range: 90 }, { proj: id ? 'c:' + id : 'all' });
+    state.scope = id || null;
+    state.an = Object.assign(state.an || { measure: 'hours', range: 90 }, { proj: id ? 'c:' + id : 'all' });
     const c = id && coById(id);
     if (c && /^(home|organisations)$/.test(parse()[0])) location.hash = c.href; else render();
     if (!quiet) toast(c ? `Scoped to ${c.short}.` : 'Showing all organisations.');
@@ -3891,7 +3900,7 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
       xs.brief.q = e.text; xs.brief.focus = e.tags.slice(); xs.brief.useCtx = true;
       xpRun(proj, xs); state.solTab = 'explore'; go(sol.href.slice(1)); toast(`Suggestions for ${sol.name}, from what the ${e.from.toLowerCase()} said.`);
     },
-    'reports-for': (d) => { state.repFor = { k: repKey(), id: d.org }; go('reports'); },
+    'reports-for': (d) => { state.scope = d.org; go('reports'); },
     'cf-reset': () => { state.cf = { show: 'all', sort: state.cf.sort, q: '' }; render(); },
     'tour-next': () => { if (state.tour >= TOUR.length - 1) { state.tour = null; render(); toast('Demo finished. Demo studio is yours.'); return; } tourGo(state.tour + 1); },
     'tour-back': () => tourGo(state.tour - 1),
@@ -3926,7 +3935,7 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
     if (d.ctxTag) { ctxReadDraft(); const tg = state.ctxDraft.tags, i = tg.indexOf(d.ctxTag); if (i >= 0) tg.splice(i, 1); else tg.push(d.ctxTag); render(); return; }
     if (d.ctxproj !== undefined) { ctxReadDraft(); state.ctxF = Object.assign(state.ctxF || { kind: 'all', q: '' }, { proj: d.ctxproj }); render(); return; }
     if (d.ctxkind) { ctxReadDraft(); state.ctxF = Object.assign(state.ctxF || { q: '' }, { kind: d.ctxkind }); render(); return; }
-    if (d.repfor) { state.repFor = d.repfor === 'all' ? null : { k: repKey(), id: d.repfor }; render(); return; }
+    if (d.setscope !== undefined) { setScope(d.setscope, true); return; }
     if (d.tab) { state.solTab = d.tab; render(); return; }
     if (d.demo) { state.demoState = d.demo; render(); return; }
     if (d.go) { location.hash = '#' + d.go; return; }

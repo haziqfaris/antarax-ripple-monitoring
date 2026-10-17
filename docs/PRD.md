@@ -418,7 +418,8 @@ Detailed in [§11](#11-ai-assistance-and-approval-gates).
 | FR-RPT-6 | Scheduled delivery by e-mail to the agreed audience, with the PDF attached and no figures in the e-mail body | P2 |
 | FR-RPT-7 | Restricted share link to a read-only web version, expiring | P3 |
 | FR-RPT-8 | Read-only API and embeddable widgets for a client's own dashboard, limited to approved, client-visible KPIs | P3 |
-| FR-RPT-9 | The Reports page lists every report with its client and filters to one client. A client page's Reports tab links to that client's reports | MVP |
+| FR-RPT-9 | A client page's Reports tab links to that client's reports on the Reports page (FR-RPT-10) | MVP |
+| FR-RPT-10 | **Reports page, one organisation at a time** (owner, 17 Oct 2026). "Reports for" is the same value as the top bar's organisation picker. Scoped, the page lists that organisation's reports, one per project, with links to its results and to Ask about it; with none, it says why and offers to track an application. "All organisations" puts what is ready to review first, across organisations, then a card per organisation with each report's period and status, and "None yet" where there are none | MVP |
 
 ### 8.10 Alerts
 
