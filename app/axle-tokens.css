@@ -1,0 +1,94 @@
+/*
+  AXLE tokens. GENERATED from the AntaraX brand kit: do not edit.
+  Source: haziqfaris/AntaraX-brand-kit tokens/tokens.json "axle", version 1.11.0 (2026-10-16), commit 931844f.
+  To change a value, change it in the brand kit (with an owner decision), then run tools/sync-brand-kit.py here.
+  Use these names only. A colour that is not here is not part of AXLE: raise it, do not add it in a product.
+*/
+
+.axle-root {
+  --axle-font: Poppins, ui-sans-serif, system-ui, sans-serif;
+  --axle-mono: "JetBrains Mono", ui-monospace, Menlo, monospace; /* every number, tabular-nums */
+
+  /* bars: The dark sidebar, top bar and phone drawer */
+  --axle-bar: #071233; /* Deepest bar ground; text on orange */
+  --axle-bar-raised: #0C1B47; /* Sidebar ground and the top bar card */
+  --axle-bar-ink: #EAF0FF; /* Page names, the AXLE word */
+  --axle-bar-body: #B6C3EA; /* Secondary text on the bars */
+  --axle-bar-muted: #8E9CC9; /* Previews, captions, chevrons */
+  --axle-bar-line: rgba(157, 184, 255, .16); /* Dividers on the bars */
+  --axle-bar-card: rgba(255, 255, 255, .035); /* A sidebar group card */
+  --axle-bar-card-line: rgba(157, 184, 255, .10); /* A sidebar group card's border */
+  --axle-bar-chip: #13255C; /* A quiet counter (a count only) */
+  --axle-bar-fault: #F7877F; /* A failing icon on the bars, beside the red count */
+  --axle-bar-focus: #4D84FE; /* Focus ring on the bars */
+
+  /* signal: REKA orange: needs a person, and where you are. Nothing else */
+  --axle-orange: #FB9800; /* Needs a person; the current page; the AXLE tag; the main action */
+  --axle-on-orange: #071233; /* Text on orange */
+  --axle-current: rgba(251, 152, 0, .16); /* The current page's tint: with orange text and the intan, never a side stripe */
+  --axle-orange-tint: #FFF1DA; /* A staff rung chip on the page */
+  --axle-orange-text: #8A4B00; /* Text on the orange tint */
+
+  /* group: Sidebar group colours: an icon tile (the colour at 16%) and the title. They mark an area, never a status */
+  --axle-group-watch: #7FA4FF; /* Watch */
+  --axle-group-organisations: #5ED3C9; /* Organisations */
+  --axle-group-ai: #B7A8FF; /* AI */
+  --axle-group-money: #E3C25E; /* Money */
+  --axle-group-platform: #F2A0CB; /* Platform */
+  --axle-group-operations: #8FD3FF; /* Operations */
+  --axle-group-trail: #C4CDE8; /* Trail */
+  --axle-group-command: #7FA4FF; /* R8 Command */
+  --axle-group-observe: #5ED3C9; /* R8 Observe */
+  --axle-group-system: #B7A8FF; /* R8 System */
+  --axle-group-control: #C4CDE8; /* R8 Control and diagnostics */
+
+  /* page: The light page */
+  --axle-page: #F5F7FC; /* Page ground */
+  --axle-card: #FFFFFF; /* Cards */
+  --axle-card-line: #E5E8EE; /* Card borders */
+  --axle-row-line: #EEF1F6; /* Row dividers, quiet tracks, quiet chips */
+  --axle-control-line: #D5DBE7; /* Buttons and fields */
+  --axle-text-strong: #0B1B4F; /* Headings and figures */
+  --axle-text: #3B4469; /* Body */
+  --axle-text-muted: #5B6488; /* Captions */
+  --axle-text-disabled: #8A93AE; /* Disabled controls */
+  --axle-switch-off: #B9C1D4; /* A switch that is off */
+  --axle-link: #0459F7; /* Links and the focus ring on the page */
+  --axle-link-hover: #002EB2; /* Link hover */
+  --axle-selected-row: #FFF6E8; /* A selected row: the tint and an orange border, no side stripe */
+  --axle-info-tint: #F3F7FE; /* AXLE's derived reading; a selected choice */
+  --axle-info-line: #C9DBFE; /* Its border */
+  --axle-info-chip: #E7EEFE; /* Running, queued, and neutral badges */
+
+  /* status: Status on the page: only on a real signal, always with a word */
+  --axle-ok: #12B76A; /* Working */
+  --axle-ok-tint: #E7F8EF;
+  --axle-ok-text: #067647;
+  --axle-ok-line: #A6E4C6;
+  --axle-warn: #F79009; /* Slow, due, missing */
+  --axle-warn-tint: #FEF4E6;
+  --axle-warn-text: #B54708;
+  --axle-warn-line: #F8CD92;
+  --axle-warn-card: #FFFBF4; /* A card in a warn state */
+  --axle-fault: #F04438; /* Failing */
+  --axle-fault-tint: #FEECEB;
+  --axle-fault-text: #B42318;
+  --axle-fault-line: #F6B5AF;
+  --axle-fault-card: #FFF8F7; /* A card in a fault state */
+
+  /* chart: Charts on the light page (validated for contrast and colour-blind separation) */
+  --axle-chart-1: #2A78D6;
+  --axle-chart-2: #1BAF7A;
+  --axle-chart-3: #EB6834;
+  --axle-chart-4: #6250D6;
+
+  /* size */
+  --axle-sidebar-width: 240px;
+  --axle-topbar-height: 64px;
+  --axle-topbar-height-phone: 58px;
+  --axle-topbar-radius: 24px;
+  --axle-card-radius: 20px;
+  --axle-nav-card-radius: 12px;
+  --axle-control-radius: 12px;
+  --axle-target: 44px;
+}

@@ -1,0 +1,41 @@
+{
+  "name": "outcomes",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AXLE · Outcomes, lean version 1: connect an application, collect its daily figures, work out KPIs against an approved baseline, and report them monthly.",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "dev": "next dev --port 3200",
+    "build": "next build",
+    "start": "next start --port 3200",
+    "typecheck": "tsc --noEmit -p .",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "check": "npm run typecheck && npm test",
+    "db:migrate": "tsx db/migrate.ts",
+    "db:local": "bash scripts/local-db.sh",
+    "staff:add": "tsx scripts/staff-add.ts",
+    "jobs:run": "tsx scripts/run-job.ts",
+    "example-link": "tsx scripts/example-link.ts",
+    "backup": "bash scripts/backup.sh",
+    "vendor:sync": "bash scripts/vendor-sync.sh"
+  },
+  "dependencies": {
+    "next": "16.3.8",
+    "postgres": "3.4.9",
+    "react": "19.2.8",
+    "react-aria-components": "1.22.1",
+    "react-dom": "19.2.8",
+    "zod": "^4.5.4"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "tsx": "4.23.15",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.3"
+  }
+}
