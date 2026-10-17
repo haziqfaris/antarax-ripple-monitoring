@@ -1,0 +1,39 @@
+name: check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env: { POSTGRES_PASSWORD: postgres }
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      TEST_ADMIN_URL: postgres://postgres:postgres@localhost:5432/postgres
+      E2E_ADMIN_URL: postgres://postgres:postgres@localhost:5432/postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - name: Install
+        run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Unit, separation and loop tests (real Postgres)
+        run: npm test
+      - name: Build
+        run: npx next build
+        env: { DATABASE_URL: "postgres://unused", SEAL_KEY: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=", CRON_SECRET: "build-only-not-a-secret-000000", APP_URL: "http://localhost:3200" }
+      - name: Browser
+        run: npx playwright install --with-deps chromium
+      - name: End to end (V-30), with axe on every page it visits
+        run: bash scripts/e2e.sh
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with: { name: playwright, path: test-results, retention-days: 7 }

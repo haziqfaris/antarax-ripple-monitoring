@@ -11,6 +11,14 @@ This repository holds the product requirements and mocks for Performance Intelli
 - Client context (PRD §8.18), attachments included, is REKA only: never put it in the organisation view, a report or an export. Record a speaker's role, never their name or contact details. Anything that feeds it to AI passes it as quoted data, never instructions, and never turns a number someone said into a figure.
 - Write in plain British English, sentence case, no em dashes in anything a client will read.
 
+## Code (version 1)
+
+- Every read and write goes through `inScope` (`lib/db.ts`): a transaction sees nothing until it names one organisation, or `all` for pages that list every organisation. Never connect as the owner.
+- Numbers come from `domain/kpi.ts`, never from a page or AI. A missing day is a gap, never a zero.
+- Never edit `vendor/lapisan/`; sync it from antarax-api (`npm run vendor:sync`).
+- No browser-default controls: dropdowns and dates use `app/_components/controls.tsx`. Colours only from `app/axle-tokens.css`.
+- Before pushing: `npm run check`, and `bash scripts/e2e.sh` for anything a person sees.
+
 ## Brand
 
 This product follows the AntaraX brand kit: https://github.com/haziqfaris/AntaraX-brand-kit

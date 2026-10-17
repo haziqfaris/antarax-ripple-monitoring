@@ -2,7 +2,7 @@
 
 REKA's console for measuring what its client AI solutions actually deliver: whether each is healthy and used, how it performs, and what business outcome it produces against an agreed baseline. It starts inside REKA, supporting the Managed AI service's "we watch it, we improve it" promise, and is built so it can graduate to an AntaraX product later.
 
-> **Status:** product requirements draft 0.5, a clickable product mock, and the measurement interface's contract, kit and contract test (proposed), 15 Oct 2026. The console itself is not built yet. Every client, person and figure in the mock is invented.
+> **Status, 17 Oct 2026:** lean version 1 is built (docs/GO_LIVE_ENGINEERING.md): connect an application, collect its daily figures, three KPIs against an approved baseline, approvals by a second person, six pages, a monthly report frozen with its hash. Tested end to end against the kit's example application. Not deployed yet: see docs/DEPLOY.md. The clickable mock (`mocks/`) remains the roadmap; every client, person and figure in it is invented.
 
 ## What is here
 
@@ -14,6 +14,29 @@ REKA's console for measuring what its client AI solutions actually deliver: whet
 | [integrations/measure/](integrations/measure/README.md) | The Measurement Link integration pack for a solution's developer: the agent instruction, the contract test, OpenAPI, examples, signature test vectors and a Python signer. Generated parts come from antarax-api |
 | [docs/workshop/PHASE_0_DECISIONS.md](docs/workshop/PHASE_0_DECISIONS.md) | The fifteen open decisions for the design workshop, each with a recommendation, what backs it and what it blocks |
 | [docs/research/USABILITY_TEST_PLAN.md](docs/research/USABILITY_TEST_PLAN.md) | Five moderated sessions with REKA project managers on the mock: questions, tasks, script and analysis |
+
+## Run it
+
+```bash
+npm install
+npm run db:local          # Postgres 16 on :54329; prints the two URLs for .env.local (see .env.example)
+STAFF_PASSWORD="a long password" npm run staff:add -- --email you@reka.example --name "Your Name" --role approver
+npm run dev               # http://localhost:3200
+AX_MEASURE_KEY=<the key the console shows> npm run example-link   # a stand-in application on :4010
+```
+
+| Check | Command |
+|---|---|
+| Typecheck, unit, separation and the whole loop against real Postgres | `npm run check` |
+| The loop in a browser, phones and accessibility | `bash scripts/e2e.sh` |
+
+| Code | What it is |
+|---|---|
+| `app/` | The console (Next.js): sign-in with two-step, Applications and tracking one, an application's page, Results, Approvals, Reports, Jobs, the developer link, the scheduled jobs |
+| `domain/` | Pure logic: the KPI engine, link states, the spreadsheet parser, the developer prompt |
+| `lib/` | Database access inside a scope, sealing, audit, sign-in, and the services the pages call |
+| `db/migrations/` | The schema, row-level security and the append-only audit |
+| `vendor/lapisan/` | The Measurement Link kit, copied from antarax-api; never edited here |
 
 ## Read in this order
 

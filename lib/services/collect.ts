@@ -26,7 +26,9 @@ export function checkBaseUrl(raw: string): string {
   let u: URL;
   try { u = new URL(raw.trim()); } catch { throw new Refused("That isn't a web address."); }
   const local = ["localhost", "127.0.0.1", "[::1]"].includes(u.hostname);
-  if (u.protocol !== "https:" && !(u.protocol === "http:" && local && process.env.NODE_ENV !== "production")) throw new Refused("The address must start with https://.");
+  // Plain http only for this machine, and in a production build only when the end-to-end test asks (ALLOW_LOCAL_HTTP_LINKS=1).
+  const localHttp = u.protocol === "http:" && local && (process.env.NODE_ENV !== "production" || process.env.ALLOW_LOCAL_HTTP_LINKS === "1");
+  if (u.protocol !== "https:" && !localHttp) throw new Refused("The address must start with https://.");
   if (u.username || u.password || u.search || u.hash) throw new Refused("The address can't carry a user name, a query or a fragment.");
   const path = u.pathname.replace(/\/+$/, "");
   if (!path.endsWith(MEASURE_BASE)) throw new Refused(`The address ends with ${MEASURE_BASE}.`);

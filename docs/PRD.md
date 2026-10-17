@@ -775,7 +775,7 @@ From brief §8, as the system computes it:
 | Baseline manual minutes per document | Sampled, 40 documents, 2 to 6 Jun 2026 (before go-live), approved by client process owner | estimated | 18 min (range 14 to 22) |
 | Machine time per document | `documents.generation_duration`, mean | measured | 0.6 min |
 | Human review time per document | Sampled, 30 documents, 1 to 3 Oct 2026 | estimated | 4 min (range 3 to 6) |
-| **Gross hours saved** | 4,812 × (18 − 0.6 − 4) / 60 | **estimated** | **1,075 h (range 594 to 1,476)** |
+| **Gross hours saved** | 4,812 × (18 − 0.6 − 4) / 60 | **estimated** | **1,075 h (range 593 to 1,476)** |
 
 Rules applied: machine time is never counted as human time saved; the range comes from the baseline and sample ranges; if the document mix changes, the KPI is segmented by `document_type`.
 

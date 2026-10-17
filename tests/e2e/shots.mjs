@@ -1,0 +1,22 @@
+// Screenshots of the main pages for review (not part of the suite): node tests/e2e/shots.mjs <dir> [width]
+import { chromium } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import { totpAt } from "../../lib/auth/totp.ts";
+const dir = process.argv[2] ?? "test-results/shots", width = Number(process.argv[3] ?? 1440);
+const keys = JSON.parse(readFileSync("test-results/.two-step-keys.json", "utf8"));
+const b = await chromium.launch(); const page = await b.newPage({ viewport: { width, height: width > 600 ? 950 : 844 }, baseURL: "http://localhost:3200" });
+await page.goto("http://localhost:3200/sign-in");
+await page.getByLabel("Work email").fill("aisyah@reka.example"); await page.getByLabel("Password").fill("approver password 1");
+await page.getByRole("button", { name: "Continue" }).click(); await page.waitForURL(/two-step/);
+await page.getByLabel("Six-digit code").fill(await totpAt(keys["aisyah@reka.example"], Math.floor(Date.now() / 1000)));
+await page.getByRole("button", { name: "Continue" }).click(); await page.waitForURL(/applications/);
+const shot = async (name) => { await page.waitForTimeout(300); await page.screenshot({ path: `${dir}/${width}-${name}.png`, fullPage: true }); };
+await shot("applications");
+const app = await page.locator("table a.name").first().getAttribute("href");
+await page.goto(app); await shot("application");
+await page.goto("/approvals"); await shot("approvals");
+await page.goto("/reports"); await page.locator("table a.name").first().click(); await page.waitForURL(/reports\//); await shot("report");
+await page.goto("/organisations"); await page.locator("table a.name").first().click(); await shot("organisation");
+await page.goto("/jobs"); await shot("jobs");
+await page.goto("/applications/new"); await shot("new");
+await b.close();

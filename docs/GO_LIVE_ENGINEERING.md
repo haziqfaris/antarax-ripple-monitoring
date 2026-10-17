@@ -2,6 +2,18 @@
 
 **Draft, 17 Oct 2026, rewritten the same day as the lean version 1 at the owner's request.** The code needed to put Outcomes (Performance Intelligence, working name) in front of two pilot organisations, and no more. Code only: pilot selection, data agreements, legal review and training are left out, except where an open decision blocks code (section 2).
 
+## Status, 17 Oct 2026
+
+**Built and tested in this repository:** V-01 and V-03 to V-30. The registry entry (V-04) is in `antarax-api`. Tests: 20 unit, 22 database (separation and the full loop), 6 browser end to end (desktop and 390px, axe clean). The backup and restore drill passed against a local database. How to deploy: `docs/DEPLOY.md`.
+
+**Not done, because it needs something outside the code:**
+
+- **V-02 environments.** Needs the Vercel and Supabase accounts; the steps are in `docs/DEPLOY.md`.
+- **V-31, V-32 the pilots' Measurement Links.** Need D9 and the pilots' repositories.
+- **Collecting from a real pilot.** The `ax_msr_` key stays proposed until D3 and D4 are signed.
+
+**Different from the plan:** sign-in is built here (password and an authenticator code), not Supabase Auth, so the console needs only Postgres. The PRD's worked example low figure is corrected to 593 h.
+
 ## 1 What version 1 is
 
 **One loop, done properly:** connect an application, collect its daily figures, work out a few KPIs against a baseline, have a second person approve them, show them, and produce a monthly report.
