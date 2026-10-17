@@ -1228,3 +1228,25 @@ details.how summary::after, details.how[open] summary::after { content: none; }
 .ax-og { display: flex; flex-direction: column; gap: 1px; }
 .ax-og + .ax-og { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--axle-bar-line); }
 .ax-oh { font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--axle-bar-muted); padding: 4px 10px 3px; }
+
+/* Capacity: supplementary to outcomes (D22, PRD §8.20) */
+.tabs button.aux { margin-left: auto; color: var(--muted); font-weight: 500; position: relative; padding-left: 18px; }
+.tabs button.aux::before { content: ''; position: absolute; left: 6px; top: 14px; bottom: 14px; border-left: 1px solid var(--line); }
+.tabs button.aux[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--muted); }
+.cap-lead { align-items: center; flex-wrap: wrap; }
+.cap-lead .btn[aria-disabled="true"] { opacity: .6; cursor: not-allowed; }
+.cap-list { display: grid; gap: 0; }
+.cap-row { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(120px, 1fr) minmax(0, 1fr); gap: 16px; align-items: center; padding: 12px 0; border-top: 1px solid var(--line); }
+.cap-row:first-child { border-top: 0; }
+.cap-name, .cap-fig { display: grid; gap: 2px; min-width: 0; }
+.cap-cls { font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.cap-bar { height: 8px; border-radius: 999px; background: var(--line); overflow: hidden; }
+.cap-bar i { display: block; height: 100%; border-radius: inherit; background: var(--s1); }
+.cap-bar i.near { background: var(--warn); }
+.warn-ink { color: var(--warn-ink); }
+.cap-avail { display: grid; gap: 4px; padding: 12px 0 0; border-top: 1px solid var(--line); }
+@media (max-width: 640px) {
+  .cap-row { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .tabs button.aux { margin-left: 0; }
+}
+.cap-lead > span:nth-child(2) { flex: 1 1 260px !important; min-width: 0; }

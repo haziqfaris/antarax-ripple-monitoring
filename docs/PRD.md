@@ -1,6 +1,6 @@
 # Performance Intelligence: product requirements
 
-**Version 0.8, draft, 17 Oct 2026.** 0.2 added first use and onboarding (§8.12, §12.3) and the light AntaraX look (§12.1). 0.3 records the owner's decision to keep that look (D13), and adds the measure library (§10.6), your own measures (§8.13), Ask (§8.14, §11.4), standard analytics (§8.15) and the demo studio (§8.16). 0.4 records two more owner decisions: RM45 an hour for value of time freed (D15), and demo workspaces with Demo studio as a product feature in the MVP (D17, §8.16). 0.5 organises the console by client: one client list, one client page template, and client → project → solution throughout (§8.6, §12.2, §12.4); it also renames organisation to client on screen and in this document. 0.6 puts the console on the AXLE standard v1.0 (`haziqfaris/AntaraX-Dashboard-kit`), because it is an internal REKA tool: AXLE · Outcomes, dark bars around a light page, the standard menu with an Outcomes-only box, an R8 mode for the machinery, and "organisation" on screen as the standard requires (§12.1, §12.2, D13, D18). It also adds exploring other measures for a live project (§8.17). 0.7 makes setup one Start tracking wizard (organisation → project → prompt → connection, then the rest) with a picture that builds as you answer and animates the connection (§12.3, FR-ONB-9 to 12). It also adds the generated blueprint (§8.19) and client context (§8.18): what organisations tell the account team and what they give them (notes, documents, photos, voice notes and links), recorded by BD and account managers, kept REKA only, and read by AI as quoted words when suggesting measures and answering Ask. 0.8 says who measures usage, capacity, availability and cost, for AntaraX products and for REKA-built client solutions (§6.5), with the gap as open decision D22, and brings AX Frame up to date with the AXLE kit 1.4.0 (§6.4, D6). Working name throughout. Owner: Muhammad Haziq Faris (Founder). Status: for review at the next design workshop.
+**Version 0.8, draft, 17 Oct 2026.** 0.2 added first use and onboarding (§8.12, §12.3) and the light AntaraX look (§12.1). 0.3 records the owner's decision to keep that look (D13), and adds the measure library (§10.6), your own measures (§8.13), Ask (§8.14, §11.4), standard analytics (§8.15) and the demo studio (§8.16). 0.4 records two more owner decisions: RM45 an hour for value of time freed (D15), and demo workspaces with Demo studio as a product feature in the MVP (D17, §8.16). 0.5 organises the console by client: one client list, one client page template, and client → project → solution throughout (§8.6, §12.2, §12.4); it also renames organisation to client on screen and in this document. 0.6 puts the console on the AXLE standard v1.0 (`haziqfaris/AntaraX-Dashboard-kit`), because it is an internal REKA tool: AXLE · Outcomes, dark bars around a light page, the standard menu with an Outcomes-only box, an R8 mode for the machinery, and "organisation" on screen as the standard requires (§12.1, §12.2, D13, D18). It also adds exploring other measures for a live project (§8.17). 0.7 makes setup one Start tracking wizard (organisation → project → prompt → connection, then the rest) with a picture that builds as you answer and animates the connection (§12.3, FR-ONB-9 to 12). It also adds the generated blueprint (§8.19) and client context (§8.18): what organisations tell the account team and what they give them (notes, documents, photos, voice notes and links), recorded by BD and account managers, kept REKA only, and read by AI as quoted words when suggesting measures and answering Ask. 0.8 says who measures usage, capacity, availability and cost, for AntaraX products and for REKA-built client solutions (§6.5), with the gap as open decision D22, and brings AX Frame up to date with the AXLE kit 1.4.0 (§6.4, D6). The owner accepted D22 the same day with a sharper line between products: Outcomes is about outcomes; capacity is a supplementary, read-only summary (§8.20), because each product's own AXLE monitors capacity in full; and Outcomes must stay usable as a productivity measuring tool for other companies (principles 10 and 11). Working name throughout. Owner: Muhammad Haziq Faris (Founder). Status: for review at the next design workshop.
 
 | | |
 |---|---|
@@ -170,7 +170,8 @@ The brief's non-negotiables (§17), with the AXLE principles they meet:
 7. **Attention first** (AXLE §2.1). Every overview opens with what needs a person.
 8. **Every change has a reason and a trail** (AXLE §2.4).
 9. **Minimise client instrumentation and data.** Aggregates only, no personal data unless authorised and needed.
-10. **REKA useful first, AntaraX portable next.**
+10. **REKA useful first, portable next.** Outcomes must work for a company with no AntaraX product, no AXLE and no AX Frame, so it can become a productivity measuring tool for other companies (owner, 17 Oct 2026). Its core needs only the Measurement Link (or a spreadsheet). Anything it reads from AXLE, Frame or a `capacity.json` is optional: absent, the screen says so and nothing else changes.
+11. **Each product keeps its own objective** (owner, 17 Oct 2026). Outcomes measures what an application delivers: KPIs, baselines, time freed, value. Each product's own AXLE monitors how it runs: usage, health, capacity, cost, alerts. Outcomes may show a short read-only summary of the platform to explain a result, never to monitor it, and never raises a platform warning itself.
 
 ## 6 Where it sits: REKA, AntaraX, AXLE and Frame
 
@@ -217,16 +218,16 @@ So:
 
 ### 6.5 Who measures what
 
-Outcomes measures **business outcomes**: KPIs, baselines, time freed and value. It does not re-measure what another product owns; it reads it and links to it. For everything else:
+Outcomes measures **business outcomes**: KPIs, baselines, time freed and value. That is its whole objective (principle 11). Each product's own AXLE monitors how it runs; Outcomes doesn't re-measure that, and shows at most a read-only summary that links back (§8.20). For everything else:
 
 | | AntaraX products (Yara, Janka and so on) | REKA-built client solutions |
 |---|---|---|
 | **Business outcomes** | Outcomes, where REKA runs the product for a client | **Outcomes**, and nobody else |
 | **Usage** (people, work handled) | AXLE: Adoption and AI usage. Outcomes reads AXLE Link `usage` (FR-INT-8) | Outcomes, through the Measurement Link figures (§9) |
 | **Health** | AXLE R8: Services, Providers, Errors. Outcomes reads AXLE Link `health` | Outcomes reads the solution's own `health` (§9) |
-| **Availability** (an outside check) | AXLE R8 → Capacity's outside check | **Nobody shows it today.** Frame's site check, where the site is in Frame (§6.4) |
-| **Capacity:** database, files, transfer, requests, compute, connections, jobs, messages, backups | AXLE R8 → Capacity, from the product's `capacity.json` (AXLE SPEC §10.13) | **Nobody shows it today.** The kit asks every REKA client project for a `capacity.json` too, but a client project has no AXLE to draw it (D22) |
-| **AI tokens and cost** | AXLE: AI usage (the Finance right) | **Nobody, as a standard figure.** The `ai` class of `capacity.json` covers it once shown (D22) |
+| **Availability** (an outside check) | AXLE R8 → Capacity's outside check | Its own AXLE, or Frame's site check where the site is in Frame (§6.4). Outcomes: a one-line summary (§8.20) |
+| **Capacity:** database, files, transfer, requests, compute, connections, jobs, messages, backups | AXLE R8 → Capacity, from the product's `capacity.json` (AXLE SPEC §10.13) | Its own AXLE, in full: every product gets one (owner, 17 Oct 2026). Outcomes: an optional read-only summary on the Capacity tab, to explain results (§8.20, D22) |
+| **AI tokens and cost** | AXLE: AI usage (the Finance right) | Its own AXLE. Outcomes: tokens against the budget in the summary; the cost only with the Commercial right, from Frame (§8.20) |
 | **Run cost** (what REKA pays) | AX Frame. AXLE's planned Costs page should read it from Frame, not keep its own | AX Frame, where the estate is recorded and the client agrees (§6.4) |
 
 This keeps the non-goal in §3.2: Outcomes shows daily figures and limits, never traces, logs or per-request metrics.
@@ -591,6 +592,22 @@ When the connection test passes, Outcomes draws the application's **blueprint** 
 
 Open in the mock: the metric catalog is the same six figures for every application of a kind; in the product it is read from each link's manifest.
 
+### 8.20 Capacity: a supplementary summary
+
+**Decided by the owner, 17 Oct 2026 (D22).** Outcomes is about outcomes. Each product's own AXLE watches capacity in full (R8 → Capacity, AXLE SPEC §10.13) and raises the warnings. Outcomes shows a short, read-only summary only so staff can tell whether a result moved because of the platform. It is optional, so Outcomes stays usable by companies that run no AXLE at all (principle 10).
+
+| Id | Requirement | Priority |
+|---|---|---|
+| FR-CAP-1 | **Capacity** is the last tab on every application's page, set apart from the outcome tabs and marked supplementary. It opens with one line: what Outcomes measures, that the application's own AXLE watches capacity in full, and a link to it | P2 |
+| FR-CAP-2 | **"Did the platform affect the results?"** comes first: each platform event in the range (a resource near its limit, an outage) set against the days KPIs were counted, with what it did to the figures (late, missing, none). This is the tab's reason to exist | P2 |
+| FR-CAP-3 | **How close it runs to its limits:** each resource from the application's `capacity.json`, with its class, use against the limit, the runway, and how and when it was measured; availability over 90 days with each outage. The kit's classes and wording, unchanged; Outcomes adds none | P2 |
+| FR-CAP-4 | **Never a monitor.** No alerts, no Needs-a-person items, no thresholds of its own; the 80% and 30-day warnings belong to the application's AXLE. A figure near its limit is marked in words, nothing more | P2 |
+| FR-CAP-5 | **Optional.** An application that doesn't share it shows "Not shared, and that's fine"; its results, KPIs and reports are unchanged. The developer prompt carries it as an optional section, only for an application that has a `capacity.json` | P2 |
+| FR-CAP-6 | Read through an optional Measurement Link route, `GET /capacity`, from the snapshots the capacity check already takes: nothing new is measured. Plan costs never travel on it; a cost is shown only with the Commercial right, read from AX Frame | P2 |
+| FR-CAP-7 | REKA only: hidden in organisation view, reports and exports | P2 |
+
+Open: `GET /capacity` isn't yet in antarax-api docs/14, the integration pack or the contract test. It goes there as a minor version before the first application shares it. In the mock, only the example Document workflow shares a summary.
+
 ## 9 The measurement interface (Measurement Link)
 
 The brief's L2 contract, written to the AntaraX API framework (`antarax-api` docs 03, 04 and 07) so a REKA-built solution and an AntaraX product speak the same way. Working name **Measurement Link**, by analogy with AXLE Link.
@@ -614,6 +631,7 @@ The brief's L2 contract, written to the AntaraX API framework (`antarax-api` doc
 | GET | `/observations?from=&to=&metric=&cursor=&limit=` | Aggregated observations for whole periods in the range, oldest first within a page | Yes |
 | GET | `/health` | `{ object: "health", status: "ok" \| "degraded" \| "down", checked_at, problems: [snake_case], freshness: { metric_key: last_period_end } }` (the AXLE Link health shape plus freshness) | Yes |
 | GET | `/baselines` | Baseline records with provenance, if the solution holds them | Optional |
+| GET | `/capacity` | Proposed, not yet in docs/14: a read-only summary from the application's `capacity.json` snapshots, for the supplementary Capacity tab (§8.20) | Optional |
 | GET | `/openapi.json` | The OpenAPI 3.1 document for this interface | Yes |
 
 Range limits: `/observations` serves at most 92 days per call (as AXLE Link `usage`); backfill asks in windows.
@@ -951,6 +969,7 @@ Each step says **why** it is asked, in one line. Back works on every step after 
 | Overview, first use | `#home` (fresh workspace) | The first-steps checklist drives the whole setup |
 | New organisation, create project | `#new-organisation`, `#new-project` | Plain forms; the data agreement gate |
 | Applications | `#applications` | The hub: every tracked application and its state; resume one being set up |
+| Capacity | The last tab on `#sim-…` and `#solution-…`, set apart | Supplementary: did the platform affect the results, then a read-only summary of its limits from `capacity.json`, linking to the application's own AXLE. "Not shared, and that's fine" where it isn't (§8.20) |
 | Blueprint | Below the wizard once connected; the Blueprint tab on `#sim-…` and `#solution-…` | The generated data model and topology, animated; download as .md with Mermaid (§8.19) |
 | Track an application | `#track`, `#track-…` | The six-step wizard from organisation to "Sent for approval", with the picture building on the right; all three ways of sharing work. `#new-project` and `#connect` open it |
 | All screens (mock only) | `#screens` | Every screen in the order people meet them: the setup path opens in the demo workspace with the guided demo at that step; the rest open in example data. Lists the standard AXLE pages not drawn |
@@ -1178,7 +1197,7 @@ The brief's §16, extended with points this review raised. Each needs the owner.
 | D19 | **Where the product-only box sits** (AXLE SPEC §20 question 12) | For Outcomes: first, as client data, with the standard groups after it as "Managing Outcomes" (owner feedback, 15 Oct 2026; §12.2). Record it in the AXLE kit, mocked beside the standard pages, before any other product follows |
 | D20 | **Who reads client context** (§8.18): every staff member, or only the organisation's account team, its REKA owner and their manager? | All staff with the Support rung, as the mock shows, so the delivery team sees what the organisation cares about. Decide before the first pilot's entries are written |
 | D21 | **Speech to text** for client-context voice notes (FR-CTX-13): which provider, given Malay and mixed-language speech, where the audio is processed, and that it keeps nothing | Shortlist two providers that process in Singapore and keep no audio; test both on ten real voice notes recorded by the account team, with their agreement. Until then, voice notes are attached and played but not read |
-| D22 | **Who shows a REKA-built client solution's capacity, availability and AI cost** (§6.5)? For AntaraX products AXLE R8 → Capacity does, from `capacity.json`. The kit asks client projects for the same file, but they have no AXLE, so today nobody shows it, against Managed AI's promise to host, watch and keep the AI reliable | **Outcomes shows it**, as a REKA-only **Capacity** tab on each application: the project's own `capacity.json` and nightly snapshots, with the kit's classes, thresholds (80% of a limit or a runway under 30 days needs a person) and decisions unchanged. Outcomes adds no classes and measures nothing itself. The snapshots and the outside check reach it through an optional Measurement Link endpoint, a minor version of antarax-api docs/14; then the developer prompt asks for it and the blueprint draws it. Each plan's cost comes from Frame through its `asset` id. The alternative is to wait for client projects to appear in AXLE Central. Decide before the first pilot connects |
+| D22 | **Who shows a REKA-built client solution's capacity, availability and AI cost** (§6.5)? | **Decided 17 Oct 2026, by the owner.** Each product's own AXLE monitors capacity and the rest in full; every product gets one. Outcomes stays on outcomes: a supplementary, optional, read-only **Capacity** tab summarises the application's `capacity.json` to explain results, raises no warnings, and links to the AXLE (§8.20). Nothing in Outcomes depends on it, so it stays portable to companies without AXLE (principles 10 and 11) |
 
 ## 21 Appendices
 

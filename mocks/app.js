@@ -1383,11 +1383,54 @@
       ${table ? `<details class="more" style="margin-top:12px"><summary>How hours saved is worked out</summary>${table}</details>` : ''}</section>`;
   };
 
+  // ------------------------------------------------------------------ CAPACITY (supplementary, D22, §8.20)
+  // Outcomes measures what an application delivers. How close it runs to its limits belongs to its own AXLE
+  // (R8 → Capacity), which watches it in full and raises the warnings. This is a read-only summary from the
+  // application's capacity.json, here only to explain the results. Optional: nothing else depends on it.
+  const CAP_EX = {
+    'doc-workflow': {
+      asOf: '06:00 today', axle: 'AXLE · Document workflow',
+      res: [
+        { cls: 'Data', name: 'Database', used: 6.1, limit: 8, unit: 'GB', runway: 'about 5 months', how: 'Provider usage, nightly' },
+        { cls: 'Files', name: 'Stored documents', used: 41, limit: 100, unit: 'GB', runway: 'over a year', how: 'Sum of file sizes, nightly' },
+        { cls: 'Connections', name: 'Database connections, busiest hour', used: 52, limit: 60, unit: 'open', note: 'At 87% on 11 Oct, 03:00', how: 'Database query, hourly peak' },
+        { cls: 'Requests', name: 'Requests a day', used: 18400, limit: 50000, unit: 'requests', runway: 'over a year', how: 'Counted at the proxy' },
+        { cls: 'AI', name: 'AI tokens this month', used: 12.4, limit: 20, unit: 'million', note: 'Within this month’s budget', how: 'From the application’s AI call log', cost: 'RM310' },
+      ],
+      avail: { share: '99.97%', outages: [['2 Oct 2026, 22:10', '14 min', 'Planned restart ran long']] },
+      effects: [{ when: '11 Oct, 03:00 to 05:00', what: 'Database connections near their limit while the nightly batch ran', effect: 'Figures arrived 2 hours late. None were lost and no KPI changed.' }],
+    },
+  };
+  const capOf = (id) => CAP_EX[id] || null;
+  const capPrompt = (app) => `## Optional: a capacity summary
+Only if ${app} has a capacity.json (AntaraX Dashboard-kit, capacity/). Its own AXLE watches capacity in full and raises the warnings; Outcomes shows a short read-only summary beside the results, to explain them. Skip this if there is no capacity.json: nothing else depends on it.
+- GET /capacity: for each resource in capacity.json, its class, name, used, limit, unit, runway_days, measured_at and how it is measured; plus availability (the outside check's share up over 90 days, and each outage with its length).
+- Read from the nightly snapshots the capacity check already takes. Measure nothing new.
+- Never send plan costs: those come from AX Frame.
+- This route is proposed for the contract's next minor version; the contract test doesn't check it yet.`;
+  const capTab = (id, app, sim) => {
+    const c = capOf(id);
+    const lead = `<div class="callout info cap-lead">${icon('target')}<span style="flex:1"><b>Supplementary.</b> Outcomes measures what ${esc(app)} delivers. How close it runs to its limits is watched in full by its own AXLE, which also raises the warnings. This is a read-only summary, here only to explain the results.</span>${c ? `<span class="btn sm" aria-disabled="true" title="${esc(c.axle)} isn’t drawn in this mock">Open its AXLE ${icon('chev', 'sm')}</span>` : ''}</div>`;
+    if (!c) return `${lead}<section class="card"><div class="empty">${emptyArt}<h3>Not shared, and that’s fine</h3><p>${esc(app)} doesn’t share a capacity summary. Its results, KPIs and reports work the same without one. If it has a capacity.json, the developer can add a short read-only summary later.</p>
+      ${sim ? `<button type="button" class="btn sm" data-act="copy-cap" data-app="${esc(app)}">${icon('copy', 'sm')}Copy the optional prompt section</button>` : ''}</div></section>`;
+    const pct = (r) => Math.round(100 * r.used / r.limit);
+    const fmt = (r) => r.unit === 'requests' ? `${nf(r.used)} of ${nf(r.limit)}` : `${nf(r.used, r.used % 1 ? 1 : 0)} of ${nf(r.limit)} ${r.unit}`;
+    return `${lead}
+      <section class="card"><div class="card-head"><div><h2>Did the platform affect the results?</h2><p class="sub">${rangeLabel()} · matched against the days KPIs were counted</p></div></div>
+        ${c.effects.length ? `<div class="list">${c.effects.map((e) => `<div class="row"><span class="ico info">${icon('clock', 'sm')}</span><div><div class="what">${esc(e.what)}</div><div class="meta"><span>${esc(e.when)}</span></div><div class="small" style="margin-top:4px">${esc(e.effect)}</div></div></div>`).join('')}</div>` : '<p class="small muted">Nothing in this range.</p>'}</section>
+      <section class="card"><div class="card-head"><div><h2>How close it runs to its limits</h2><p class="sub">From its capacity.json · as of ${esc(c.asOf)} · example data</p></div></div>
+        <div class="cap-list">${c.res.map((r) => { const p = pct(r), near = p >= 80; return `<div class="cap-row"><div class="cap-name"><span class="cap-cls">${esc(r.cls)}</span><b>${esc(r.name)}</b><span class="small muted">${esc(r.how)}</span></div>
+          <div class="cap-bar" role="img" aria-label="${p}% of the limit"><i style="width:${Math.min(100, p)}%" class="${near ? 'near' : ''}"></i></div>
+          <div class="cap-fig"><span class="mono">${fmt(r)}</span><span class="small ${near ? 'warn-ink' : 'muted'}">${near ? 'Near its limit · ' : ''}${r.note ? esc(r.note) : 'Limit in ' + esc(r.runway)}</span>${r.cost ? `<span class="small muted">Cost: ${has('Commercial') ? `<span class="mono">${r.cost}</span> this month, from AX Frame` : '– needs the Commercial right'}</span>` : ''}</div></div>`; }).join('')}</div>
+        <div class="cap-avail"><span><b>Available</b> <span class="mono">${c.avail.share}</span> of the last 90 days, by an outside check</span>${c.avail.outages.map(([w, l, why]) => `<span class="small muted">${esc(w)} · down ${esc(l)} · ${esc(why)}</span>`).join('')}</div>
+        <p class="small muted" style="margin-top:12px">Outcomes doesn’t raise warnings for these: its AXLE does, to the people who run it. REKA only: hidden in organisation view, reports and exports.</p></section>`;
+  };
+
   // ------------------------------------------------------------------ example SOLUTION
   const VOLUME = { 'doc-workflow': ['documents.generated', 'Documents processed'], 'invoice-triage': ['invoices.triaged', 'Invoices triaged'], 'shift-planner': ['plans.generated', 'Shift plans made'], 'enquiry-triage': ['enquiries.received', 'Enquiries received'], 'quote-drafter': ['quotes.drafted', 'Quotations drafted'] };
   pages.solution = (id) => {
     const s = M.solutions[id], o = orgById(s.org), st = solStatus(id), days = windowDays(state.range);
-    const tabs = [['outcomes', 'Outcomes'], ['measures', 'Measures'], ['explore', 'Explore'], ['blueprint', 'Blueprint'], ['usage', 'Usage'], ['health', 'Health'], ['data', 'Data and connection']];
+    const tabs = [['outcomes', 'Outcomes'], ['measures', 'Measures'], ['explore', 'Explore'], ['blueprint', 'Blueprint'], ['usage', 'Usage'], ['health', 'Health'], ['data', 'Data and connection'], ...(state.audience === 'client' ? [] : [['capacity', 'Capacity', 'aux']])];
     let banner = '';
     if (st === 'stale') banner = `<div class="callout warn">${icon('clock')}<span><b>No new data since ${(s.since || '14 Oct 2026, 06:00').replace(' 2026,', '')}.</b> ${s.missed || 2} nightly collections were missed. You’re seeing the last good figures, faded. Nothing is filled in as zero.</span></div>`;
     if (st === 'failing') banner = `<div class="callout fault">${icon('alerts')}<span style="flex:1"><b>The solution isn’t answering since ${(s.since || '14 Oct 2026, 06:00').replace(' 2026,', '')}.</b> Its health check returned an error. We retry every 15 minutes and have told the project owner.</span>${gate(atLeast('Operator'), 'Retry now', 'Needs operator rights', 'data-act="retry"', 'btn sm')}</div>`;
@@ -1413,6 +1456,8 @@
       body = exploreTab(projById(id));
     } else if (state.solTab === 'blueprint') {
       body = blueprint(bpDemo(id), 'solution');
+    } else if (state.solTab === 'capacity' && state.audience !== 'client') {
+      body = capTab(id, s.name, false);
     } else if (state.solTab === 'usage') {
       if (id !== 'doc-workflow') body = `<section class="card"><div class="empty"><h3>Usage detail</h3><p>This mock shows usage for Contoh Logistik’s Document workflow.</p><a class="btn sm" href="#solution-doc-workflow">Open Document workflow</a></div></section>`;
       else {
@@ -1446,7 +1491,7 @@
     return `
     ${head({ crumbs: crumbs(['Results', '#results'], [o.short, '#results-' + o.id], [o.projects.find((x) => x.solutions.includes(s.id)).name], [s.name]), title: esc(s.name), meta: `${statusPill(st)}<span>${esc(o.projects[0].name)}</span><span>Live since ${day(s.live)}</span>`, actions: rangeSeg() })}
     ${banner}
-    <div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button type="button" role="tab" data-tab="${k}" aria-selected="${state.solTab === k}">${l}</button>`).join('')}</div>
+    <div class="tabs" role="tablist">${tabs.map(([k, l, aux]) => `<button type="button" role="tab" data-tab="${k}" aria-selected="${state.solTab === k}"${aux ? ' class="aux" title="Supplementary: watched in full by its own AXLE"' : ''}>${l}</button>`).join('')}</div>
     ${body}
     ${id === 'doc-workflow' ? `<div class="demo-bar"><span class="tag">MOCK CONTROLS</span><span>See what happens when data stops:</span><div class="seg">${[['live', 'Normal'], ['stale', 'Late'], ['failing', 'Not answering']].map(([v, l]) => `<button type="button" data-demo="${v}" aria-pressed="${state.demoState === v}">${l}</button>`).join('')}</div></div>` : ''}`;
   };
@@ -1484,10 +1529,11 @@
         return hasBase(s) ? { name: p.name, quality: 'estimated', value: nf(r.mid), unit: 'h', cmp: [['Likely', `${nf(r.low)} to ${nf(r.high)} h`], ['Baseline', `${s.base.mid} min per ${K.noun}`]], src: `${r.missing ? `${r.missing} day${r.missing > 1 ? 's' : ''} missing, not filled in · ` : ''}review time is an estimate`, staleNote: fade } : { name: p.name, quality: 'unavailable', value: null, why: 'Needs a baseline before it can be shown.', cmp: [], src: 'Add one in Approvals' };
       });
       const rs = simReportState(s);
-      const simTabs = `<div class="tabs" role="tablist">${[['outcomes', 'Overview'], ['measures', 'Measures'], ['explore', 'Explore'], ['blueprint', 'Blueprint']].map(([k, l]) => `<button type="button" role="tab" data-tab="${k}" aria-selected="${(['measures', 'explore', 'blueprint'].includes(state.solTab) ? state.solTab : 'outcomes') === k}">${l}</button>`).join('')}</div>`;
+      const simTabs = `<div class="tabs" role="tablist">${[['outcomes', 'Overview'], ['measures', 'Measures'], ['explore', 'Explore'], ['blueprint', 'Blueprint'], ['capacity', 'Capacity', 'aux']].map(([k, l, aux]) => `<button type="button" role="tab" data-tab="${k}" aria-selected="${(['measures', 'explore', 'blueprint', 'capacity'].includes(state.solTab) ? state.solTab : 'outcomes') === k}"${aux ? ' class="aux" title="Supplementary: watched in full by its own AXLE"' : ''}>${l}</button>`).join('')}</div>`;
       if (state.solTab === 'measures') body = `${banner}${simTabs}${measuresTab(projOfSim(s))}`;
       else if (state.solTab === 'explore') body = `${banner}${simTabs}${exploreTab(projOfSim(s))}`;
       else if (state.solTab === 'blueprint') body = `${banner}${simTabs}${blueprint(bpFrom(s), 'sim')}`;
+      else if (state.solTab === 'capacity') body = `${banner}${simTabs}${capTab(s.id, s.name, true)}`;
       else body = `${banner}${simTabs}
         ${hasBase(s) && s.kpis.includes('impact') && r.vol ? breakdownHtml(s.base, r.machine, K.review, K.noun, ({ sample: `timed on ${s.base.n} ${K.nouns}`, history: 'from past records', estimate: 'the organisation’s estimate' })[s.base.method], '') : ''}
         <div class="grid ${gridFor(cards.length)}">${cards.map(kpiCardHtml).join('')}</div>
@@ -1591,6 +1637,8 @@ Every call carries AntaraX-Service: measure, AntaraX-Timestamp (Unix seconds) an
 - Run the contract test against the running interface until there is no FAIL:
   AX_MEASURE_KEY=… node contract-test/cli.mjs --base <url>/internal/measure/v1
 - Then paste the base address into the developer link. Outcomes runs the same checks and connects.
+
+${capPrompt(app)}
 
 ## Hand over
 A short note in the pull request: each metric and where it comes from; what you chose not to share and why; any trustworthy "before" figure you found (how long a ${K.noun} took by hand, with evidence) or that none exists (don't guess one); the contract test output; how to rotate the key.
@@ -3505,6 +3553,7 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
     'w-next': wizardNext,
     'w-back': () => { state.wiz.step--; render(); },
     'copy-devlink': () => { const s = wizSim(), u = `https://outcomes.reka.example/connect/dev/${s ? s.id : ''}`; const done = () => toast('Copied. The developer sees the brief, their key once, and the test result as soon as the link answers.'); try { navigator.clipboard.writeText(u).then(done, done); } catch (err) { done(); } },
+    'copy-cap': (d) => copyText(capPrompt(d.app), 'Optional section copied. Send it to the developer if the application has a capacity.json.'),
     'copy-tpl': () => { const el = $('#w-tpl'); const done = () => toast('Columns copied. Paste them into the first row of the sheet.'); try { navigator.clipboard.writeText(el ? el.textContent : '').then(done, done); } catch (err) { done(); } },
     'w-pickfile': () => { const f = $('#w-file'); if (f) f.click(); },
     'w-examplefile': () => { state.wiz.sheetFile = 'example-week.csv'; runTests(); },
