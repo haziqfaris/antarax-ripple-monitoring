@@ -50,7 +50,7 @@ In the demo workspace, the dashed **Demo studio** button in the top bar shows th
 
 **Client data or managing.** The Outcomes-only box comes first and holds the client data; the AXLE standard groups below it are for managing Outcomes. Every Dashboard page carries a chip saying which it is: "Client data" or "Managing Outcomes".
 
-**The shell** (AXLE SPEC §4, §6, §7). The top bar: the AntaraX A and the Outcomes chip, the orange `AXLE` tag, the page title, the organisation scope picker, Find (⌘K), the health button (opens R8; a red count when a measurement link fails), and the staff menu. The sidebar: the Dashboard · R8 switch, the AXLE STANDARD groups as folding cards (fold one to see its grey preview and orange roll-up), and the dashed **Outcomes only** box. Standard items this mock doesn't draw are listed in grey and aren't links.
+**The shell** (AXLE SPEC §4, §6, §7). The top bar: the AntaraX A and the Outcomes chip, the orange `AXLE` tag, the page title, the organisation scope picker, Find (⌘K), the health button (opens R8; a red count when a measurement link fails), and the staff menu. The sidebar: the Dashboard · R8 switch, the AXLE STANDARD groups as folding cards (fold one to see its grey preview and orange roll-up), and the dashed **Outcomes only** box, its pages grouped by job: Track (Applications, Approvals), Report (Results, Reports, Analytics), Understand (Client context, Ask). Standard items this mock doesn't draw are listed in grey and aren't links.
 
 | Mode | Where | What it shows |
 |---|---|---|

@@ -600,7 +600,12 @@
         ['Operations', 'operations', [['Errors'], ['Alerts'], ['Backups'], ['Access']]],
         ['Trail', 'trail', [['Audit', 'audit'], ['Staff', 'staff']]],
       ],
-      dashOnly: [['Applications', 'applications', appRows().filter((r) => r.setting).length, 'quiet'], ['Results', 'results'], ['Reports', 'reports', reportsDue, 'loud'], ['Approvals', 'approvals', waiting, has('Approve') ? 'loud' : 'quiet'], ['Client context', 'context', ctxAll().filter((e) => !e.archived).length, 'quiet'], ['Analytics', 'analytics'], ['Ask', 'ask']],
+      // Grouped by job, in the order staff do it: track an application, report what it delivered, understand the organisation.
+      dashOnly: [
+        ['Track', [['Applications', 'applications', appRows().filter((r) => r.setting).length, 'quiet'], ['Approvals', 'approvals', waiting, has('Approve') ? 'loud' : 'quiet']]],
+        ['Report', [['Results', 'results'], ['Reports', 'reports', reportsDue, 'loud'], ['Analytics', 'analytics']]],
+        ['Understand', [['Client context', 'context', ctxAll().filter((e) => !e.archived).length, 'quiet'], ['Ask', 'ask']]],
+      ],
       r8: [
         ['Command', 'command', [['Overview', 'r8'], ['Incidents', 'incidents', R.incidents.filter((i) => i.state === 'open').length, 'loud'], ['Troubleshoot', 'troubleshoot']]],
         ['System', 'system', [['Jobs', 'jobs', R.jobs.filter((j) => j.st === 'fault').length, 'loud'], ['Providers', 'providers', R.providers.filter((x) => x.st === 'fault').length, 'loud'], ['Services', 'services']]],
@@ -634,13 +639,14 @@
         ${closed ? '' : `<div class="ax-items">${items.map(item).join('')}</div>`}</div>`;
     }).join('');
     const allOpen = N[mode].every(([label]) => !closedMap[label]);
-    const only = mode === 'r8' ? N.r8Only : N.dashOnly;
+    const only = mode === 'r8' ? N.r8Only.map(item).join('')
+      : N.dashOnly.map(([h, items]) => `<div class="ax-og" role="group" aria-label="${h}"><span class="ax-oh">${h}</span>${items.map(item).join('')}</div>`).join('');
     const u = me();
     return `<a class="ax-brand" href="#home"><img src="assets/antarax-mark.svg" alt="AntaraX"><span><b>AXLE</b><small>REKA STAFF CONSOLE</small></span></a>
       <div class="ax-mode" role="tablist" aria-label="AXLE mode"><a href="#home" role="tab" aria-selected="${mode === 'dash'}">Dashboard</a><a href="#r8" role="tab" aria-selected="${mode === 'r8'}">R8</a></div>
       <div class="ax-modeline">${mode === 'r8' ? 'R8 Full · is the platform okay, and why did this fail?' : 'How is Outcomes doing, and who needs us?'}</div>
       ${mode === 'dash' ? `<a class="ax-track" href="#track" ${/^track/.test(route) ? 'aria-current="page"' : ''}>${icon('plus', 'sm')}<span>Track an application</span></a>` : ''}
-      <section class="ax-only" aria-label="Outcomes only"><div class="ax-only-head"><span>${icon('analytics', 'sm').replace('<svg', '<svg style="color:#0459F7;width:15px;height:15px"')}</span><b>Outcomes only</b></div><p class="ax-sub">${mode === 'r8' ? 'The machinery only Outcomes runs' : 'Client data: what each organisation’s solutions delivered'}</p>${only.map(item).join('')}</section>
+      <section class="ax-only" aria-label="Outcomes only"><div class="ax-only-head"><span>${icon('analytics', 'sm').replace('<svg', '<svg style="color:#0459F7;width:15px;height:15px"')}</span><b>Outcomes only</b></div><p class="ax-sub">${mode === 'r8' ? 'The machinery only Outcomes runs' : 'Client data: applications and what they delivered'}</p>${only}</section>
       <div class="ax-std"><span>AXLE STANDARD</span><i></i><button type="button" data-act="nav-all">${allOpen ? 'Collapse all' : 'Expand all'}</button></div>
       <p class="ax-sub" style="padding:0 8px">${mode === 'r8' ? 'The same groups in every product' : 'Managing Outcomes: organisations, people, settings, the trail'}</p>
       ${groups}

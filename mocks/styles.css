@@ -1223,3 +1223,8 @@ details > summary:focus-visible { outline: 2px solid var(--primary); outline-off
 .tk-resume a:hover { border-color: var(--axle-warn); text-decoration: none; }
 @media (prefers-reduced-motion: reduce) { details > summary::before, input[type=checkbox]::after { transition: none; } }
 details.how summary::after, details.how[open] summary::after { content: none; }
+
+/* Outcomes only, grouped by job (owner feedback, 17 Oct 2026) */
+.ax-og { display: flex; flex-direction: column; gap: 1px; }
+.ax-og + .ax-og { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--axle-bar-line); }
+.ax-oh { font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--axle-bar-muted); padding: 4px 10px 3px; }
