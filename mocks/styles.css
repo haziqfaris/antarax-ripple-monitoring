@@ -1042,3 +1042,72 @@ details.ctx-att[open] .ctx-more { transform: rotate(180deg); }
 .tvis .twire .track, .tvis .cmap.vert .cwire .track { left: 26px; }
 .tvis .cmap.vert .cwire { height: 18px; }
 .tvis .cmap.vert .cwire i { left: 23px; }
+
+/* Track an application: the main action, at the top of the menu */
+.ax-track { display: flex; gap: 8px; align-items: center; justify-content: center; margin: 10px 8px 4px; padding: 11px 14px; border-radius: 12px; background: #FFFFFF; color: var(--axle-bar); font-weight: 600; font-size: .875rem; text-decoration: none; box-shadow: 0 1px 0 rgba(255, 255, 255, .2), 0 6px 18px rgba(0, 0, 0, .25); transition: transform .15s var(--ease), box-shadow .15s var(--ease); }
+.ax-track:hover { text-decoration: none; transform: translateY(-1px); box-shadow: 0 10px 24px rgba(0, 0, 0, .3); }
+.ax-track:focus-visible { outline: 2px solid var(--axle-orange); outline-offset: 2px; }
+.ax-track[aria-current="page"] { box-shadow: 0 0 0 2px var(--axle-orange); }
+
+/* Applications: the hub */
+.apf-strip { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.apf { display: grid; gap: 2px; text-align: left; padding: 12px 14px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--surface); cursor: pointer; transition: border-color .15s var(--ease), box-shadow .15s var(--ease); }
+.apf b { font-family: var(--mono); font-size: 1.375rem; color: var(--ink); line-height: 1.2; }
+.apf span { font-size: .8125rem; color: var(--muted); }
+.apf.warn b { color: var(--warn-ink); } .apf.fault b { color: var(--fault-ink); } .apf.ok b { color: var(--ok-ink); }
+.apf[aria-pressed="true"] { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-tint); }
+.app-cell { display: flex; gap: 10px; align-items: center; }
+.app-cell .ico { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; flex: none; }
+.apps-empty { display: flex; gap: 24px; align-items: center; padding: 32px; }
+.apps-empty .radar { background: var(--primary-tint); color: var(--primary-ink); }
+.apps-empty .radar::before, .apps-empty .radar::after { border-color: var(--primary); }
+@media (max-width: 760px) { .apf-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); } .apps-empty { flex-direction: column; text-align: center; } }
+
+/* The wizard: why each step, how linking works, what the prompt asks */
+.tk-why { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--primary-tint); color: var(--primary-ink); font-size: .8125rem; line-height: 1.45; }
+.tk-why .i { flex: none; margin-top: 1px; }
+.tk-sec { display: grid; gap: 8px; }
+.tk-how { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; counter-reset: none; }
+.tk-how-s { position: relative; display: grid; gap: 4px; align-content: start; padding: 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2); }
+.tk-how-s .n { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: var(--surface); border: 1px solid var(--line); color: var(--primary-ink); }
+.tk-how-s b { font-size: .8125rem; color: var(--ink); }
+.tk-how-s > span:last-child { font-size: .75rem; color: var(--muted); line-height: 1.4; }
+.tq-card.enter .tk-how-s { animation: c-rise .4s var(--ease) both; }
+.tq-card.enter .tk-how-s:nth-child(2) { animation-delay: .08s; } .tq-card.enter .tk-how-s:nth-child(3) { animation-delay: .16s; } .tq-card.enter .tk-how-s:nth-child(4) { animation-delay: .24s; } .tq-card.enter .tk-how-s:nth-child(5) { animation-delay: .32s; }
+.tk-asks { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 16px; }
+.tk-asks li { display: flex; gap: 8px; align-items: flex-start; font-size: .8125rem; color: var(--body); }
+.tk-asks .i { color: var(--ok-ink); flex: none; margin-top: 2px; }
+.tk-full .code-block { margin-top: 8px; max-height: 360px; }
+.tk-methods { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.tk-method { position: relative; display: grid; gap: 4px; align-content: start; text-align: left; padding: 12px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--surface); cursor: pointer; transition: border-color .15s var(--ease), box-shadow .15s var(--ease); }
+.tk-method .i { color: var(--muted); }
+.tk-method b { font-size: .875rem; color: var(--ink); }
+.tk-method span { font-size: .75rem; color: var(--muted); }
+.tk-method i { position: absolute; top: 10px; right: 10px; font-style: normal; font-size: .625rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--primary-ink); background: var(--primary-tint); padding: 2px 6px; border-radius: var(--r-pill); }
+.tk-method[aria-pressed="true"] { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-tint); }
+.tk-method[aria-pressed="true"] .i { color: var(--primary); }
+.tk-toggle.sm { padding: 6px 10px; margin-top: 8px; width: auto; display: inline-flex; font-size: .8125rem; }
+.tk-urlrow { display: flex; gap: 8px; margin-top: 8px; } .tk-urlrow input { flex: 1; min-width: 0; }
+
+/* The footer: Back on the left, actions on the right, on one line. On phones the main action comes first, full width. */
+.tq-card > .tk-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: nowrap; }
+.tk-acts { display: flex; gap: 10px; align-items: center; justify-content: flex-end; flex-wrap: wrap; }
+.tk-exit { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+.btn.danger { color: var(--fault-ink); border-color: var(--axle-fault-line); background: var(--surface); }
+.btn.danger:hover { background: var(--fault-tint); }
+@media (max-width: 640px) {
+  .tq-card > .tk-foot { flex-direction: column-reverse; align-items: stretch; }
+  .tk-acts { flex-direction: column-reverse; align-items: stretch; }
+  .tk-foot .btn { width: 100%; justify-content: center; }
+  .tk-methods, .tk-asks { grid-template-columns: minmax(0, 1fr); }
+  .tk-exit { flex-direction: column-reverse; } .tk-exit .btn { width: 100%; justify-content: center; }
+}
+@media (prefers-reduced-motion: reduce) { .tq-card.enter .tk-how-s, .ax-track { animation: none; transition: none; } }
+/* How linking works: a vertical timeline, readable at any width */
+.tk-how { grid-template-columns: minmax(0, 1fr); gap: 0; }
+.tk-how-s { grid-template-columns: 32px minmax(0, 1fr); column-gap: 12px; row-gap: 1px; padding: 6px 0 10px; border: 0; background: none; border-radius: 0; }
+.tk-how-s .n { grid-row: span 2; width: 32px; height: 32px; border-radius: 50%; background: var(--primary-tint); border: 0; position: relative; z-index: 1; }
+.tk-how-s:not(:last-child)::before { content: ""; position: absolute; left: 15px; top: 38px; bottom: -6px; border-left: 2px solid var(--primary-tint-2); }
+.tk-how-s b { font-size: .875rem; padding-top: 6px; }
+.tk-how-s > span:last-child { font-size: .8125rem; }
+.ax-track { white-space: nowrap; font-size: .8125rem; padding: 10px 12px; }

@@ -443,7 +443,7 @@
   // "How this page works", and its range picker or main action. Entity pages also show who they are about.
   let curTitle = '', curPage = '';
   // Pages that show an organisation's own figures; everything else in the Dashboard is managing Outcomes.
-  const DATA_PAGES = /^(results|reports|report|approvals|context|analytics|ask|solution|sim)$/;
+  const DATA_PAGES = /^(applications|results|reports|report|approvals|context|analytics|ask|solution|sim)$/;
   const stateWord = () => demo() ? 'Example data' : sandbox() ? 'Demo workspace, simulated' : 'Live database';
   function head(o) {
     curTitle = o.topTitle || String(o.title).replace(/<span class="avatar[^>]*>[^<]*<\/span>/g, '').replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').trim();
@@ -557,7 +557,7 @@
         ['Operations', 'operations', [['Errors'], ['Alerts'], ['Backups'], ['Access']]],
         ['Trail', 'trail', [['Audit', 'audit'], ['Staff', 'staff']]],
       ],
-      dashOnly: [['Results', 'results'], ['Reports', 'reports', reportsDue, 'loud'], ['Approvals', 'approvals', waiting, has('Approve') ? 'loud' : 'quiet'], ['Client context', 'context', ctxAll().filter((e) => !e.archived).length, 'quiet'], ['Analytics', 'analytics'], ['Ask', 'ask']],
+      dashOnly: [['Applications', 'applications', appRows().filter((r) => r.setting).length, 'quiet'], ['Results', 'results'], ['Reports', 'reports', reportsDue, 'loud'], ['Approvals', 'approvals', waiting, has('Approve') ? 'loud' : 'quiet'], ['Client context', 'context', ctxAll().filter((e) => !e.archived).length, 'quiet'], ['Analytics', 'analytics'], ['Ask', 'ask']],
       r8: [
         ['Command', 'command', [['Overview', 'r8'], ['Incidents', 'incidents', R.incidents.filter((i) => i.state === 'open').length, 'loud'], ['Troubleshoot', 'troubleshoot']]],
         ['System', 'system', [['Jobs', 'jobs', R.jobs.filter((j) => j.st === 'fault').length, 'loud'], ['Providers', 'providers', R.providers.filter((x) => x.st === 'fault').length, 'loud'], ['Services', 'services']]],
@@ -566,7 +566,7 @@
       r8Only: [['Measurement links', 'links', R.links.filter((l) => l.st !== 'ok').length, 'loud']],
     };
   }
-  const NAV_CUR = { 'new-organisation': 'organisations', 'new-project': 'organisations', connect: 'organisations', track: 'organisations', screens: 'demo', organisation: 'organisations', results: 'results', solution: 'results', sim: 'results', report: 'reports', guide: 'home' };
+  const NAV_CUR = { 'new-organisation': 'organisations', 'new-project': 'organisations', connect: 'applications', track: 'applications', screens: 'demo', organisation: 'organisations', results: 'results', solution: 'results', sim: 'results', report: 'reports', guide: 'home' };
   function navHtml(route) {
     const mode = axMode(route), N = navModel();
     const curKey = R8_ROUTES.test(route) ? route.replace(/-.+$/, '') : (NAV_CUR[route] || NAV_CUR[parse()[0]] || route);
@@ -596,6 +596,7 @@
     return `<a class="ax-brand" href="#home"><img src="assets/antarax-mark.svg" alt="AntaraX"><span><b>AXLE</b><small>REKA STAFF CONSOLE</small></span></a>
       <div class="ax-mode" role="tablist" aria-label="AXLE mode"><a href="#home" role="tab" aria-selected="${mode === 'dash'}">Dashboard</a><a href="#r8" role="tab" aria-selected="${mode === 'r8'}">R8</a></div>
       <div class="ax-modeline">${mode === 'r8' ? 'R8 Full · is the platform okay, and why did this fail?' : 'How is Outcomes doing, and who needs us?'}</div>
+      ${mode === 'dash' ? `<a class="ax-track" href="#track" ${/^track/.test(route) ? 'aria-current="page"' : ''}>${icon('plus', 'sm')}<span>Track an application</span></a>` : ''}
       <section class="ax-only" aria-label="Outcomes only"><div class="ax-only-head"><span>${icon('analytics', 'sm').replace('<svg', '<svg style="color:#0459F7;width:15px;height:15px"')}</span><b>Outcomes only</b></div><p class="ax-sub">${mode === 'r8' ? 'The machinery only Outcomes runs' : 'Client data: what each organisation’s solutions delivered'}</p>${only.map(item).join('')}</section>
       <div class="ax-std"><span>AXLE STANDARD</span><i></i><button type="button" data-act="nav-all">${allOpen ? 'Collapse all' : 'Expand all'}</button></div>
       <p class="ax-sub" style="padding:0 8px">${mode === 'r8' ? 'The same groups in every product' : 'Managing Outcomes: organisations, people, settings, the trail'}</p>
@@ -892,9 +893,7 @@
     const s = firstSim(), st = s ? s.stage : null;
     return [
       { t: 'Set up your workspace', d: 'Name, time zone and team.', done: true },
-      { t: 'Add your first organisation', d: 'The organisation, and their data agreement.', done: state.orgs.length > 0, href: '#track', cta: 'Start tracking' },
-      { t: 'Create a project', d: 'What the solution is for, in the organisation’s words.', done: !!s, href: '#track', cta: 'Start tracking' },
-      { t: 'Connect the solution', d: 'Copy the prompt for the developer and wait for the connection. Then choose KPIs and the baseline.', done: !!s && st !== 'draft', href: '#connect', cta: 'Connect' },
+      { t: 'Track your first application', d: 'The organisation, the application, the prompt for the developer, the connection, what to measure and the baseline, in one wizard.', done: !!s && st !== 'draft', href: s && st === 'draft' ? '#track-' + s.id : '#track', cta: s && st === 'draft' ? 'Resume' : 'Track an application' },
       { t: 'Get the KPIs approved', d: 'Someone else checks every KPI and baseline.', done: st === 'approved' || st === 'collecting', href: s ? '#sim-' + s.id : '#approvals', cta: 'Check status' },
       { t: 'See your first results', d: 'Figures arrive after the first nightly collection.', done: st === 'collecting', href: s ? '#sim-' + s.id : '#home', cta: 'Open solution' },
       { t: 'Schedule the organisation report', d: 'Drafted for you. Nothing goes out until you check it.', done: !!s && s.reportScheduled, href: '#reports', cta: 'Schedule' },
@@ -910,7 +909,7 @@
   }
   function homeMine() {
     const collecting = state.sims.filter((s) => s.stage === 'collecting');
-    const greet = head({ title: 'Overview', lead: collecting.length ? 'What needs a person, and how Outcomes is running. Each organisation’s figures are in Results.' : 'Outcomes is new here. Seven first steps take your first project from nothing to its first report.', actions: collecting.length ? rangeSeg() : '' });
+    const greet = head({ title: 'Overview', lead: collecting.length ? 'What needs a person, and how Outcomes is running. Each organisation’s figures are in Results.' : 'Outcomes is new here. Track your first application: a few steps take it from nothing to its first report.', actions: collecting.length ? rangeSeg() : '' });
     if (!collecting.length) {
       return `${greet}
       <section class="grid g-side">${checklistCard(false)}
@@ -1089,7 +1088,7 @@
   pages.organisations = () => {
     const all = companies();
     const lead = 'Every organisation REKA measures for: its stage, setup and what it needs from a person. Its figures are in Results.';
-    if (!all.length) return `${head({ title: 'Organisations', lead, actions: `<a class="btn" href="#new-organisation">${icon('plus', 'sm')}New organisation</a><a class="btn primary" href="#track">Start tracking</a>` })}<section class="card"><div class="empty">${emptyArt}<h3>No organisations yet</h3><p>Start with the organisation. You record their data agreement here, because nothing is collected until it is signed.</p><div class="head-actions" style="justify-content:center"><a class="btn primary" href="#new-organisation">${icon('plus', 'sm')}Add organisation</a><button type="button" class="btn" data-act="studio">Try a demo workspace</button></div></div></section>`;
+    if (!all.length) return `${head({ title: 'Organisations', lead, actions: `<a class="btn" href="#new-organisation">${icon('plus', 'sm')}New organisation</a><a class="btn primary" href="#track">Track an application</a>` })}<section class="card"><div class="empty">${emptyArt}<h3>No organisations yet</h3><p>Start with the organisation. You record their data agreement here, because nothing is collected until it is signed.</p><div class="head-actions" style="justify-content:center"><a class="btn primary" href="#new-organisation">${icon('plus', 'sm')}Add organisation</a><button type="button" class="btn" data-act="studio">Try a demo workspace</button></div></div></section>`;
     const f = state.cf = state.cf || { show: 'all', sort: 'needs', q: '' };
     const days = aWindow(state.range), prevDays = windowDays(state.range, M.addDays(days[0], -1)), hm = mByKey('hours'), vm = mByKey('value');
     let rows = all.map((c) => { const t = coTotals(c, days), tp = coTotals(c, prevDays); return { c, t, h: hm.calc(t), hc: comparable(t, tp) ? chgPct(hm.calc(t), hm.calc(tp)) : null, v: vm.calc(t), needs: coNeeds(c).length, sev: needSeverity(coNeeds(c)), st: coStatus(c) }; });
@@ -1103,7 +1102,7 @@
     if (f.group === 'stage' || f.group === 'industry') { const key = (r) => f.group === 'stage' ? ['live', 'pilot', 'onboarding', 'planning'].indexOf(r.c.stage) : r.c.industry; rows = rows.map((r, i) => [r, i]).sort((a, b) => (key(a[0]) < key(b[0]) ? -1 : key(a[0]) > key(b[0]) ? 1 : a[1] - b[1])).map((x) => x[0]); }
     const wk = weeksOf(aWindow(84));
     const strip = [['all', 'All', all.length], ['needs', 'Need a person', counts.needs], ['live', 'Live', counts.live], ['early', 'Getting started', all.length - counts.live]];
-    return `${head({ title: 'Organisations', lead, actions: `<button type="button" class="btn" data-act="export">Export CSV</button>${demo() ? '' : `<a class="btn" href="#new-organisation">${icon('plus', 'sm')}New organisation</a><a class="btn primary" href="#track">Start tracking</a>`}` })}
+    return `${head({ title: 'Organisations', lead, actions: `<button type="button" class="btn" data-act="export">Export CSV</button>${demo() ? '' : `<a class="btn" href="#new-organisation">${icon('plus', 'sm')}New organisation</a><a class="btn primary" href="#track">Track an application</a>`}` })}
     <section class="strip" aria-label="Organisations by state">${strip.map(([k, l, n]) => `<button type="button" class="strip-b" data-cfshow="${k}" aria-pressed="${f.show === k}"><span>${l}</span><b class="mono">${n}</b></button>`).join('')}
 </section>
     <section class="card" style="padding:14px 18px"><div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
@@ -1472,16 +1471,75 @@
     [`${cap(K.nouns)} by customer name`, `${K.nouns}.by_customer_name`, 'Count, split by customer', 'fault', 'Split by customer name, which could identify people. The contract test refuses it; ask the developer to split by customer type instead.'],
   ];
   const wizSim = () => simById(state.focusSim);
-  const devPrompt = (s) => { const K = kindOf(s); return `Add a Measurement Link to ${state.wiz.solName || s.name}. Follow the integration pack: integrations/measure in antarax-ripple-monitoring, starting with CLAUDE_CODE_INTEGRATION.md.
+  // The prompt for the developer, or for Claude Code or Codex: the integration pack's instruction
+  // (integrations/measure/CLAUDE_CODE_INTEGRATION.md) made specific to this application.
+  const devPrompt = (s) => {
+    const K = kindOf(s), o = orgOf(s), app = state.wiz.solName || s.name, id = slug(o.name + ' ' + app), nk = K.nouns.replace(/\s+/g, '_'), unit = K.noun.replace(/\s+/g, '_');
+    return `# Add a Measurement Link to ${app}
 
-- Read-only GET endpoints under /internal/measure/v1: manifest, metrics, observations, health, openapi.json.
-- TypeScript: use the kit in the pack. Other languages: follow the pack's signature and test vectors.
-- Don't change the app's own data model or API.
-- Daily totals for finished days in the organisation's time zone: ${K.nouns} handled, processing time (with sum and count), ${K.nouns} ${K.qual.label}, people reviewing (each counted once). A missing day is left out, never sent as zero.
-- No document text, names or personal data. Dimension values are short codes, like invoice.
-- Check every call is signed with the key in AX_MEASURE_KEY (ax_msr_…). The developer link shows it once.
-- Before you finish, run the contract test: AX_MEASURE_KEY=… node contract-test/cli.mjs --base <url>
-- If there's no baseline, say so. Don't guess one.`; };
+You are adding a small, read-only measurement interface to ${app}, an application REKA built and runs for ${o.name} (${K.label.toLowerCase()}). REKA's Outcomes console will call it every night to collect daily totals, so ${o.name} can see what the application changed. Nothing Outcomes calls may change the application.
+
+Get the integration pack from the developer link (it is also in the antarax-ripple-monitoring repository, integrations/measure). It holds the contract (openapi.json), worked examples, a TypeScript kit, a Python signer, test vectors and the contract test. Read its CLAUDE_CODE_INTEGRATION.md first: this prompt is that instruction, made specific to ${app}.
+
+## Ground rules
+- Read-only: GET routes under /internal/measure/v1 only.
+- Do not change the application's data model, its API or its behaviour. Read from what it already records.
+- Aggregates only. Never expose document text, file contents, credentials, names, email addresses, phone numbers, identity card or account numbers, or anything about one person.
+- Stop and ask before anything that costs real time or money: new tables, new logging on hot paths, background jobs.
+
+## 1. Inspect, then propose (stop here for approval)
+Read the main workflows. Find where ${app} already records ${K.nouns}, runs, reviews and errors. Reply with a table for a person to approve: key, type, unit, plain-words description, dimensions, and the table or log each number comes from. A starting catalog for this kind of work:
+
+| Key | Type | Unit | Means |
+|---|---|---|---|
+| ${nk}.processed | counter | ${unit} | ${cap(K.nouns)} the application finished in the day |
+| ${nk}.processing_duration | duration (mean; send count and sum) | second | Machine time per ${K.noun} |
+| ${nk}.flagged | counter | ${unit} | ${cap(K.nouns)} ${K.qual.label} |
+| reviewers.active | distinct (identity: operator) | person | People who reviewed at least one ${K.noun}, each counted once |
+| runs.failed | counter | run | Runs that failed and needed a person |
+
+Use only what ${app} really records. If a metric can't be worked out from existing data, say so; don't invent it. Keys are two to four lower-case words joined by dots. At most 200 metrics.
+
+## 2. Build the endpoints
+Every answer is JSON with Cache-Control: no-store and X-Request-Id: req_…
+- GET /manifest: solution_id "${id}", solution_name "${app}", environment, time_zone "Asia/Kuala_Lumpur", metric_catalog_version (a date), capabilities, and every metric.
+- GET /metrics: the same definitions, as a list.
+- GET /observations?from=YYYY-MM-DD&to=YYYY-MM-DD&metric=…: daily figures, oldest first, at most 92 days a call, paged with ?cursor= and ?limit= (1 to 100, default 25).
+- GET /health: ok, degraded or down; named problems (for example aggregates_late); each metric's last complete day.
+- GET /openapi.json: the contract document from the pack.
+- GET /baselines only if ${app} already holds "before" figures with evidence.
+Unknown query parameters: 422 invalid_request, naming the parameter. Any other path: 404 not_found.
+
+TypeScript: use measureLink(adapter, { key, nextKey }) from the kit and write only the adapter (describe, observations, health). In Next.js that is app/internal/measure/v1/[...path]/route.ts exporting GET. Other languages: follow openapi.json and examples/, and check signatures as reference/python/measure_sign.py does.
+
+## 3. Daily figures, done right
+- One observation per metric per finished day in Asia/Kuala_Lumpur: local_period (YYYY-MM-DD) and that day's UTC bounds (period_start, period_end, ending in Z).
+- Always the day's total with dimensions {}, plus one per dimension value. At most 5 dimensions a metric and 20 values each; values are short lower-case codes (invoice), never free text.
+- Never serve today: it isn't finished.
+- A day with no figures is left out. Never send zero for a day that wasn't counted.
+- quality is measured or derived; source names where it came from (application_aggregate, application_log).
+- Aggregate queries over the application's own records. Never move raw rows out.
+
+## 4. Signing
+Every call carries AntaraX-Service: measure, AntaraX-Timestamp (Unix seconds) and AntaraX-Service-Signature: v1=<hex HMAC-SHA256>. The signed text is the timestamp, a newline, GET, a newline, the path with its query string, a newline, and the hex SHA-256 of the empty body. The key is AX_MEASURE_KEY (ax_msr_…, shown once in the developer link); during a rotation also accept AX_MEASURE_KEY_NEXT. Answer anything missing, wrong or more than five minutes off with one plain 401 invalid_signature. While no key is set, answer 404 everywhere. Never log the key or the signature header. Keep both keys in the application's secret store, never in code.
+
+## 5. Errors
+{ "error": { "code", "message", "request_id" } } with invalid_request 422, invalid_cursor 400, invalid_signature 401, not_found 404, rate_limited 429 (with Retry-After), unavailable 503 (the day's figures aren't computed yet, with Retry-After), internal 500.
+
+## 6. Test
+- Unit tests for the adapter's queries, in ${app}'s own test suite.
+- Run the contract test against the running interface until there is no FAIL:
+  AX_MEASURE_KEY=… node contract-test/cli.mjs --base <url>/internal/measure/v1
+- Then paste the base address into the developer link. Outcomes runs the same checks and connects.
+
+## Hand over
+A short note in the pull request: each metric and where it comes from; what you chose not to share and why; any trustworthy "before" figure you found (how long a ${K.noun} took by hand, with evidence) or that none exists (don't guess one); the contract test output; how to rotate the key.
+
+## Done means
+- The contract test passes with no FAIL on staging, then on production once the key is set there.
+- ${app}'s behaviour, API and data model are unchanged, apart from the new read-only routes and any instrumentation a person approved.
+- No personal data leaves ${app}.`;
+  };
   const sheetTemplate = (K) => `date,${K.nouns.replace(/\s+/g, '_')}_handled,seconds_per_${K.noun.replace(/\s+/g, '_')},${K.nouns.replace(/\s+/g, '_')}_${K.qual.label.replace(/\s+/g, '_')},people_reviewing\n${M.addDays(today(), -1)},0,0,0,0`;
   // The connection, drawn: the solution, the door it shares through, and Outcomes. It moves as the connection does:
   // waiting (the door breathes), testing (requests travel to the solution), live (figures flow to Outcomes nightly).
@@ -1490,8 +1548,8 @@
 
   function copyText(text, msg) { const done = () => toast(msg); try { navigator.clipboard.writeText(text).then(done, done); } catch (err) { done(); } }
 
-  // Connecting happens in Start tracking; this address opens it (see render). Without a project, say what comes first.
-  pages.connect = () => `${head({ title: 'Connect a solution' })}<section class="card"><div class="empty">${emptyArt}<h3>Start with the organisation and project</h3><p>A solution is measured against a project’s outcome. Start tracking takes you through both, then the connection.</p><a class="btn primary" href="#track">Start tracking</a></div></section>`;
+  // Connecting happens in Track an application; this address opens it (see render). Without a project, say what comes first.
+  pages.connect = () => `${head({ title: 'Connect a solution' })}<section class="card"><div class="empty">${emptyArt}<h3>Track an application</h3><p>Connecting happens in one wizard: the organisation, the application, the prompt for the developer, then the connection.</p><a class="btn primary" href="#track">Track an application</a></div></section>`;
   pages.connect.after = () => {
     const w = state.wiz;
     const map = { 'b-mid': 'mid', 'b-low': 'low', 'b-high': 'high', 'b-n': 'n', 'b-period': 'period', 'b-note': 'note' };
@@ -1516,8 +1574,9 @@
   function wizardNext() {
     const w = state.wiz, s = wizSim(); if (!s) return;
     if (w.step === 1) {
-      if (w.method === 'link') { w.promptAt = now(); copyText(devPrompt(s), 'Prompt copied. Send it to the developer.'); log(`Copied the developer prompt for ${w.solName || s.name}`); }
-      if (w.method === 'sheet') copyText(sheetTemplate(kindOf(s)), 'Columns copied. Share them with whoever fills in the sheet.');
+      const copied = state.trk && state.trk.copied;
+      if (w.method === 'link' && !copied) { w.promptAt = now(); copyText(devPrompt(s), 'Prompt copied. Send it to the developer.'); log(`Copied the developer prompt for ${w.solName || s.name}`); }
+      if (w.method === 'sheet' && !copied) copyText(sheetTemplate(kindOf(s)), 'Columns copied. Share them with whoever fills in the sheet.');
       w.step = 2; render(); window.scrollTo(0, 0);
       if (w.method === 'axle') runTests();
       return;
@@ -1530,18 +1589,63 @@
     if (w.step === 4) { finishWizard(); return; }
     w.step++; render(); window.scrollTo(0, 0);
   }
-  // ------------------------------------------------------------------ START TRACKING (one wizard: organisation, project, prompt, connection)
-  // One question at a time on the left; on the right, what is being set up builds itself as you answer, then the
-  // connection animates as it waits, is tested and goes live. KPIs and the baseline follow on the connect page.
-  const TRK_STEPS = ['Organisation', 'Project', 'Prompt', 'Connection', 'What to measure', 'Baseline and send'];
-  const trkFresh = () => ({ step: 1, orgId: null, isNew: false, q: '', industry: 'Property and real estate', signed: true, name: '', kind: 'documents', sol: '', solTouched: false, method: 'link', objective: '', simId: null, copied: false });
+  // ------------------------------------------------------------------ APPLICATIONS: the hub. Every tracked application, in every organisation.
+  // Tracking an application is the main action; organisations, results, reports and analytics hang off what is tracked.
+  function appRows() {
+    return companies().flatMap((c) => c.projects.flatMap((p) => p.solutions.map((x) => {
+      const s = !demo() && simById(x.id), setting = !!s && s.stage === 'draft';
+      const step = setting && state.focusSim === s.id ? Math.min(state.wiz.step + 2, 6) : setting ? 3 : null;
+      const order = setting ? 0 : ['failing', 'stale'].includes(x.status) ? 1 : x.status === 'review' ? 2 : x.status === 'approved' ? 3 : x.status === 'not_connected' ? 5 : 4;
+      return { c, p, x, s, setting, step, order };
+    }))).sort((a, b) => a.order - b.order || a.x.name.localeCompare(b.x.name));
+  }
+  pages.applications = () => {
+    const rows = appRows(), hm = mByKey('hours'), days = aWindow(30), f = state.appF || 'all';
+    const counts = { all: rows.length, setting: rows.filter((r) => r.setting).length, attention: rows.filter((r) => r.order === 1).length, waiting: rows.filter((r) => r.order === 2 || r.order === 3).length, live: rows.filter((r) => r.order === 4).length };
+    const shown = rows.filter((r) => f === 'all' || (f === 'setting' && r.setting) || (f === 'attention' && r.order === 1) || (f === 'waiting' && (r.order === 2 || r.order === 3)) || (f === 'live' && r.order === 4));
+    const track = `<a class="btn primary" href="#track">${icon('plus', 'sm')}Track an application</a>`;
+    if (!rows.length) return `${head({ title: 'Applications', kind: 'data', lead: 'Every application REKA tracks for its organisations. Start by tracking the first one.', actions: track })}
+      <section class="card apps-empty"><div class="radar">${icon('box')}</div><div><h2>Track your first application</h2><p class="muted">Pick the organisation, name the application, send the developer a prompt, and Outcomes connects to it. About five minutes, plus the developer’s day.</p><div class="head-actions" style="justify-content:flex-start;margin-top:12px">${track}<button type="button" class="btn" data-act="tour-start">Watch the guided demo</button></div></div></section>`;
+    const pill = (r) => r.setting ? `<span class="pill warn"><span class="dot"></span>Setting up · step ${r.step} of 6</span>` : statusPill(r.x.status);
+    return `${head({ title: 'Applications', kind: 'data', lead: 'Every application REKA tracks for its organisations. Track a new one, or pick up one being set up.', state: `${stateWord()} · ${rows.length} application${rows.length === 1 ? '' : 's'}${counts.setting ? ` · ${counts.setting} being set up` : ''}`, actions: track })}
+      <div class="apf-strip" role="group" aria-label="Show">${[['all', 'All', counts.all, ''], ['setting', 'Being set up', counts.setting, 'warn'], ['attention', 'Need a person', counts.attention, 'fault'], ['waiting', 'Waiting for approval or data', counts.waiting, 'info'], ['live', 'Live', counts.live, 'ok']].map(([k, l, n, c]) => `<button type="button" class="apf ${c}" data-appf="${k}" aria-pressed="${f === k}"><b>${n}</b><span>${l}</span></button>`).join('')}</div>
+      <section class="card" style="padding:0"><div class="table-wrap"><table class="apps-table"><thead><tr><th>Application</th><th>Organisation</th><th>Status</th><th class="num">Hours saved, 30 days</th><th></th></tr></thead><tbody>
+        ${shown.map((r) => { const href = r.setting ? '#track-' + r.s.id : r.x.href, h = r.x.proj ? hm.calc(totals(r.x.proj, days)) : null;
+          return `<tr ${href ? `class="link" data-go="${href.slice(1)}" tabindex="0"` : ''}><td><span class="app-cell"><span class="ico ${r.setting ? 'warn' : 'info'}">${icon('box', 'sm')}</span><span><span class="name">${esc(r.x.name)}</span><span class="sub">${esc(r.p.name)} · ${esc(r.p.kind)}</span></span></span></td><td><a href="#organisation-${r.c.id}" data-stop="1">${esc(r.c.short)}</a></td><td>${pill(r)}</td><td class="num">${h === null ? '<span class="dash">–</span>' : nf(h) + ' h'}</td><td class="num">${r.setting ? `<a class="btn sm" href="#track-${r.s.id}" data-stop="1">Resume</a>` : href ? `<a class="btn sm ghost" href="${href}" data-stop="1">Open</a>` : ''}</td></tr>`; }).join('') || '<tr><td colspan="5" class="muted">Nothing here.</td></tr>'}
+      </tbody></table></div></section>`;
+  };
+  // ------------------------------------------------------------------ TRACK AN APPLICATION (the main action: one wizard, start to finish)
+  // One question at a time on the left, each saying why it is asked; on the right, what is being set up builds itself
+  // as you answer, animates the connection, and is the review before sending. Back on every step; Exit at any time.
+  const TRK_STEPS = ['Organisation', 'Application', 'Prompt', 'Connection', 'What to measure', 'Baseline and send'];
+  const trkFresh = () => ({ step: 1, orgId: null, isNew: false, q: '', industry: 'Property and real estate', signed: true, name: '', kind: 'documents', sol: '', method: 'link', objective: '', simId: null, copied: false, createdOrg: null, editing: false });
   const trkSim = () => { const t = state.trk; return t && t.simId ? simById(t.simId) : null; };
-  // Where the person is: steps 1 and 2 before anything exists, then the wizard's own steps for the solution.
-  function trkStep() { const t = state.trk, s = trkSim(); return t.sent && s ? 7 : s && s.stage === 'draft' ? 2 + state.wiz.step : t.step; }
+  // Steps 1 and 2 before anything exists (or while editing them), then the connection's own steps.
+  function trkStep() { const t = state.trk, s = trkSim(); return t.sent && s ? 7 : t.editing ? t.step : s && s.stage === 'draft' ? 2 + state.wiz.step : t.step; }
+  const TRK_WHY = {
+    1: 'Everything is reported per organisation, and nothing is collected until their data agreement is signed.',
+    2: 'The kind of work decides which KPIs AI suggests. How it shares decides what, if anything, a developer has to do.',
+    3: 'The application has to share its daily totals before anything can be measured. The prompt tells the developer, or Claude Code, exactly how.',
+    4: 'Outcomes checks the link is real, signed and safe before it collects anything.',
+    5: 'KPIs are what the organisation sees in its reports. Each one is worked out from the figures the application shares.',
+    6: 'Hours saved needs how long the work took before. Someone else approves it, so the number can be trusted.',
+  };
+  const why = (n) => `<p class="tk-why">${icon('insight', 'sm')}<span><b>Why:</b> ${TRK_WHY[n]}</span></p>`;
+  // How linking works, drawn as numbered steps, for each way of sharing.
+  function howLink(method) {
+    const S = {
+      link: [['documents', 'The developer adds a read-only link', 'Five GET routes under /internal/measure/v1 on the application’s own server. Its code and data stay as they are.'], ['lock', 'It gets its own key', 'An ax_msr_ key from the developer link. The application checks every call from Outcomes is signed with it.'], ['check', 'They run the contract test', '17 checks: signing, daily figures, no personal data, errors.'], ['link', 'They paste the address', 'Outcomes calls it, runs the same checks and reads one day of figures.'], ['clock', 'Every night at 06:00', 'Outcomes reads yesterday’s totals. It never writes, and never sees records or people.']],
+      axle: [['box', 'The product already shares', 'Yara and Janka send daily totals to AXLE. Nothing to build.'], ['organisation', 'Outcomes finds the workspace', 'It asks AXLE for this organisation’s workspace in the product.'], ['check', 'One day is read and checked', 'The same checks as a measurement link.'], ['clock', 'Every night at 06:00', 'Yesterday’s totals, read only.']],
+      sheet: [['sheet', 'Share the template', 'One row a day, one column a figure. Totals only.'], ['upload', 'Someone uploads it weekly', 'From the organisation or REKA.'], ['check', 'Each file is checked', 'Columns, missing days, no personal data.'], ['analytics', 'Figures appear', 'Missing days stay gaps, never zeros.']],
+    }[method];
+    return `<div class="tk-how" aria-label="How linking works">${S.map(([ic, h, d], i) => `<div class="tk-how-s"><span class="n">${icon(ic, 'sm')}</span><b>${i + 1}. ${h}</b><span>${d}</span></div>`).join('')}</div>`;
+  }
+  const PROMPT_ASKS = ['Inspect the application and propose its metrics, then stop for a person to approve', 'Add five read-only GET routes under /internal/measure/v1', 'Daily totals only: no personal data, missing days left out, never zero', 'Check every call is signed with the application’s own key', 'Pass the 17-check contract test, then paste the address', 'Hand over a note: each metric, where it comes from, any baseline found'];
   function trkVisual(n) {
     const t = state.trk, s = trkSim(), w = state.wiz, o = s ? orgOf(s) : t.orgId ? state.orgs.find((x) => x.id === t.orgId) : null;
-    const orgName = o ? o.name : t.isNew && t.q.trim() ? t.q.trim() : '', K = KINDS[t.kind], projName = s ? s.project.name : t.name.trim(), solName = s ? (w.solName || s.name) : (t.sol.trim() || K.sol);
-    const m = WMETHODS[s ? w.method : t.method], tests = s ? w.tests : [], done = tests.filter((x) => x[1] === 'ok').length;
+    const orgName = t.editing && t.isNew && t.q.trim() ? t.q.trim() : o ? o.name : t.isNew && t.q.trim() ? t.q.trim() : '';
+    const K = KINDS[t.editing || !s ? t.kind : s.kind], appName = s && !t.editing ? (w.solName || s.name) : t.sol.trim(), projName = s && !t.editing ? s.project.name : (t.name.trim() || appName);
+    const m = WMETHODS[s && !t.editing ? w.method : t.method], tests = s ? w.tests : [], done = tests.filter((x) => x[1] === 'ok').length;
     const st = !s ? 'idle' : w.tested ? 'live' : tests.length ? 'test' : n >= 4 ? 'wait' : 'idle';
     const seen = t.vis || {}; t.vis = {};
     const props = s && w.proposals ? kpiProposals(s).filter((p) => w.keep[p.id]) : [], b = w.baseline, Kx = s ? kindOf(s) : K;
@@ -1554,12 +1658,10 @@
     const flow = `<div class="cwire" aria-hidden="true"><span class="track"></span><i></i><i></i><i></i></div>`;
     const word = st === 'live' ? 'Connected' : st === 'test' ? `Checking, ${done} of ${tests.length}` : st === 'wait' ? ({ link: 'Waiting for the developer', axle: 'Ready to test', sheet: 'Waiting for a file' })[w.method] : 'Not connected yet';
     return `<aside class="tvis" aria-label="What you are setting up"><div class="tvis-head"><span class="eyebrow">What you’re setting up</span>${n === 7 ? '<span class="pill info"><span class="dot"></span>Sent for approval</span>' : st === 'live' ? '<span class="pill ok"><span class="dot"></span>Connected</span>' : ''}</div>
-      ${node('tv-org', 'organisation', 'Organisation', orgName, o ? (o.signed === false ? 'Data agreement not signed' : 'Data agreement signed') : t.isNew && orgName ? 'New' : '', !!orgName)}
-      ${link(!!orgName && !!projName)}
-      ${node('tv-proj', 'projects', 'Project', projName, projName ? esc(K.label) : '', !!projName)}
-      ${link(!!projName && (n >= 3 || !!s))}
+      ${node('tv-org', 'organisation', 'Organisation', orgName, o && !(t.editing && t.isNew) ? (o.signed === false ? 'Data agreement not signed' : 'Data agreement signed') : orgName ? 'New' : '', !!orgName)}
+      ${link(!!orgName && !!appName)}
       <div class="cmap vert" data-st="${st}">
-        ${node('tv-sol', 'box', 'Solution', projName ? solName : '', projName ? `${esc(orgName || 'Their')}’s system` : '', !!s && st === 'live', st === 'live' ? 'ok' : '')}
+        ${node('tv-app', 'box', 'Application', appName, appName ? `${esc(projName)} · ${esc(K.label)}` : '', !!appName, st === 'live' ? 'ok' : '')}
         ${flow}
         <div class="tnode door ${st === 'live' || (st === 'test' && done >= Math.ceil(tests.length / 2)) ? 'ok on' : ''}"><span class="cic">${icon(m.ic)}</span><span class="tl">How it shares</span><b class="nm">${m.door}</b><span class="cword">${word}</span></div>
         ${flow}
@@ -1581,15 +1683,17 @@
     if (s && !w.baseline) { const Kb = kindOf(s); w.baseline = { method: 'sample', mid: Kb.base.mid, low: Kb.base.low, high: Kb.base.high, n: 20, period: `${day(M.addDays(today(), 5))} to ${day(M.addDays(today(), 9))}`, note: '' }; }
     const shown = `${n}:${s ? w.tested : ''}:${s ? w.method : t.isNew}`, enter = t.shown !== shown; t.shown = shown;
     const steps = `<ol class="tsteps">${TRK_STEPS.map((l, i) => `<li class="${i + 1 < n ? 'done' : i + 1 === n ? 'now' : ''}" ${i + 1 === n ? 'aria-current="step"' : ''}><b>${i + 1 < n ? icon('check', 'sm') : i + 1}</b><span>${l}</span></li>`).join('')}<li class="then"><span>Then: approval and first figures</span></li></ol>`;
-    const back = n > 1 && n !== 3 && n !== 7 && !(n === 4 && s && w.tested) ? `<button type="button" class="btn ghost" data-act="trk-back">${icon('back', 'sm')}Back</button>` : n === 3 ? '<span></span>' : `<a class="btn ghost" href="#home">Cancel</a>`;
-    const foot = (label, attrs = '', extra = '', cls = 'btn primary lg') => `<div class="wfoot">${back}<span class="head-actions">${extra}<button type="button" class="${cls}" ${attrs}>${label}</button></span></div>`;
+    const back = n === 1 ? '<button type="button" class="btn ghost" data-act="trk-exit">Cancel</button>' : `<button type="button" class="btn ghost" data-act="trk-back">${icon('back', 'sm')}Back</button>`;
+    // The footer: Back on the left, then secondary and main actions. On phones the main action is first and full width.
+    const foot = (label, attrs = '', extra = '', cls = 'btn primary lg') => `<div class="wfoot tk-foot">${back}<span class="tk-acts">${extra}<button type="button" class="${cls}" ${attrs}>${label}</button></span></div>`;
+    const tq = (k, h, p) => `<div class="tq"><span class="tq-n">${k} of 6</span><h2>${h}</h2>${p ? `<p class="muted">${p}</p>` : ''}</div>`;
     let body = '';
     if (n === 1) {
       const q = t.q.trim(), list = state.orgs, exact = list.some((o) => o.name.toLowerCase() === q.toLowerCase());
-      body = `<div class="tq"><span class="tq-n">1 of 6</span><h2>Which organisation is this for?</h2><p class="muted">Pick one, or type a new name to add it.</p></div>
+      body = `${tq(1, 'Which organisation is this for?', 'Pick one, or type a new name to add it.')}${why(1)}
         <div class="field"><label for="tk-q" class="sr-only">Organisation</label><div class="tk-search">${icon('search', 'sm')}<input id="tk-q" autocomplete="off" placeholder="Type an organisation’s name" value="${esc(t.q)}"></div></div>
         <div class="tk-orgs" role="listbox" aria-label="Organisations">
-          ${list.map((o) => `<button type="button" class="tk-org" role="option" data-trk-org="${o.id}" aria-selected="${t.orgId === o.id}" data-name="${esc(o.name.toLowerCase())}"><span class="avatar" style="border-radius:10px">${initials(o.name)}</span><span><b class="ink">${esc(o.name)}</b><small>${esc(o.industry)} · ${simsOf(o).length} project${simsOf(o).length === 1 ? '' : 's'}</small></span>${icon('check', 'sm')}</button>`).join('')}
+          ${list.map((o) => `<button type="button" class="tk-org" role="option" data-trk-org="${o.id}" aria-selected="${t.orgId === o.id && !t.isNew}" data-name="${esc(o.name.toLowerCase())}"><span class="avatar" style="border-radius:10px">${initials(o.name)}</span><span><b class="ink">${esc(o.name)}</b><small>${esc(o.industry)} · ${simsOf(o).length} application${simsOf(o).length === 1 ? '' : 's'}</small></span>${icon('check', 'sm')}</button>`).join('')}
           <button type="button" class="tk-org add" data-trk-new="1" aria-selected="${t.isNew}" ${q && !exact ? '' : 'hidden'} id="tk-add"><span class="avatar" style="border-radius:10px;background:var(--primary-tint);color:var(--primary-ink)">${icon('plus', 'sm')}</span><span><b class="ink">Add “<span id="tk-add-name">${esc(q)}</span>”</b><small>A new organisation</small></span>${icon('check', 'sm')}</button>
         </div>
         ${!list.length && !q ? '<p class="small muted">No organisations yet. Type the first one’s name.</p>' : ''}
@@ -1598,54 +1702,61 @@
         ${foot('Continue', `data-act="trk-next" ${t.orgId || (t.isNew && q) ? '' : 'disabled'}`)}`;
     }
     if (n === 2) {
-      body = `<div class="tq"><span class="tq-n">2 of 6</span><h2>What’s the project?</h2><p class="muted">The name ${esc(t.isNew ? t.q.trim() : (state.orgs.find((o) => o.id === t.orgId) || {}).name || 'they')} use for it.</p></div>
-        <div class="field"><label for="tk-name" class="sr-only">Project name</label><input id="tk-name" class="tk-big" placeholder="e.g. Lease abstraction" value="${esc(t.name)}" autocomplete="off"></div>
+      const orgName = t.isNew ? t.q.trim() : (state.orgs.find((o) => o.id === t.orgId) || {}).name || 'the organisation';
+      body = `${tq(2, 'Which application are you tracking?', `What your team calls the application you built for ${esc(orgName)}.`)}${why(2)}
+        <div class="field"><label for="tk-sol" class="sr-only">Application name</label><input id="tk-sol" class="tk-big" placeholder="e.g. ${esc(K.sol)}" value="${esc(t.sol)}" autocomplete="off"></div>
         <div class="field"><span class="lab">Kind of work <span class="muted" style="font-weight:400">· steers the KPIs AI suggests</span></span><div class="tk-kinds">${Object.entries(KINDS).map(([k, x]) => `<button type="button" class="tk-kind" data-trk-kind="${k}" aria-pressed="${t.kind === k}">${icon(x.icon, 'sm')}<span>${x.label}</span></button>`).join('')}</div></div>
-        <div class="form-grid"><div class="field"><label for="tk-sol">The solution is called</label><input id="tk-sol" value="${esc(t.sol || K.sol)}"></div>
-          <div class="field"><span class="lab">It shares figures by</span><div class="seg tk-seg" role="group" aria-label="How it shares">${Object.entries(WMETHODS).map(([k, x]) => `<button type="button" data-trk-method="${k}" aria-pressed="${t.method === k}">${{ link: 'Link', axle: 'AntaraX product', sheet: 'Spreadsheet' }[k]}</button>`).join('')}</div><span class="help">${esc(WMETHODS[t.method].effort)}${t.method === 'link' ? '. Best for anything REKA builds' : ''}</span></div></div>
+        <div class="field"><span class="lab">How it will share its figures</span><div class="tk-methods">${Object.entries(WMETHODS).map(([k, x]) => `<button type="button" class="tk-method" data-trk-method="${k}" aria-pressed="${t.method === k}">${icon(x.ic, 'sm')}<b>${{ link: 'Measurement link', axle: 'AntaraX product', sheet: 'Spreadsheet' }[k]}</b><span>${esc(x.effort)}</span>${x.tag ? `<i>${x.tag}</i>` : ''}</button>`).join('')}</div></div>
+        <div class="field"><label for="tk-name">The project it belongs to <span class="muted" style="font-weight:400">· the name ${esc(orgName)} uses, for reports</span></label><input id="tk-name" placeholder="${esc(t.sol.trim() || 'e.g. Lease abstraction')}" value="${esc(t.name)}" autocomplete="off"></div>
         <details class="more"><summary>The outcome, in their words (you can add it later)</summary><div class="field" style="margin-top:8px"><textarea id="tk-obj" rows="2">${esc(t.objective || K.objective)}</textarea></div></details>
-        ${foot(t.method === 'link' ? 'Create and get the prompt' : 'Create and connect', `data-act="trk-next" ${t.name.trim() ? '' : 'disabled'}`)}`;
+        ${foot(t.simId ? 'Save and continue' : t.method === 'link' ? 'Create and get the prompt' : 'Create and connect', `data-act="trk-next" ${t.sol.trim() ? '' : 'disabled'}`)}`;
     }
     if (n === 3 && s) {
       const solName = w.solName || s.name;
-      if (w.method === 'link') body = `<div class="tq"><span class="tq-n">3 of 6</span><h2>Send this prompt to the developer</h2><p class="muted">Paste it into Claude Code or Codex, or send it to whoever builds ${esc(solName)}. About a day of work.</p></div>
-        <div class="tk-prompt"><div class="code-block prompt" id="dev-prompt">${esc(devPrompt(s))}</div><button type="button" class="btn primary lg tk-copy ${t.copied ? 'copied' : ''}" data-act="trk-copy">${t.copied ? `${icon('check', 'sm')}Copied` : `${icon('copy', 'sm')}Copy prompt`}</button></div>
-        <p class="small muted">${icon('link', 'sm')} Or send the <button type="button" class="lnk" data-act="copy-devlink">developer link</button>: the prompt, their own key, and the test runs when they paste the address.</p>
-        ${foot('I’ve sent it', 'data-act="w-next"', '', 'btn lg')}`;
-      if (w.method === 'axle') body = `<div class="tq"><span class="tq-n">3 of 6</span><h2>Which product is it?</h2><p class="muted">AntaraX products already share daily totals. Nothing to build, no prompt.</p></div>
+      if (w.method === 'link') body = `${tq(3, 'Send this prompt to the developer', `Paste it into Claude Code or Codex in ${esc(solName)}’s code, or send it to whoever builds it. About a day of work.`)}${why(3)}
+        <div class="tk-sec"><span class="lab">How linking works</span>${howLink('link')}</div>
+        <div class="tk-sec"><span class="lab">What the prompt asks for</span><ul class="tk-asks">${PROMPT_ASKS.map((x) => `<li>${icon('check', 'sm')}<span>${esc(x)}</span></li>`).join('')}</ul></div>
+        <details class="more tk-full"><summary>Read the full prompt · ${devPrompt(s).split('\n').length} lines</summary><div class="code-block prompt" id="dev-prompt">${esc(devPrompt(s))}</div></details>
+        <p class="small muted">${icon('link', 'sm')} Or send the <button type="button" class="lnk" data-act="copy-devlink">developer link</button>: the same prompt, the integration pack, their own key, and the test runs when they paste the address.</p>
+        ${t.copied ? foot(`I’ve sent it${icon('chev', 'sm')}`, 'data-act="w-next"', `<button type="button" class="btn lg tk-copy copied" data-act="trk-copy">${icon('check', 'sm')}Copied</button>`) : foot(`${icon('copy', 'sm')}Copy prompt`, 'data-act="trk-copy"', '', 'btn primary lg tk-copy')}`;
+      if (w.method === 'axle') body = `${tq(3, 'Which product is it?', 'AntaraX products already share daily totals with AXLE. Nothing to build, no prompt.')}${why(3)}
         <div class="tk-kinds">${['Yara', 'Janka'].map((p) => `<button type="button" class="tk-kind" data-trk-prod="${p}" aria-pressed="${w.product === p}">${icon('box', 'sm')}<span>${p}</span></button>`).join('')}</div>
+        <div class="tk-sec"><span class="lab">How it connects</span>${howLink('axle')}</div>
         ${foot('Connect', 'data-act="w-next"')}`;
-      if (w.method === 'sheet') body = `<div class="tq"><span class="tq-n">3 of 6</span><h2>Share the spreadsheet template</h2><p class="muted">One row a day, one column a figure. Totals only, no names.</p></div>
-        <div class="tk-prompt"><div class="code-block" id="w-tpl">${esc(sheetTemplate(kindOf(s)))}</div><button type="button" class="btn primary lg tk-copy ${t.copied ? 'copied' : ''}" data-act="trk-copy">${t.copied ? `${icon('check', 'sm')}Copied` : `${icon('copy', 'sm')}Copy columns`}</button></div>
-        ${foot('Next: the first file', 'data-act="w-next"', '', 'btn lg')}`;
+      if (w.method === 'sheet') body = `${tq(3, 'Share the spreadsheet template', 'One row a day, one column a figure. Totals only, no names.')}${why(3)}
+        <div class="tk-sec"><span class="lab">How it works</span>${howLink('sheet')}</div>
+        <div class="code-block" id="w-tpl">${esc(sheetTemplate(kindOf(s)))}</div>
+        ${t.copied ? foot(`Next: the first file${icon('chev', 'sm')}`, 'data-act="w-next"', `<button type="button" class="btn lg tk-copy copied" data-act="trk-copy">${icon('check', 'sm')}Copied</button>`) : foot(`${icon('copy', 'sm')}Copy the columns`, 'data-act="trk-copy"', '', 'btn primary lg tk-copy')}`;
     }
     if (n === 4 && s) {
       const solName = w.solName || s.name, testing = w.tests.length && !w.tested, lastOk = w.tests.filter((x) => x[1] === 'ok').length - 1;
       const checks = w.tests.length ? `<div class="checks" aria-live="polite">${w.tests.map(([x, ok], i) => `<div${i === lastOk && !w.tested ? ' class="just"' : ''}><span class="tick ${ok}">${ok === 'ok' ? '✓' : '…'}</span><span>${esc(x)}</span></div>`).join('')}</div>` : '';
+      const how = `<details class="more"><summary>How linking works</summary><div style="margin-top:10px">${howLink(w.method)}</div></details>`;
       if (w.tested) body = `<div class="tq"><span class="tq-n">4 of 6</span><h2 class="tk-win">${icon('check')}${esc(solName)} is connected</h2><p class="muted">Every check passed. It shares 6 figures: 4 ready, 1 with a note, 1 held back because it could identify people.</p></div>
         ${foundChips(kindOf(s))}${checks}
-        ${foot(`Choose what to measure${icon('chev', 'sm')}`, 'data-act="w-next"', `<a class="btn" href="#organisation-${s.orgId}">Later</a>`)}`;
-      else if (testing) body = `<div class="tq"><span class="tq-n">4 of 6</span><h2>Testing the connection</h2><p class="muted">Checking it is signed and reading one day of figures. Nothing is saved until every check passes.</p></div>${checks}`;
-      else if (w.method === 'sheet') body = `<div class="tq"><span class="tq-n">4 of 6</span><h2>Waiting for the first file</h2><p class="muted">Upload a week of figures saved from the template. It is checked straight away.</p></div>
+        ${foot(`Choose what to measure${icon('chev', 'sm')}`, 'data-act="w-next"')}`;
+      else if (testing) body = `${tq(4, 'Testing the connection', 'Checking it is signed and reading one day of figures. Nothing is saved until every check passes.')}${checks}`;
+      else if (w.method === 'sheet') body = `${tq(4, 'Waiting for the first file', 'Upload a week of figures saved from the template. It is checked straight away.')}${why(4)}
         <div class="tk-drop" id="tk-drop"><span class="radar">${icon('sheet')}</span><div><b class="ink">Drop the CSV here</b><p class="small muted">or</p><div class="head-actions" style="justify-content:center"><button type="button" class="btn" data-act="w-pickfile">${icon('upload', 'sm')}Choose a file</button><button type="button" class="btn ghost" data-act="w-examplefile">Use the example file</button></div></div><input type="file" id="w-file" accept=".csv,text/csv" hidden></div>
-        ${foot('Waiting for the file', 'disabled', `<a class="btn" href="#organisation-${s.orgId}">Leave and come back</a>`)}`;
-      else body = `<div class="tq"><span class="tq-n">4 of 6</span><h2>Waiting for ${esc(solName)}</h2><p class="muted">The developer adds the link and runs the contract test. When they paste the address in their developer link, Outcomes tests it at once and tells you. You can leave this page.</p></div>
-        <div class="tk-listen"><span class="radar">${icon('lock')}</span><div><b class="ink">Listening for the link</b><p class="small muted">Prompt sent ${esc((w.promptAt || now()).replace(' 2026,', ''))} · usually about a day</p><label class="check" style="margin-top:8px"><input type="checkbox" id="w-notify" ${w.notify === false ? '' : 'checked'}><span>Email me when it connects</span></label></div></div>
-        <details class="more"><summary>Have the address? Test it now</summary><div class="with-btn" style="margin-top:8px"><input id="w-url" class="mono" aria-label="Link address" value="${esc(w.url)}"><button type="button" class="btn" data-act="w-test">Test</button></div></details>
+        ${how}${foot('Waiting for the file', 'disabled', '<button type="button" class="btn lg" data-act="trk-exit">Leave and come back</button>')}`;
+      else body = `${tq(4, `Waiting for ${esc(solName)}`, 'The developer adds the link and runs the contract test. When they paste the address in their developer link, Outcomes tests it at once and tells you. You can leave this page.')}${why(4)}
+        <div class="tk-listen"><span class="radar">${icon('lock')}</span><div><b class="ink">Listening for the link</b><p class="small muted">Prompt sent ${esc((w.promptAt || now()).replace(' 2026,', ''))} · usually about a day</p><button type="button" class="tk-toggle sm" role="switch" aria-checked="${w.notify !== false}" data-trk-notify="1"><span class="switch" aria-hidden="true"></span><span>Email me when it connects</span></button></div></div>
+        <details class="more"><summary>Have the address? Test it now</summary><div class="tk-urlrow"><input id="w-url" class="mono" aria-label="Link address" value="${esc(w.url)}"><button type="button" class="btn" data-act="w-test">Test</button></div></details>
+        ${how}
         <div class="demo-bar"><span class="tag">MOCK CONTROLS</span><button type="button" class="btn sm" data-act="w-devdone">The developer finished</button></div>
-        ${foot('Waiting for the connection', 'disabled', `<a class="btn" href="#organisation-${s.orgId}">Leave and come back</a>`)}`;
+        ${foot('Waiting for the connection', 'disabled', '<button type="button" class="btn lg" data-act="trk-exit">Leave and come back</button>')}`;
     }
     if (n === 5 && s) {
       const props = kpiProposals(s), solName = w.solName || s.name, kept = props.filter((p) => w.keep[p.id]).length;
-      body = !w.proposals ? `<div class="tq"><span class="tq-n">5 of 6</span><h2>What should we measure?</h2></div><div class="thinking" style="padding:4px 0"><img src="${SPARK}" alt=""><span>Reading what ${esc(solName)} shares and what ${esc(s.project.name)} is for…</span></div><div class="grid" style="gap:10px"><div class="skel" style="height:64px"></div><div class="skel" style="height:64px"></div><div class="skel" style="height:64px"></div></div>`
-        : `<div class="tq"><span class="tq-n">5 of 6</span><h2>What should we measure?</h2><p class="muted">Suggested from what ${esc(solName)} shares and what ${esc(s.project.name)} is for. Keep or drop each.</p>${aiMark('Suggested by AI. You decide.')}</div>
+      body = !w.proposals ? `${tq(5, 'What should we measure?')}<div class="thinking" style="padding:4px 0"><img src="${SPARK}" alt=""><span>Reading what ${esc(solName)} shares and what ${esc(s.project.name)} is for…</span></div><div class="grid" style="gap:10px"><div class="skel" style="height:64px"></div><div class="skel" style="height:64px"></div><div class="skel" style="height:64px"></div></div>`
+        : `${tq(5, 'What should we measure?', `Suggested from what ${esc(solName)} shares and what ${esc(s.project.name)} is for. Keep or drop each.`)}${why(5)}${aiMark('Suggested by AI. You decide.')}
         <div class="tk-picks">${props.map((p, i) => `<div class="tk-pick ${w.keep[p.id] ? 'on' : ''}" style="--i:${i}"><div class="tk-pick-b"><b class="ink">${esc(p.name)}</b><span class="d">${esc(p.why)}</span><span class="meta-line" style="margin:2px 0 0"><span class="pill idle">${p.kind}</span>${q(p.quality)}${p.needsBaseline ? `<span class="small muted">${icon('target', 'sm')} Needs a baseline, next</span>` : ''}</span><details class="more"><summary>How it’s worked out</summary><div class="small">${esc(p.formula)}</div></details></div><button type="button" class="switch" role="switch" aria-checked="${!!w.keep[p.id]}" aria-label="Measure ${esc(p.name)}" data-keep="${p.id}"></button></div>`).join('')}</div>
         <div class="tk-gap">${icon('insight', 'sm')}<span><b class="ink">Accuracy</b> would be worth measuring, but ${esc(solName)} doesn’t count corrections yet.</span><button type="button" class="btn sm" data-act="add-gap">Ask the developer</button></div>
         ${foot(`Continue with ${kept} KPI${kept === 1 ? '' : 's'}`, `data-act="w-next" ${kept ? '' : 'disabled'}`)}`;
     }
     if (n === 6 && s) {
       const b = w.baseline, Ks = kindOf(s), o = orgOf(s);
-      body = `<div class="tq"><span class="tq-n">6 of 6</span><h2>${w.keep.impact ? `How long does a ${Ks.noun} take by hand?` : 'Ready to send'}</h2><p class="muted">${w.keep.impact ? `Hours saved compares today with before. Agree it with ${esc(o.name)}: it appears in every report.` : 'None of the KPIs you chose need a baseline.'}</p></div>
+      body = `${tq(6, w.keep.impact ? `How long does a ${Ks.noun} take by hand?` : 'Ready to send', w.keep.impact ? `Hours saved compares today with before. Agree it with ${esc(o.name)}: it appears in every report.` : 'None of the KPIs you chose need a baseline.')}${why(6)}
         ${w.keep.impact ? `<div class="tk-bases">${[['sample', 'clock', 'Time a sample', `20 or more ${Ks.nouns}, timed by hand. Most trusted`], ['history', 'documents', 'Past records', 'From their own system, if it logged the time'], ['estimate', 'people', 'Their estimate', 'Quickest. Labelled as an estimate'], ['none', 'target', 'Not yet', 'Hours saved waits for one']].map(([k, ic, tt, d]) => `<button type="button" class="tk-base" data-bmethod="${k}" aria-pressed="${b.method === k}">${icon(ic, 'sm')}<b>${tt}</b><span>${d}</span></button>`).join('')}</div>
         ${b.method !== 'none' ? `<div class="tk-mins"><div class="field"><label for="b-mid">Typical</label><div class="tk-unit"><input id="b-mid" type="number" inputmode="decimal" value="${b.mid}"><span>min</span></div></div><div class="field"><label for="b-low">Fastest</label><div class="tk-unit"><input id="b-low" type="number" value="${b.low}"><span>min</span></div></div><div class="field"><label for="b-high">Slowest</label><div class="tk-unit"><input id="b-high" type="number" value="${b.high}"><span>min</span></div></div>${b.method === 'sample' ? `<div class="field"><label for="b-n">Timed</label><div class="tk-unit"><input id="b-n" type="number" value="${b.n}"><span>${esc(Ks.nouns)}</span></div></div>` : ''}</div>
           <div class="field"><label for="b-note">Evidence</label><input id="b-note" placeholder="${b.method === 'sample' ? 'e.g. Timing sheet signed by the finance lead' : 'Where the number comes from'}" value="${esc(b.note)}"></div>` : ''}` : ''}
@@ -1656,9 +1767,9 @@
       const x = t.sent;
       body = `<div class="tq"><h2 class="tk-win">${icon('check')}Sent for approval</h2><p class="muted">${x.kpis} KPI${x.kpis === 1 ? '' : 's'}${x.base ? ' and the baseline' : ''} for ${esc(s.name)} are with Aisyah Rahman. Nothing counts until they are approved.</p></div>
         <ol class="wait-steps tk-next"><li class="done"><b>${icon('check', 'sm')}</b><span>Connected, and what to measure chosen</span></li><li class="now"><b>2</b><span>Aisyah Rahman approves the KPIs${x.base ? ' and baseline' : ''}</span></li><li><b>3</b><span>The first collection runs that night, 06:00</span></li><li><b>4</b><span>First figures next morning; the report is drafted on the 1st</span></li></ol>
-        <div class="wfoot"><button type="button" class="btn ghost" data-act="trk-new">${icon('plus', 'sm')}Start tracking another</button><a class="btn primary lg" href="#sim-${s.id}">Open ${esc(s.name)}${icon('chev', 'sm')}</a></div>`;
+        <div class="wfoot tk-foot"><a class="btn ghost" href="#applications">All applications</a><span class="tk-acts"><button type="button" class="btn lg" data-act="trk-new">${icon('plus', 'sm')}Track another</button><a class="btn primary lg" href="#sim-${s.id}">Open ${esc(s.name)}${icon('chev', 'sm')}</a></span></div>`;
     }
-    return `${head({ title: 'Start tracking', kind: 'manage', lead: 'From the organisation to what you measure, one question at a time.', state: s ? `${esc(orgOf(s).name)} · ${esc(s.project.name)}` : undefined, actions: s ? '<button type="button" class="btn sm ghost" data-act="trk-new">Start another</button>' : '' })}
+    return `${head({ title: 'Track an application', kind: 'manage', lead: n === 7 ? 'Done. It is with the approver.' : 'From the organisation to what you measure, one question at a time. You can leave at any step and pick it up from Applications.', state: s ? `${esc(orgOf(s).name)} · ${esc(w.solName || s.name)}` : undefined, actions: n === 7 ? '' : `<button type="button" class="btn sm ghost" data-act="trk-exit">${icon('x', 'sm')}Exit</button>` })}
       <div class="track">${steps}<div class="track-grid"><section class="card tq-card${enter ? ' enter' : ''}" id="wpanel">${body}</section>${trkVisual(n)}</div></div>`;
   };
   pages.track.after = () => {
@@ -1677,18 +1788,20 @@
       };
       q.addEventListener('input', () => { if (t.orgId) { t.orgId = null; $$('.tk-org').forEach((b) => b.setAttribute('aria-selected', 'false')); } sync(); });
       q.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); const v = q.value.trim(), ex = state.orgs.find((o) => o.name.toLowerCase() === v.toLowerCase()); if (ex) { t.orgId = ex.id; t.isNew = false; } else if (v) { t.isNew = true; } render(); const f = $('#tk-q'); if (f) f.focus(); } });
-      sync(); if (t.step === 1 && !t.orgId) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); }
+      sync(); if (!t.orgId && !t.isNew) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); }
     }
-    const nm = $('#tk-name');
-    if (nm) {
-      nm.addEventListener('input', () => { t.name = nm.value; const v = $('#tv-proj .nm'); if (v) v.innerHTML = nm.value.trim() ? esc(nm.value.trim()) : '<span class="ph">Not chosen yet</span>'; $('#tv-proj').classList.toggle('on', !!nm.value.trim()); const nx = $('[data-act=trk-next]'); if (nx) nx.disabled = !nm.value.trim(); const sv = $('#tv-sol .nm'); if (sv) sv.innerHTML = nm.value.trim() ? esc(t.sol.trim() || KINDS[t.kind].sol) : '<span class="ph">Not chosen yet</span>'; });
-      nm.addEventListener('keydown', (e) => { if (e.key === 'Enter' && nm.value.trim()) { e.preventDefault(); trkNext(); } });
-      if (!nm.value) nm.focus();
+    // Application and project names update the picture as they are typed.
+    const paintApp = () => { const v = $('#tv-app .nm'), sub = $('#tv-app .sub'), a = t.sol.trim(); if (v) v.innerHTML = a ? esc(a) : '<span class="ph">Not chosen yet</span>'; const n = $('#tv-app'); if (n) n.classList.toggle('on', !!a); if (sub) sub.textContent = a ? `${t.name.trim() || a} · ${KINDS[t.kind].label}` : ''; else if (a && n) n.insertAdjacentHTML('beforeend', `<span class="sub">${esc(t.name.trim() || a)} · ${esc(KINDS[t.kind].label)}</span>`); const nx = $('[data-act=trk-next]'); if (nx) nx.disabled = !a; const pn = $('#tk-name'); if (pn) pn.placeholder = a || 'e.g. Lease abstraction'; };
+    const so = $('#tk-sol');
+    if (so) {
+      so.addEventListener('input', () => { t.sol = so.value; paintApp(); });
+      so.addEventListener('keydown', (e) => { if (e.key === 'Enter' && so.value.trim()) { e.preventDefault(); trkNext(); } });
+      if (!so.value) so.focus();
     }
-    const so = $('#tk-sol'); if (so) so.addEventListener('input', () => { t.sol = so.value; t.solTouched = true; const v = $('#tv-sol .nm'); if (v && t.name.trim()) v.textContent = so.value.trim() || KINDS[t.kind].sol; });
+    const nm = $('#tk-name'); if (nm) { nm.addEventListener('input', () => { t.name = nm.value; paintApp(); }); nm.addEventListener('keydown', (e) => { if (e.key === 'Enter' && t.sol.trim()) { e.preventDefault(); trkNext(); } }); }
     const ob = $('#tk-obj'); if (ob) ob.addEventListener('input', () => { t.objective = ob.value; });
     pages.connect.after();
-    ['b-mid', 'b-low', 'b-high', 'b-n'].forEach((id) => { const el = $('#' + id); if (el) el.addEventListener('input', () => { const b = state.wiz.baseline, s = trkSim(), nm = $('#tv-base .nm'), sub = $('#tv-base .sub'); if (nm && s) nm.textContent = `${b.mid} min per ${kindOf(s).noun}`; if (sub) sub.textContent = `${b.low} to ${b.high} min · ${({ sample: `timed sample of ${b.n}`, history: 'past records', estimate: 'their estimate' })[b.method]}`; }); });
+    ['b-mid', 'b-low', 'b-high', 'b-n'].forEach((id) => { const el = $('#' + id); if (el) el.addEventListener('input', () => { const b = state.wiz.baseline, s = trkSim(), nm2 = $('#tv-base .nm'), sub = $('#tv-base .sub'); if (nm2 && s) nm2.textContent = `${b.mid} min per ${kindOf(s).noun}`; if (sub) sub.textContent = `${b.low} to ${b.high} min · ${({ sample: `timed sample of ${b.n}`, history: 'past records', estimate: 'their estimate' })[b.method]}`; }); });
     const dz = $('#tk-drop'); if (dz) {
       ['dragenter', 'dragover'].forEach((ev) => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.add('over'); }));
       dz.addEventListener('dragleave', () => dz.classList.remove('over'));
@@ -1697,19 +1810,38 @@
   };
   function trkNext() {
     const t = state.trk;
-    if (t.step === 1) { if (!(t.orgId || (t.isNew && t.q.trim()))) return; t.step = 2; render(); return; }
-    if (t.step === 2 && !t.simId) {
-      if (!t.name.trim()) { const el = $('#tk-name'); if (el) { el.setAttribute('aria-invalid', 'true'); el.focus(); } return; }
+    if (t.step === 1 && (t.editing || !t.simId)) { if (!(t.orgId || (t.isNew && t.q.trim()))) return; t.step = 2; render(); window.scrollTo(0, 0); return; }
+    if (t.step === 2) {
+      const app = t.sol.trim(); if (!app) { const el = $('#tk-sol'); if (el) { el.setAttribute('aria-invalid', 'true'); el.focus(); } return; }
       state.mode = 'new';
-      let org = state.orgs.find((o) => o.id === t.orgId);
-      if (!org) { org = newOrg(t.q.trim(), t.industry, t.signed); log(`Added organisation ${org.name}`); }
-      const sol = t.sol.trim() || KINDS[t.kind].sol;
-      const sim = newSim(org, { kind: t.kind, project: t.name.trim(), objective: (t.objective || '').trim() || KINDS[t.kind].objective, sol });
-      log(`Created project ${sim.project.name} for ${org.name}`);
+      let org = state.orgs.find((o) => o.id === t.orgId && !t.isNew);
+      if (!org) { org = newOrg(t.q.trim(), t.industry, t.signed); t.createdOrg = org.id; t.isNew = false; log(`Added organisation ${org.name}`); }
+      const project = t.name.trim() || app, objective = (t.objective || '').trim() || KINDS[t.kind].objective;
+      if (t.simId && trkSim()) {
+        // Back from the prompt: change what was created, and start the connection again if how it shares changed.
+        const s = trkSim(), w = state.wiz;
+        Object.assign(s, { orgId: org.id, kind: t.kind, name: app }); Object.assign(s.project, { name: project, objective });
+        if (w.method !== t.method) Object.assign(w, { method: t.method, tests: [], tested: false, proposals: null, step: 1 });
+        w.solName = app; t.editing = false; t.orgId = org.id; t.copied = false; w.step = 1;
+        log(`Changed ${app} for ${org.name} while setting it up`); render(); window.scrollTo(0, 0); return;
+      }
+      const sim = newSim(org, { kind: t.kind, project, objective, sol: app });
+      log(`Started tracking ${app} (${project}) for ${org.name}`);
       t.simId = sim.id; t.orgId = org.id; state.focusSim = sim.id;
-      state.wiz = Object.assign(freshWizard(), { method: t.method, solName: sol });
-      go('track-' + sim.id); return;
+      state.wiz = Object.assign(freshWizard(), { method: t.method, solName: app });
+      go('track-' + sim.id); window.scrollTo(0, 0); return;
     }
+  }
+  // Exit at any step: keep what was set up (it waits in Applications), delete it, or stay.
+  function trkExit() {
+    const t = state.trk, s = trkSim();
+    closeReason();
+    const el = document.createElement('div'); el.id = 'reason';
+    el.innerHTML = `<div class="scrim" data-act="reason-cancel"></div><form class="card reason" role="dialog" aria-modal="true" aria-labelledby="exit-h" onsubmit="return false">
+      <h2 id="exit-h">${s ? `Leave ${esc(state.wiz.solName || s.name)} for now?` : 'Leave without saving?'}</h2>
+      <p class="small">${s ? 'It stays in Applications as “Setting up”, at this step. Pick it up there at any time, or delete it.' : 'Nothing has been created yet. What you typed is not kept.'}</p>
+      <div class="tk-exit">${s ? `<button type="button" class="btn primary" data-act="trk-keep">Keep it and exit</button><button type="button" class="btn danger" data-act="trk-discard">Delete it</button>` : '<button type="button" class="btn primary" data-act="trk-leave">Leave</button>'}<button type="button" class="btn" data-act="reason-cancel">Stay</button></div></form>`;
+    document.body.appendChild(el); setTimeout(() => { const b = $('#reason .btn'); if (b) b.focus(); }, 0);
   }
   function finishWizard() {
     const w = state.wiz, s = wizSim();
@@ -2899,9 +3031,9 @@
   const tsim = () => simById(T.simId);
   const TOUR = [
     { t: 'Meet Outcomes', d: 'REKA builds AI solutions for organisations. Outcomes shows each organisation what their solution changed. Let’s take a new organisation from nothing to their first report.', go() { setWs('sandbox'); resetWorkspace(true); go('home'); } },
-    { t: 'Start tracking: the organisation', d: 'One wizard, four short steps. Type the organisation’s name: pick it if it exists, or add it. The picture on the right builds as you answer.', mark: '#wpanel', go() { state.trk = Object.assign(trkFresh(), { q: 'Harapan Foods', isNew: true, industry: 'Food and beverage' }); go('track'); } },
-    { t: 'Name the project', d: 'The project’s name, the kind of work (it steers which KPIs AI suggests), the solution and how it shares its figures.', mark: '#wpanel', go() { state.trk = Object.assign(trkFresh(), { step: 2, q: 'Harapan Foods', isNew: true, industry: 'Food and beverage', name: 'Supplier invoices', kind: 'documents', sol: 'Invoice reader', solTouched: true }); go('track'); } },
-    { t: 'Copy the prompt', d: 'Outcomes writes the prompt for the developer, or for Claude Code or Codex. One button copies it and moves on to the connection.', mark: '#wpanel', go() { if (!T.simId && state.trk && state.trk.simId && simById(state.trk.simId)) { T.simId = state.trk.simId; T.orgId = simById(T.simId).orgId; } if (!T.orgId) { const o = newOrg('Harapan Foods', 'Food and beverage'); T.orgId = o.id; log('Added organisation Harapan Foods'); } if (!T.simId) { const s = newSim(state.orgs.find((o) => o.id === T.orgId), { kind: 'documents', project: 'Supplier invoices', sol: 'Invoice reader', vol: 220, history: 14 }); T.simId = s.id; state.focusSim = s.id; state.wiz = freshWizard(); log('Created project Supplier invoices for Harapan Foods'); } wizTo(1); } },
+    { t: 'Track an application: the organisation', d: 'Tracking an application is the main action, at the top of the menu. One wizard, one question at a time. Type the organisation’s name: pick it if it exists, or add it. The picture on the right builds as you answer.', mark: '#wpanel', go() { state.trk = Object.assign(trkFresh(), { q: 'Harapan Foods', isNew: true, industry: 'Food and beverage' }); go('track'); } },
+    { t: 'Name the application', d: 'The application’s name, the kind of work (it steers which KPIs AI suggests) and how it will share its figures. Each step says why it is asked.', mark: '#wpanel', go() { state.trk = Object.assign(trkFresh(), { step: 2, q: 'Harapan Foods', isNew: true, industry: 'Food and beverage', name: 'Supplier invoices', kind: 'documents', sol: 'Invoice reader', solTouched: true }); go('track'); } },
+    { t: 'Copy the prompt', d: 'How linking works, in five steps, and what the prompt asks the developer, or Claude Code, to do. One button copies the full prompt.', mark: '#wpanel', go() { if (!T.simId && state.trk && state.trk.simId && simById(state.trk.simId)) { T.simId = state.trk.simId; T.orgId = simById(T.simId).orgId; } if (!T.orgId) { const o = newOrg('Harapan Foods', 'Food and beverage'); T.orgId = o.id; log('Added organisation Harapan Foods'); } if (!T.simId) { const s = newSim(state.orgs.find((o) => o.id === T.orgId), { kind: 'documents', project: 'Supplier invoices', sol: 'Invoice reader', vol: 220, history: 14 }); T.simId = s.id; state.focusSim = s.id; state.wiz = freshWizard(); log('Created project Supplier invoices for Harapan Foods'); } wizTo(1); } },
     { t: 'Wait for the connection', d: 'The developer adds a small read-only link, about a day of work. Outcomes listens for it; you can leave and are told when it connects.', mark: '#wpanel', go() { wizTo(2); } },
     { t: 'Connected', d: 'Outcomes checks the link is signed and reads one day of figures; each part of the picture lights up as it passes. Anything that could identify people is held back. Then on to what to measure.', mark: '#wpanel', go() { wizTo(2); setTimeout(() => { if (state.tour === 5) runTests(); }, 300); } },
     { t: 'AI suggests the KPIs', d: 'AI reads the figures and the project, and suggests what to measure and why. People keep or drop each one.', mark: '#wpanel', go() { wizTo(3); } },
@@ -2952,10 +3084,10 @@
   const SCREENS = [
     ['Setting up a project, in order', 'Opens in the demo workspace, with the guided demo at that step. Your own workspace is not touched.', true, [
       ['home', 'Overview, first use', 'The checklist from nothing to a first report', 0],
-      ['organisation', 'Start tracking: organisation', 'Pick one, or type a new name to add it', 1],
-      ['projects', 'Start tracking: project', 'Name, kind of work, solution and how it shares', 2],
-      ['copy', 'Start tracking: prompt', 'One button copies it and moves on', 3],
-      ['clock', 'Start tracking: connection', 'Listening for the link; you can leave', 4],
+      ['organisation', 'Track: organisation', 'Pick one, or type a new name to add it', 1],
+      ['box', 'Track: application', 'Name, kind of work, how it shares', 2],
+      ['copy', 'Track: prompt', 'How linking works, and the prompt', 3],
+      ['clock', 'Track: connection', 'Listening for the link; you can leave', 4],
       ['link', 'Connected', 'Each check lights up; what it shares', 5],
       ['target', 'What to measure', 'AI suggests KPIs; keep or drop each', 6],
       ['savings', 'Baseline and send', 'Time by hand, and what goes for approval', 7],
@@ -2966,6 +3098,7 @@
       ['reports', 'The monthly report', 'Drafted for you; a person approves it', 14],
     ]],
     ['Client data, every week', 'Opens in the example workspace: five invented organisations.', false, [
+      ['box', 'Applications', 'Every tracked application, and the ones being set up', 'applications'],
       ['analytics', 'Results', 'Every organisation’s figures', 'results'],
       ['organisation', 'One organisation’s results', 'Figures, summary, reports, client context', 'results-contoh-logistik'],
       ['box', 'A solution', 'Where the time goes; measures; Explore', 'solution-doc-workflow'],
@@ -3050,7 +3183,7 @@
     return [h, null, h];
   }
   let last = '';
-  const TITLES = { results: 'Results', analytics: 'Analytics', ask: 'Ask', signin: 'Sign in', welcome: 'Welcome', home: 'Overview', organisations: 'Organisations', 'new-organisation': 'New organisation', 'new-project': 'New project', connect: 'Connect a solution', approvals: 'Approvals', reports: 'Reports', report: 'Report', settings: 'Settings', guide: 'AXLE guide', adoption: 'Adoption', demo: 'Demo', audit: 'Audit', staff: 'Staff', r8: 'Overview', incidents: 'Incidents', troubleshoot: 'Troubleshoot', jobs: 'Jobs', providers: 'Providers', services: 'Services', configuration: 'Configuration', 'ops-audit': 'Operations audit', links: 'Measurement links', context: 'Client context', screens: 'All screens', track: 'Start tracking' };
+  const TITLES = { results: 'Results', analytics: 'Analytics', ask: 'Ask', signin: 'Sign in', welcome: 'Welcome', home: 'Overview', organisations: 'Organisations', 'new-organisation': 'New organisation', 'new-project': 'New project', connect: 'Connect a solution', approvals: 'Approvals', reports: 'Reports', report: 'Report', settings: 'Settings', guide: 'AXLE guide', adoption: 'Adoption', demo: 'Demo', audit: 'Audit', staff: 'Staff', r8: 'Overview', incidents: 'Incidents', troubleshoot: 'Troubleshoot', jobs: 'Jobs', providers: 'Providers', services: 'Services', configuration: 'Configuration', 'ops-audit': 'Operations audit', links: 'Measurement links', context: 'Client context', screens: 'All screens', track: 'Track an application', applications: 'Applications' };
   // "How this page works" for the standard pages (SPEC §3.6). Pages may pass their own.
   const HOW = {
     home: 'Start with <b>Needs a person</b>: each row says what is wrong and links to the fix; a technical problem opens Troubleshoot in R8. Every figure is worked out from the solutions’ daily figures and opens the list behind it. Hours saved and value are estimates against agreed baselines, always shown with a likely range. Fees need the Commercial right; without it you see a dash, never a zero.',
@@ -3129,14 +3262,31 @@
     'w-examplefile': () => { state.wiz.sheetFile = 'example-week.csv'; runTests(); },
     'w-devdone': () => { runTests(); },
     'trk-next': () => trkNext(),
-    'trk-back': () => { const t = state.trk, n = trkStep(); if (n === 2) t.step = 1; else if (n === 4) { state.wiz.step = 1; t.copied = false; } else if (n >= 5) state.wiz.step--; render(); window.scrollTo(0, 0); },
+    'trk-back': () => {
+      const t = state.trk, n = trkStep(), s = trkSim(), w = state.wiz;
+      if (n === 2) t.step = 1;
+      else if (n === 3 && s) Object.assign(t, { editing: true, step: 2, orgId: s.orgId, isNew: false, q: orgOf(s).name, sol: w.solName || s.name, name: s.project.name === (w.solName || s.name) ? '' : s.project.name, kind: s.kind, method: w.method, objective: s.project.objective });
+      else if (n === 4) { w.step = 1; t.copied = false; }
+      else if (n >= 5) w.step--;
+      render(); window.scrollTo(0, 0);
+    },
+    'trk-exit': () => trkExit(),
+    'trk-keep': () => { const s = trkSim(); closeReason(); if (s) log(`Left ${state.wiz.solName || s.name} at step ${trkStep()} of 6, to finish later`); state.trk = trkFresh(); go('applications'); toast('Kept in Applications. Resume it from there.'); },
+    'trk-leave': () => { closeReason(); state.trk = trkFresh(); go('applications'); },
+    'trk-discard': () => {
+      const t = state.trk, s = trkSim(); closeReason(); if (!s) return;
+      const name = state.wiz.solName || s.name, org = orgOf(s);
+      state.sims = state.sims.filter((x) => x.id !== s.id);
+      if (t.createdOrg && t.createdOrg === s.orgId && !state.sims.some((x) => x.orgId === s.orgId)) state.orgs = state.orgs.filter((o) => o.id !== s.orgId);
+      log(`Deleted ${name} for ${org.name} before it was connected`);
+      state.trk = trkFresh(); state.wiz = freshWizard(); state.focusSim = null; go('applications'); toast(`${name} deleted.`);
+    },
     'trk-new': () => { state.trk = trkFresh(); state.wiz = freshWizard(); go('track'); },
     'trk-copy': () => {
       const t = state.trk, w = state.wiz, s = wizSim(); if (!s) return;
       copyText(w.method === 'sheet' ? sheetTemplate(kindOf(s)) : devPrompt(s), w.method === 'sheet' ? 'Columns copied. Share them with whoever fills in the sheet.' : 'Prompt copied. Send it to the developer.');
       if (w.method === 'link') { w.promptAt = now(); log(`Copied the developer prompt for ${w.solName || s.name}`); }
       t.copied = true; render();
-      setTimeout(() => { if (state.trk === t && w.step === 1 && /^#track/.test(location.hash)) { w.step = 2; render(); } }, reduceMotion ? 0 : 900);
     },
     'w-test': () => { const w = state.wiz, u = $('#w-url'); if (u) w.url = u.value.trim(); if (!/^https:\/\/\S+\.\S+/.test(w.url)) { if (u) { u.setAttribute('aria-invalid', 'true'); u.focus(); } toast('The address must start with https.'); return; } runTests(); },
     'copy-prompt': () => {
@@ -3248,6 +3398,8 @@
     if (d.trkNew) { const t = state.trk, q = $('#tk-q'); if (q) t.q = q.value; t.isNew = true; t.orgId = null; render(); return; }
     if (d.trkKind) { const t = state.trk; t.kind = d.trkKind; if (!t.solTouched) t.sol = ''; t.objective = ''; render(); return; }
     if (d.trkInd) { state.trk.industry = d.trkInd; render(); return; }
+    if (d.appf) { state.appF = d.appf; render(); return; }
+    if (d.trkNotify) { state.wiz.notify = state.wiz.notify === false; render(); return; }
     if (d.trkSigned) { state.trk.signed = !state.trk.signed; render(); return; }
     if (d.trkMethod) { state.trk.method = d.trkMethod; render(); return; }
     if (d.trkProd) { state.wiz.product = d.trkProd; render(); return; }
@@ -3291,7 +3443,7 @@
     if (e.target.id === 'f-ws') { e.preventDefault(); state.setup.workspace = $('#ws-name').value.trim() || 'REKA Inisiatif'; state.setup.step = 2; render(); }
   });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { closePops(); closePalette(); if (state.studio) { readSf(); state.studio = false; render(); } const sb = $('#sidebar'); if (sb) { sb.classList.remove('open'); $('#scrim').hidden = true; } }
+    if (e.key === 'Escape') { closePops(); closePalette(); closeReason(); if (state.studio) { readSf(); state.studio = false; render(); } const sb = $('#sidebar'); if (sb) { sb.classList.remove('open'); $('#scrim').hidden = true; } }
     if (e.key === 'Enter' && e.target.matches('tr[data-go]')) location.hash = '#' + e.target.dataset.go;
     if (e.key === 'Enter' && e.target.matches('tr[data-anpick], tr[data-jobsel], tr[data-provsel]')) e.target.click();
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k' && state.mode) { e.preventDefault(); openPalette(); }

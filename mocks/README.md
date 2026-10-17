@@ -21,7 +21,7 @@ Switch in the staff menu (your initials, top right) or Platform → Demo.
 Sign in, skip through welcome, and choose **Watch the guided demo**. It opens the demo workspace and plays 23 steps:
 
 1. A new organisation is added, with a project.
-2. **Start tracking** (`#track`): one wizard, one question at a time, start to finish: choose or add the organisation → name the project → copy the prompt → the connection → what to measure → baseline and send → "Sent for approval". On the right, a picture of what you're setting up builds as you answer, animates the connection, and is the review before sending. An AntaraX product or a spreadsheet each have their own short path.
+2. **Track an application** (the white button at the top of the menu, `#track`): one wizard, one question at a time, each saying why it is asked, with Back on every step and Exit (keep it for later, or delete it) at any time: choose or add the organisation → name the project → copy the prompt → the connection → what to measure → baseline and send → "Sent for approval". On the right, a picture of what you're setting up builds as you answer, animates the connection, and is the review before sending. An AntaraX product or a spreadsheet each have their own short path.
 
 **All screens** (staff menu → All screens, or `#screens`) lists every screen in the order people meet them, and opens any one: the setup steps in the demo workspace with the guided demo at that step, the rest in example data.
 3. The KPIs are approved, and the first figures arrive.
@@ -50,7 +50,8 @@ In the demo workspace, the dashed **Demo studio** button in the top bar shows th
 
 | Mode | Where | What it shows |
 |---|---|---|
-| Dashboard: client data (Outcomes only, first) | **Results** (`#results`, `#results-…`) | Every organisation's figures and hours saved over time; then one organisation's figures, hours saved by project, the monthly summary, outcomes by project and reports, with staff view and organisation view |
+| Dashboard: client data (Outcomes only, first) | **Applications** (`#applications`) | Every tracked application and its state; resume one being set up |
+| | **Results** (`#results`, `#results-…`) | Every organisation's figures and hours saved over time; then one organisation's figures, hours saved by project, the monthly summary, outcomes by project and reports, with staff view and organisation view |
 | | **Reports**, **Approvals**, **Analytics**, **Ask** | Reports by organisation; separation of duties; any measure by organisation or solution; questions in plain words, including "What has Contoh told us?" |
 | | **Client context** (`#context`, and a tab on each organisation's results) | What organisations told or gave BD and account managers, by role, never by name: a summary plus documents, photos (or the phone's camera), voice notes (recorded in the browser or uploaded) and links. The mock reads plain text files and hides personal details in them; other files are attached but not read. Each entry can be left out of AI; "Suggest measures from this" opens Explore with it. REKA only: hidden in organisation view, reports and exports |
 | Dashboard: managing | **Overview** (`#home`) | First use: the checklist. Later: health strip, Needs a person (a technical problem opens Troubleshoot), Nightly collection, figures that open their lists, organisations by stage, organisations at a glance with readiness, hours saved, recent actions |
