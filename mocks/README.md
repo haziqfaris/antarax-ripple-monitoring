@@ -23,6 +23,8 @@ Sign in, skip through welcome, and choose **Watch the guided demo**. It opens th
 1. A new organisation is added, with a project.
 2. **Track an application** (the white button at the top of the menu, `#track`): one wizard, one question at a time, each saying why it is asked, with Back on every step and Exit (keep it for later, or delete it) at any time: choose or add the organisation → name the project → copy the prompt → the connection → what to measure → baseline and send → "Sent for approval". On the right, a picture of what you're setting up builds as you answer, animates the connection, and is the review before sending. An AntaraX product or a spreadsheet each have their own short path.
 
+Once it connects, Outcomes draws the application's **blueprint**: a data model (each figure the link shares, the baseline, and lines to the KPIs that use them) and a topology (the application, the link, the collector, the store, what people see). Both download as `.md` with Mermaid diagrams, and the prompt downloads as `.md` too.
+
 **All screens** (staff menu → All screens, or `#screens`) lists every screen in the order people meet them, and opens any one: the setup steps in the demo workspace with the guided demo at that step, the rest in example data.
 3. The KPIs are approved, and the first figures arrive.
 4. Five weeks pass, the data stops, then recovers.

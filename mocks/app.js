@@ -1338,7 +1338,7 @@
   const VOLUME = { 'doc-workflow': ['documents.generated', 'Documents processed'], 'invoice-triage': ['invoices.triaged', 'Invoices triaged'], 'shift-planner': ['plans.generated', 'Shift plans made'], 'enquiry-triage': ['enquiries.received', 'Enquiries received'], 'quote-drafter': ['quotes.drafted', 'Quotations drafted'] };
   pages.solution = (id) => {
     const s = M.solutions[id], o = orgById(s.org), st = solStatus(id), days = windowDays(state.range);
-    const tabs = [['outcomes', 'Outcomes'], ['measures', 'Measures'], ['explore', 'Explore'], ['usage', 'Usage'], ['health', 'Health'], ['data', 'Data and connection']];
+    const tabs = [['outcomes', 'Outcomes'], ['measures', 'Measures'], ['explore', 'Explore'], ['blueprint', 'Blueprint'], ['usage', 'Usage'], ['health', 'Health'], ['data', 'Data and connection']];
     let banner = '';
     if (st === 'stale') banner = `<div class="callout warn">${icon('clock')}<span><b>No new data since ${(s.since || '14 Oct 2026, 06:00').replace(' 2026,', '')}.</b> ${s.missed || 2} nightly collections were missed. You’re seeing the last good figures, faded. Nothing is filled in as zero.</span></div>`;
     if (st === 'failing') banner = `<div class="callout fault">${icon('alerts')}<span style="flex:1"><b>The solution isn’t answering since ${(s.since || '14 Oct 2026, 06:00').replace(' 2026,', '')}.</b> Its health check returned an error. We retry every 15 minutes and have told the project owner.</span>${gate(atLeast('Operator'), 'Retry now', 'Needs operator rights', 'data-act="retry"', 'btn sm')}</div>`;
@@ -1362,6 +1362,8 @@
       body = measuresTab(projById(id));
     } else if (state.solTab === 'explore') {
       body = exploreTab(projById(id));
+    } else if (state.solTab === 'blueprint') {
+      body = blueprint(bpDemo(id), 'solution');
     } else if (state.solTab === 'usage') {
       if (id !== 'doc-workflow') body = `<section class="card"><div class="empty"><h3>Usage detail</h3><p>This mock shows usage for Contoh Logistik’s Document workflow.</p><a class="btn sm" href="#solution-doc-workflow">Open Document workflow</a></div></section>`;
       else {
@@ -1400,6 +1402,7 @@
     ${id === 'doc-workflow' ? `<div class="demo-bar"><span class="tag">MOCK CONTROLS</span><span>See what happens when data stops:</span><div class="seg">${[['live', 'Normal'], ['stale', 'Late'], ['failing', 'Not answering']].map(([v, l]) => `<button type="button" data-demo="${v}" aria-pressed="${state.demoState === v}">${l}</button>`).join('')}</div></div>` : ''}`;
   };
   pages.solution.after = (id) => {
+    requestAnimationFrame(drawBp);
     builderAfter();
     const el = $('#ch-vol'); if (!el) return;
     const metric = VOLUME[id][0], map = new Map(seriesOf(id, metric).map((p) => [p.d, p.v])), start = firstDay(id, metric), st = solStatus(id);
@@ -1432,9 +1435,10 @@
         return hasBase(s) ? { name: p.name, quality: 'estimated', value: nf(r.mid), unit: 'h', cmp: [['Likely', `${nf(r.low)} to ${nf(r.high)} h`], ['Baseline', `${s.base.mid} min per ${K.noun}`]], src: `${r.missing ? `${r.missing} day${r.missing > 1 ? 's' : ''} missing, not filled in · ` : ''}review time is an estimate`, staleNote: fade } : { name: p.name, quality: 'unavailable', value: null, why: 'Needs a baseline before it can be shown.', cmp: [], src: 'Add one in Approvals' };
       });
       const rs = simReportState(s);
-      const simTabs = `<div class="tabs" role="tablist">${[['outcomes', 'Overview'], ['measures', 'Measures'], ['explore', 'Explore']].map(([k, l]) => `<button type="button" role="tab" data-tab="${k}" aria-selected="${(['measures', 'explore'].includes(state.solTab) ? state.solTab : 'outcomes') === k}">${l}</button>`).join('')}</div>`;
+      const simTabs = `<div class="tabs" role="tablist">${[['outcomes', 'Overview'], ['measures', 'Measures'], ['explore', 'Explore'], ['blueprint', 'Blueprint']].map(([k, l]) => `<button type="button" role="tab" data-tab="${k}" aria-selected="${(['measures', 'explore', 'blueprint'].includes(state.solTab) ? state.solTab : 'outcomes') === k}">${l}</button>`).join('')}</div>`;
       if (state.solTab === 'measures') body = `${banner}${simTabs}${measuresTab(projOfSim(s))}`;
       else if (state.solTab === 'explore') body = `${banner}${simTabs}${exploreTab(projOfSim(s))}`;
+      else if (state.solTab === 'blueprint') body = `${banner}${simTabs}${blueprint(bpFrom(s), 'sim')}`;
       else body = `${banner}${simTabs}
         ${hasBase(s) && s.kpis.includes('impact') && r.vol ? breakdownHtml(s.base, r.machine, K.review, K.noun, ({ sample: `timed on ${s.base.n} ${K.nouns}`, history: 'from past records', estimate: 'the organisation’s estimate' })[s.base.method], '') : ''}
         <div class="grid ${gridFor(cards.length)}">${cards.map(kpiCardHtml).join('')}</div>
@@ -1444,10 +1448,10 @@
         : `<section class="card"><div class="row" style="border:0;padding:0"><span class="ico ${rs.st === 'ready' ? 'warn' : 'ok'}">${icon('reports', 'sm')}</span><div><div class="what">${rs.st === 'ready' ? `${monthName(rs.ym)} report is ready to review` : rs.st === 'approved' ? `${monthName(rs.ym)} report approved` : `${esc(s.project.cadence)} report scheduled`}</div><div class="meta">${rs.st === 'waiting' ? `First draft on ${nextMonthStart()}, once a full month of figures is in. Move the date forward in Demo studio to see it.` : 'Drafted from the figures above'}</div></div>${rs.st !== 'waiting' ? `<a class="btn sm ${rs.st === 'ready' ? 'primary' : ''}" href="#report-${s.id}">Open report</a>` : ''}</div></section>`}`;
     }
     return `${head({ crumbs: crumbs(['Results', '#results'], [o.name, '#results-' + o.id], [s.project.name], [s.name]), title: esc(s.name), meta: `${statusPill(st)}<span>${esc(s.project.name)}</span><span>${K.label}</span>`, actions: s.stage === 'collecting' ? rangeSeg() : '' })}
-      ${strip}${body}`;
+      ${strip}${body}${s.stage !== 'collecting' && s.stage !== 'draft' ? blueprint(bpFrom(s), 'sim') : ''}`;
   };
   pages.sim.after = (id) => {
-    builderAfter();
+    builderAfter(); requestAnimationFrame(drawBp);
     const el = $('#ch-sim'); if (!el) return;
     const s = simById(id);
     drawChart(el, bucket(simDaily(s, simWindow(state.range)).map((p) => p.gap ? Object.assign(p, { v: null }) : p), state.range > 30), { id: 'sim', kind: 'columns', label: `${kindOf(s).nouns} handled`, height: 210, tip: (p) => p.before ? '<div>Before collection started</div>' : p.gap ? '<div>No data. Not counted as zero.</div>' : `<div><span class="mono">${nf(p.v)}</span> ${kindOf(s).nouns}</div>` });
@@ -1589,6 +1593,153 @@ A short note in the pull request: each metric and where it comes from; what you 
     if (w.step === 4) { finishWizard(); return; }
     w.step++; render(); window.scrollTo(0, 0);
   }
+  // ------------------------------------------------------------------ BLUEPRINT: generated once the link answers
+  // A data model and a topology, worked out from what the link reports (its manifest: each metric, its type, unit and
+  // splits, and which figures are derived from which) and from what Outcomes set up itself (key, schedule, store,
+  // KPIs, baseline). It never claims to know how the application works inside: the link doesn't say.
+  async function saveFile(filename, text) {
+    let dl = null;
+    try { dl = window.claude && window.claude.use ? await window.claude.use('downloads') : null; } catch (err) { dl = null; }
+    if (dl) {
+      try { const r = await dl.save({ filename, data: text }); if (r && r.status === 'saved') toast(`Saved ${filename}.`); } catch (e) { if (!e || e.code !== 'declined') toast(e && e.code === 'unavailable' ? 'Saving files isn’t available here. Copy it instead.' : 'Couldn’t save the file. Try again.'); }
+      return;
+    }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: 'text/markdown;charset=utf-8' })); a.download = filename;
+    document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0); toast(`Downloaded ${filename}.`);
+  }
+  // The metric catalog as the manifest describes it (the same six figures the connection test reads).
+  function catalogFor(K) {
+    const nk = K.nouns.replace(/\s+/g, '_'), unit = K.noun.replace(/\s+/g, '_');
+    return [
+      { id: 'processed', key: `${nk}.processed`, name: `${cap(K.nouns)} handled`, type: 'counter', unit, dims: [`${unit}_type`], st: 'ok' },
+      { id: 'duration', key: `${nk}.processing_duration`, name: `Time to process a ${K.noun}`, type: 'duration · mean', unit: 'second', dims: [], st: 'ok' },
+      { id: 'flagged', key: `${nk}.flagged`, name: `${cap(K.nouns)} ${K.qual.label}`, type: 'counter', unit, dims: ['reason'], st: 'ok' },
+      { id: 'reviewers', key: 'reviewers.active', name: 'People reviewing', type: 'distinct · operator', unit: 'person', dims: [], st: 'ok' },
+      { id: 'pages', key: 'pages.read', name: 'Pages read', type: 'counter', unit: 'pages', dims: [], st: 'warn', note: 'Unit not on the standard list' },
+      { id: 'byname', key: `${nk}.by_customer_name`, name: `${cap(K.nouns)} by customer name`, type: 'counter', unit, dims: ['customer_name'], st: 'fault', note: 'Held back: could identify people' },
+    ];
+  }
+  const BP_USES = { volume: ['processed'], quality: ['flagged', 'processed'], impact: ['processed', 'duration', 'baseline', 'review'] };
+  const BP_KEPT = { baseline: 'baseline', review: 'review minutes' };
+  // What a blueprint needs, from the wizard, a simulated application, or an example one.
+  function bpFrom(s, opt = {}) {
+    const K = opt.K || kindOf(s), w = opt.wiz;
+    const kpiIds = opt.kpis || (w ? (w.proposals ? Object.keys(w.keep).filter((k) => w.keep[k]) : null) : s.kpis && s.kpis.length ? s.kpis : null);
+    const base = opt.base !== undefined ? opt.base : w ? (w.keep.impact && w.baseline && w.baseline.method !== 'none' ? w.baseline : null) : s.base && s.base.method !== 'none' ? s.base : null;
+    return { app: opt.app || (w && w.solName) || s.name, org: opt.org || orgOf(s).name, project: s.project.name, K, method: opt.method || (w ? w.method : 'link'), product: w && w.product, suggested: !kpiIds,
+      kpis: kpiProposals({ kind: opt.kind || s.kind, project: s.project }).filter((p) => !kpiIds || kpiIds.includes(p.id)), base, id: slug(`${opt.org || orgOf(s).name} ${opt.app || (w && w.solName) || s.name}`) };
+  }
+  function bpModel(b) {
+    const cat = catalogFor(b.K);
+    const metric = (m, i) => `<div class="bp-node m ${m.st}" data-bp="m:${m.id}" style="--i:${i}"><span class="bp-k mono">${esc(m.key)}</span><b>${esc(m.name)}</b><span class="bp-t">${esc(m.type)} · ${esc(m.unit)}${m.dims.length ? ` · split by ${esc(m.dims.join(', '))}` : ''}</span>${m.note ? `<span class="bp-note">${esc(m.note)}</span>` : ''}</div>`;
+    const kpi = (p, i) => `<div class="bp-node k" data-bp-uses="${BP_USES[p.id].map((u) => (BP_KEPT[u] ? 'b:' : 'm:') + u).join(' ')}" style="--i:${i + 7}"><span class="bp-k">${esc(p.kind)}</span><b>${esc(p.name)}</b><span class="bp-t">${q(p.quality)} ${esc(p.formula)}</span><span class="bp-uses">Uses: ${BP_USES[p.id].map((u) => `<span>${BP_KEPT[u] || esc(cat.find((m) => m.id === u).key)}</span>`).join('')}</span></div>`;
+    const baseCard = b.kpis.some((p) => p.id === 'impact') ? `<div class="bp-node b" data-bp="b:baseline" style="--i:6"><span class="bp-k">Recorded in Outcomes</span><b>Minutes by hand per ${esc(b.K.noun)}</b><span class="bp-t">${b.base ? `${b.base.mid} min, likely ${b.base.low} to ${b.base.high}` : 'Not recorded yet'} · approved by a second person</span></div>
+      <div class="bp-node b" data-bp="b:review" style="--i:7"><span class="bp-k">Recorded in Outcomes</span><b>Review minutes per ${esc(b.K.noun)}</b><span class="bp-t">${b.K.review.mid} min, sampled · estimated</span></div>` : '';
+    return `<div class="bp-model" id="bp-model"><svg class="bp-lines" aria-hidden="true"></svg>
+      <div class="bp-col"><span class="bp-h">${icon('link', 'sm')}Shared by the link · ${cat.length} figures</span>${cat.map(metric).join('')}
+        <span class="bp-h" style="margin-top:10px">${icon('lock', 'sm')}Kept by Outcomes</span>${baseCard || '<p class="small muted">Nothing extra: these KPIs need no baseline.</p>'}<div class="bp-node s" style="--i:8"><span class="bp-k">Every figure carries</span><b>Day, quality, source</b><span class="bp-t">local_period · measured or derived · application_aggregate</span></div></div>
+      <div class="bp-col"><span class="bp-h">${icon('target', 'sm')}${b.suggested ? 'KPIs suggested' : 'KPIs'} · ${b.kpis.length}</span>${b.kpis.map(kpi).join('')}</div>
+    </div>`;
+  }
+  function bpTopo(b) {
+    const src = b.method === 'axle' ? `${b.product || 'Yara'}, an AntaraX product` : b.method === 'sheet' ? 'A weekly CSV, uploaded by a person' : `${esc(b.app)}`;
+    const door = b.method === 'axle' ? ['AXLE Link', 'Built into the product', ['Daily totals', 'Workspace for ' + b.org]] : b.method === 'sheet' ? ['Spreadsheet upload', 'Checked on upload', ['One row a day', 'One column a figure']] : ['Measurement link', '/internal/measure/v1 · GET only', ['/manifest', '/metrics', '/observations', '/health', '/openapi.json']];
+    const tier = (ic, h, sub, chips, cls = '') => `<div class="bp-tier ${cls}"><span class="cic">${icon(ic)}</span><b>${h}</b><span class="bp-t">${sub}</span>${chips && chips.length ? `<span class="bp-chips">${chips.map((c) => `<span class="${c.startsWith('/') ? 'mono' : ''}">${esc(c)}</span>`).join('')}</span>` : ''}</div>`;
+    const arrow = (lab) => `<div class="bp-arrow" aria-hidden="true"><span class="track"></span><i></i><i></i><span class="lab">${lab}</span></div>`;
+    return `<div class="bp-topo">
+      ${tier('box', src, `${esc(b.org)} · production · Asia/Kuala_Lumpur`, b.method === 'link' ? ['Its own code and data, unchanged', 'Secret: AX_MEASURE_KEY'] : [], 'src')}
+      ${arrow(b.method === 'sheet' ? 'Each week' : 'Signed · HTTPS · 06:00 nightly')}
+      ${tier(b.method === 'axle' ? 'box' : b.method === 'sheet' ? 'sheet' : 'lock', door[0], door[1], door[2])}
+      ${arrow('Daily totals only')}
+      ${tier('live', 'Outcomes collector', 'Checks every answer against the contract', ['Health every 15 min', 'Contract test nightly', 'Key from the REKA vault'])}
+      ${arrow('Stored')}
+      ${tier('shield', 'Outcomes store', 'Singapore · REKA only', ['Observations 25 months', `Catalog ${today()}`])}
+      ${arrow('After approval')}
+      ${tier('analytics', 'What people see', `${b.kpis.length} KPI${b.kpis.length === 1 ? '' : 's'} for ${esc(b.org)}`, ['Results', 'Monthly report', 'Analytics', 'Ask'], 'out')}
+    </div>`;
+  }
+  function blueprint(b, where) {
+    const tab = state.bpTab || 'model'; state.bpCur = b;
+    return `<section class="card bp" id="bp"><div class="card-head"><div><span class="eyebrow">${icon('system', 'sm')}Generated from the link</span><h2 style="margin-top:4px">${esc(b.app)}: blueprint</h2><p class="sub">Worked out from what the link reports and what Outcomes set up. It shows what ${esc(b.app)} shares, not how it works inside.</p></div>
+        <div class="head-actions"><div class="seg" role="tablist" aria-label="Blueprint view">${[['model', 'Data model'], ['topo', 'Topology']].map(([k, l]) => `<button type="button" role="tab" data-bptab="${k}" aria-pressed="${tab === k}">${l}</button>`).join('')}</div><button type="button" class="btn sm" data-act="bp-md" data-where="${where}">${icon('upload', 'sm').replace('<svg', '<svg style="transform:rotate(180deg)"')}Download .md</button></div></div>
+      ${tab === 'model' ? bpModel(b) : bpTopo(b)}</section>`;
+  }
+  function bpDemo(id) {
+    const sol = M.solutions[id], o = orgById(sol.org), kind = (XP_EX[id] || ['documents'])[0], K = KINDS[kind] || KINDS.documents, pr = o.projects.find((p) => p.solutions.includes(id)), imp = M.impact[id];
+    return bpFrom({ name: sol.name, project: { name: pr ? pr.name : sol.name }, kind }, { K, kind, app: sol.name, org: o.short, kpis: imp ? ['volume', 'quality', 'impact'] : ['volume', 'quality'], base: imp ? imp.baseline : null, method: 'link' });
+  }
+  // The same blueprint as Markdown, with Mermaid diagrams, for the project's docs or a handover.
+  function blueprintMd(b) {
+    const cat = catalogFor(b.K), nid = (k) => k.replace(/[^a-z0-9]/gi, '_');
+    const door = b.method === 'axle' ? 'AXLE Link' : b.method === 'sheet' ? 'Weekly spreadsheet upload' : 'Measurement link /internal/measure/v1';
+    return `# ${b.app}: blueprint
+
+Generated by Outcomes on ${day(today())} from what the link reports (its manifest) and what Outcomes set up. It shows what ${b.app} shares, not how it works inside.
+
+- Organisation: ${b.org}
+- Project: ${b.project}
+- Kind of work: ${b.K.label}
+- Shares by: ${door}
+- Solution id: ${b.id}
+- Time zone: Asia/Kuala_Lumpur
+
+## Topology
+
+\`\`\`mermaid
+flowchart LR
+  A["${b.method === 'link' ? b.app : b.method === 'axle' ? (b.product || 'Yara') + ' (AntaraX product)' : 'Weekly CSV'}<br/>${b.org} · production"] -->|${b.method === 'sheet' ? 'each week' : 'signed GET · HTTPS · 06:00 nightly'}| L["${door}"]
+  L -->|daily totals only| C["Outcomes collector<br/>health every 15 min · contract test nightly"]
+  V[("REKA vault<br/>${b.method === 'link' ? 'ax_msr_ key' : 'credentials'}")] -.-> C
+  C --> S[("Outcomes store<br/>Singapore · REKA only")]
+  S -->|after approval| P["What people see<br/>Results · monthly report · Analytics · Ask"]
+\`\`\`
+
+## Data model
+
+\`\`\`mermaid
+flowchart LR
+${cat.filter((m) => m.st !== 'fault').map((m) => `  ${nid(m.key)}["${m.key}<br/>${m.type} · ${m.unit}"]`).join('\n')}
+${b.kpis.some((p) => p.id === 'impact') ? '  baseline[("Minutes by hand<br/>recorded in Outcomes, approved")]\n  review[("Review minutes<br/>sampled, estimated")]\n' : ''}${b.kpis.map((p) => `  kpi_${p.id}(["${p.name}<br/>${p.quality}"])`).join('\n')}
+${b.kpis.flatMap((p) => BP_USES[p.id].map((u) => `  ${BP_KEPT[u] ? u : nid(cat.find((m) => m.id === u).key)} --> kpi_${p.id}`)).join('\n')}
+\`\`\`
+
+## Figures the link shares
+
+| Key | Name | Type | Unit | Split by | State |
+|---|---|---|---|---|---|
+${cat.map((m) => `| ${m.key} | ${m.name} | ${m.type} | ${m.unit} | ${m.dims.join(', ') || '–'} | ${m.st === 'ok' ? 'Ready' : m.st === 'warn' ? 'Note: ' + m.note : m.note} |`).join('\n')}
+
+## ${b.suggested ? 'KPIs suggested' : 'KPIs'}
+
+| KPI | Kind | Worked out as | Uses |
+|---|---|---|---|
+${b.kpis.map((p) => `| ${p.name} | ${p.quality} | ${p.formula} | ${BP_USES[p.id].map((u) => BP_KEPT[u] || cat.find((m) => m.id === u).key).join(', ')} |`).join('\n')}
+${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${b.base.low} to ${b.base.high}), approved by a second person.\n` : ''}
+## Rules this follows
+
+- Read-only: Outcomes only calls GET, and never changes ${b.app}.
+- Daily totals only. Missing days are gaps, never zeros.
+- No personal data. Figures that could identify people are held back.
+`;
+  }
+  // Lines from each figure to the KPIs that use it, drawn after the cards are laid out.
+  function drawBp() {
+    const box = $('#bp-model'); if (!box) return;
+    const svg = $('.bp-lines', box), r0 = box.getBoundingClientRect();
+    if (window.innerWidth < 900) { svg.innerHTML = ''; return; }
+    svg.setAttribute('width', r0.width); svg.setAttribute('height', r0.height); svg.setAttribute('viewBox', `0 0 ${r0.width} ${r0.height}`);
+    const paths = [];
+    $$('[data-bp-uses]', box).forEach((k, ki) => {
+      const rk = k.getBoundingClientRect();
+      k.dataset.bpUses.split(' ').forEach((u, ui) => {
+        const from = $(`[data-bp="${u}"]`, box); if (!from) return;
+        const rf = from.getBoundingClientRect(), x1 = rf.right - r0.left, y1 = rf.top + rf.height / 2 - r0.top, x2 = rk.left - r0.left, y2 = rk.top + Math.min(rk.height / 2, 28) - r0.top, mx = (x1 + x2) / 2;
+        paths.push(`<path class="${u.startsWith('b:') ? 'b' : ''}" style="--d:${(ki * 3 + ui) * 90}ms" d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}" pathLength="1"/>`);
+      });
+    });
+    svg.innerHTML = paths.join('');
+  }
+  window.addEventListener('resize', () => { clearTimeout(state.bpT); state.bpT = setTimeout(drawBp, 120); });
   // ------------------------------------------------------------------ APPLICATIONS: the hub. Every tracked application, in every organisation.
   // Tracking an application is the main action; organisations, results, reports and analytics hang off what is tracked.
   function appRows() {
@@ -1717,7 +1868,7 @@ A short note in the pull request: each metric and where it comes from; what you 
         <div class="tk-sec"><span class="lab">How linking works</span>${howLink('link')}</div>
         <div class="tk-sec"><span class="lab">What the prompt asks for</span><ul class="tk-asks">${PROMPT_ASKS.map((x) => `<li>${icon('check', 'sm')}<span>${esc(x)}</span></li>`).join('')}</ul></div>
         <details class="more tk-full"><summary>Read the full prompt · ${devPrompt(s).split('\n').length} lines</summary><div class="code-block prompt" id="dev-prompt">${esc(devPrompt(s))}</div></details>
-        <p class="small muted">${icon('link', 'sm')} Or send the <button type="button" class="lnk" data-act="copy-devlink">developer link</button>: the same prompt, the integration pack, their own key, and the test runs when they paste the address.</p>
+        <div class="tk-alt"><button type="button" class="btn sm" data-act="prompt-md">${icon('upload', 'sm').replace('<svg', '<svg style="transform:rotate(180deg)"')}Download as .md</button><button type="button" class="btn sm" data-act="copy-devlink">${icon('link', 'sm')}Copy developer link</button><span class="small muted">The developer link carries the same prompt, the integration pack and their own key, and the test runs when they paste the address.</span></div>
         ${t.copied ? foot(`I’ve sent it${icon('chev', 'sm')}`, 'data-act="w-next"', `<button type="button" class="btn lg tk-copy copied" data-act="trk-copy">${icon('check', 'sm')}Copied</button>`) : foot(`${icon('copy', 'sm')}Copy prompt`, 'data-act="trk-copy"', '', 'btn primary lg tk-copy')}`;
       if (w.method === 'axle') body = `${tq(3, 'Which product is it?', 'AntaraX products already share daily totals with AXLE. Nothing to build, no prompt.')}${why(3)}
         <div class="tk-kinds">${['Yara', 'Janka'].map((p) => `<button type="button" class="tk-kind" data-trk-prod="${p}" aria-pressed="${w.product === p}">${icon('box', 'sm')}<span>${p}</span></button>`).join('')}</div>
@@ -1732,7 +1883,7 @@ A short note in the pull request: each metric and where it comes from; what you 
       const solName = w.solName || s.name, testing = w.tests.length && !w.tested, lastOk = w.tests.filter((x) => x[1] === 'ok').length - 1;
       const checks = w.tests.length ? `<div class="checks" aria-live="polite">${w.tests.map(([x, ok], i) => `<div${i === lastOk && !w.tested ? ' class="just"' : ''}><span class="tick ${ok}">${ok === 'ok' ? '✓' : '…'}</span><span>${esc(x)}</span></div>`).join('')}</div>` : '';
       const how = `<details class="more"><summary>How linking works</summary><div style="margin-top:10px">${howLink(w.method)}</div></details>`;
-      if (w.tested) body = `<div class="tq"><span class="tq-n">4 of 6</span><h2 class="tk-win">${icon('check')}${esc(solName)} is connected</h2><p class="muted">Every check passed. It shares 6 figures: 4 ready, 1 with a note, 1 held back because it could identify people.</p></div>
+      if (w.tested) body = `<div class="tq"><span class="tq-n">4 of 6</span><h2 class="tk-win">${icon('check')}${esc(solName)} is connected</h2><p class="muted">Every check passed. It shares 6 figures: 4 ready, 1 with a note, 1 held back because it could identify people. Outcomes drew its <a href="#bp" data-act="bp-jump">blueprint</a> from the link, below.</p></div>
         ${foundChips(kindOf(s))}${checks}
         ${foot(`Choose what to measure${icon('chev', 'sm')}`, 'data-act="w-next"')}`;
       else if (testing) body = `${tq(4, 'Testing the connection', 'Checking it is signed and reading one day of figures. Nothing is saved until every check passes.')}${checks}`;
@@ -1770,7 +1921,8 @@ A short note in the pull request: each metric and where it comes from; what you 
         <div class="wfoot tk-foot"><a class="btn ghost" href="#applications">All applications</a><span class="tk-acts"><button type="button" class="btn lg" data-act="trk-new">${icon('plus', 'sm')}Track another</button><a class="btn primary lg" href="#sim-${s.id}">Open ${esc(s.name)}${icon('chev', 'sm')}</a></span></div>`;
     }
     return `${head({ title: 'Track an application', kind: 'manage', lead: n === 7 ? 'Done. It is with the approver.' : 'From the organisation to what you measure, one question at a time. You can leave at any step and pick it up from Applications.', state: s ? `${esc(orgOf(s).name)} · ${esc(w.solName || s.name)}` : undefined, actions: n === 7 ? '' : `<button type="button" class="btn sm ghost" data-act="trk-exit">${icon('x', 'sm')}Exit</button>` })}
-      <div class="track">${steps}<div class="track-grid"><section class="card tq-card${enter ? ' enter' : ''}" id="wpanel">${body}</section>${trkVisual(n)}</div></div>`;
+      <div class="track">${steps}<div class="track-grid"><section class="card tq-card${enter ? ' enter' : ''}" id="wpanel">${body}</section>${trkVisual(n)}</div>
+      ${s && w.tested && n >= 4 ? blueprint(bpFrom(s, { wiz: w }), 'track') : ''}</div>`;
   };
   pages.track.after = () => {
     const t = state.trk; if (!t) return;
@@ -1800,7 +1952,7 @@ A short note in the pull request: each metric and where it comes from; what you 
     }
     const nm = $('#tk-name'); if (nm) { nm.addEventListener('input', () => { t.name = nm.value; paintApp(); }); nm.addEventListener('keydown', (e) => { if (e.key === 'Enter' && t.sol.trim()) { e.preventDefault(); trkNext(); } }); }
     const ob = $('#tk-obj'); if (ob) ob.addEventListener('input', () => { t.objective = ob.value; });
-    pages.connect.after();
+    pages.connect.after(); requestAnimationFrame(drawBp);
     ['b-mid', 'b-low', 'b-high', 'b-n'].forEach((id) => { const el = $('#' + id); if (el) el.addEventListener('input', () => { const b = state.wiz.baseline, s = trkSim(), nm2 = $('#tv-base .nm'), sub = $('#tv-base .sub'); if (nm2 && s) nm2.textContent = `${b.mid} min per ${kindOf(s).noun}`; if (sub) sub.textContent = `${b.low} to ${b.high} min · ${({ sample: `timed sample of ${b.n}`, history: 'past records', estimate: 'their estimate' })[b.method]}`; }); });
     const dz = $('#tk-drop'); if (dz) {
       ['dragenter', 'dragover'].forEach((ev) => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.add('over'); }));
@@ -3271,6 +3423,9 @@ A short note in the pull request: each metric and where it comes from; what you 
       render(); window.scrollTo(0, 0);
     },
     'trk-exit': () => trkExit(),
+    'prompt-md': () => { const s = trkSim() || wizSim(); if (!s) return; saveFile(`${slug(state.wiz.solName || s.name)}-measurement-link-prompt.md`, devPrompt(s)); },
+    'bp-md': () => { const b = state.bpCur; if (b) saveFile(`${b.id}-blueprint.md`, blueprintMd(b)); },
+    'bp-jump': () => { const el = $('#bp'); if (el) el.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' }); },
     'trk-keep': () => { const s = trkSim(); closeReason(); if (s) log(`Left ${state.wiz.solName || s.name} at step ${trkStep()} of 6, to finish later`); state.trk = trkFresh(); go('applications'); toast('Kept in Applications. Resume it from there.'); },
     'trk-leave': () => { closeReason(); state.trk = trkFresh(); go('applications'); },
     'trk-discard': () => {
@@ -3399,6 +3554,7 @@ A short note in the pull request: each metric and where it comes from; what you 
     if (d.trkKind) { const t = state.trk; t.kind = d.trkKind; if (!t.solTouched) t.sol = ''; t.objective = ''; render(); return; }
     if (d.trkInd) { state.trk.industry = d.trkInd; render(); return; }
     if (d.appf) { state.appF = d.appf; render(); return; }
+    if (d.bptab) { state.bpTab = d.bptab; render(); return; }
     if (d.trkNotify) { state.wiz.notify = state.wiz.notify === false; render(); return; }
     if (d.trkSigned) { state.trk.signed = !state.trk.signed; render(); return; }
     if (d.trkMethod) { state.trk.method = d.trkMethod; render(); return; }

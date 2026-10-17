@@ -1111,3 +1111,66 @@ details.ctx-att[open] .ctx-more { transform: rotate(180deg); }
 .tk-how-s b { font-size: .875rem; padding-top: 6px; }
 .tk-how-s > span:last-child { font-size: .8125rem; }
 .ax-track { white-space: nowrap; font-size: .8125rem; padding: 10px 12px; }
+
+/* Prompt alternatives */
+.tk-alt { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; }
+.tk-alt .small { flex: 1 1 260px; }
+
+/* Blueprint: generated from the link */
+.bp { display: grid; gap: 16px; }
+.bp .card-head { align-items: flex-start; flex-wrap: wrap; gap: 12px; }
+.bp .eyebrow { display: inline-flex; gap: 6px; align-items: center; }
+.bp-model { position: relative; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr) minmax(0, 1fr); gap: 20px 56px; align-items: start; }
+.bp-lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+.bp-lines path { fill: none; stroke: var(--primary-tint-2); stroke-width: 1.75; stroke-dasharray: 1; stroke-dashoffset: 1; animation: bp-draw .9s var(--ease) forwards; animation-delay: calc(var(--d, 0ms) + .45s); }
+.bp-lines path.b { stroke: var(--ai); stroke-dasharray: .02 .015; stroke-dashoffset: 0; opacity: 0; animation: bp-fade .6s var(--ease) forwards; animation-delay: calc(var(--d, 0ms) + .45s); }
+@keyframes bp-draw { to { stroke-dashoffset: 0; } }
+@keyframes bp-fade { to { opacity: .8; } }
+.bp-col { display: grid; gap: 8px; position: relative; z-index: 1; }
+.bp-h { display: flex; gap: 6px; align-items: center; font-size: .6875rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
+.bp-node { display: grid; gap: 2px; padding: 9px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); box-shadow: var(--shadow-sm); animation: c-rise .4s var(--ease) both; animation-delay: calc(var(--i, 0) * 55ms); min-width: 0; }
+.bp-node b { font-size: .8125rem; color: var(--ink); }
+.bp-k { font-size: .6875rem; color: var(--primary-ink); overflow-wrap: anywhere; }
+.bp-t { font-size: .75rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.bp-note { font-size: .6875rem; font-weight: 500; }
+.bp-node.m { border-left: 3px solid var(--primary); }
+.bp-node.warn { border-left-color: var(--axle-warn); } .bp-node.warn .bp-note { color: var(--warn-ink); }
+.bp-node.fault { border-left-color: var(--axle-fault); background: var(--surface-2); box-shadow: none; } .bp-node.fault b { color: var(--muted); text-decoration: line-through; } .bp-node.fault .bp-note { color: var(--fault-ink); }
+.bp-node.b { border-left: 3px solid var(--ai); } .bp-node.b .bp-k { color: var(--ai); }
+.bp-node.s { border-style: dashed; box-shadow: none; background: transparent; }
+.bp-node.k { border-left: 3px solid var(--ok); } .bp-node.k .bp-k { color: var(--ok-ink); }
+.bp-uses { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; font-size: .6875rem; color: var(--muted); align-items: center; }
+.bp-uses span { font-family: var(--mono); padding: 1px 6px; border-radius: 6px; background: var(--surface-2); border: 1px solid var(--line); color: var(--body); }
+.bp-topo { display: flex; align-items: stretch; gap: 0; overflow-x: auto; padding: 4px 2px 8px; }
+.bp-tier { flex: 1 1 0; min-width: 150px; display: grid; gap: 4px; align-content: start; padding: 14px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); box-shadow: var(--shadow-sm); animation: c-rise .4s var(--ease) both; }
+.bp-tier:nth-child(3) { animation-delay: .1s; } .bp-tier:nth-child(5) { animation-delay: .2s; } .bp-tier:nth-child(7) { animation-delay: .3s; } .bp-tier:nth-child(9) { animation-delay: .4s; }
+.bp-tier .cic { width: 36px; height: 36px; border-radius: 10px; background: var(--primary-tint); color: var(--primary-ink); }
+.bp-tier.src .cic { background: var(--sunken); color: var(--body); }
+.bp-tier.out .cic { background: var(--ok-tint); color: var(--ok-ink); }
+.bp-tier b { font-size: .875rem; color: var(--ink); }
+.bp-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.bp-chips span { font-size: .6875rem; padding: 2px 7px; border-radius: 6px; background: var(--surface-2); border: 1px solid var(--line); color: var(--body); }
+.bp-arrow { position: relative; flex: 0 0 64px; min-height: 60px; }
+.bp-arrow .track { position: absolute; left: 4px; right: 4px; top: 40px; border-top: 2px solid var(--ok); }
+.bp-arrow .track::after { content: ""; position: absolute; right: -2px; top: -6px; border: 5px solid transparent; border-left: 7px solid var(--ok); }
+.bp-arrow i { position: absolute; left: 4px; right: 4px; top: 36px; height: 8px; animation: c-flow 2.2s linear infinite; }
+.bp-arrow i::before { content: ""; position: absolute; left: -4px; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px var(--ok-tint); }
+.bp-arrow i:nth-of-type(2) { animation-delay: 1.1s; }
+.bp-arrow .lab { position: absolute; left: 0; right: 0; top: 48px; text-align: center; font-size: .625rem; line-height: 1.25; color: var(--ok-ink); font-weight: 500; }
+@media (max-width: 900px) {
+  .bp-model { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .bp-topo { flex-direction: column; overflow: visible; }
+  .bp-tier { min-width: 0; }
+  .bp-arrow { flex: 0 0 52px; min-height: 52px; }
+  .bp-arrow .track { left: 30px; right: auto; top: 4px; bottom: 4px; border-top: 0; border-left: 2px solid var(--ok); }
+  .bp-arrow .track::after { right: auto; top: auto; bottom: -2px; left: -6px; border: 5px solid transparent; border-top: 7px solid var(--ok); }
+  .bp-arrow i { left: 27px; right: auto; top: 4px; bottom: 4px; width: 8px; height: auto; animation-name: c-flow-y; }
+  .bp-arrow i::before { left: 0; top: -4px; }
+  .bp-arrow .lab { left: 44px; right: auto; top: 50%; transform: translateY(-50%); text-align: left; }
+}
+@media (prefers-reduced-motion: reduce) { .bp-node, .bp-tier { animation: none; } .bp-arrow i { display: none; } .bp-lines path { animation: none; stroke-dashoffset: 0; } .bp-lines path.b { opacity: .8; } }
+.bp-model { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px 120px; }
+.bp-arrow { flex-basis: 84px; }
+.bp-tier { min-width: 140px; }
+.bp-lines path { stroke: var(--primary); stroke-opacity: .45; }
+@media (max-width: 900px) { .bp-model { grid-template-columns: minmax(0, 1fr); gap: 14px; } .bp-arrow { flex-basis: 52px; } }
