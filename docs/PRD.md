@@ -452,7 +452,8 @@ Detailed in [§11](#11-ai-assistance-and-approval-gates).
 | FR-ONB-9 | **Track an application** is one wizard of six steps (organisation, application, prompt, connection, what to measure, baseline and send) ending on "Sent for approval", one question at a time, in one layout, with keyboard support (Enter moves on) and the focus in the first field. Choosing an organisation and adding one are the same box. The person can leave at the connection step; nothing is lost and they are told when it connects. No browser-default dropdowns: chips, cards and switches | MVP |
 | FR-ONB-9b | Every step says why it is asked. Back on every step after the first. Exit at any step: keep it (resumable from Applications at that step), delete it, or stay | MVP |
 | FR-ONB-9f | Several applications can be set up and wait at once. "Track an application" always starts a new one, even while others wait for their connection or for approval; each keeps its own place, and the first step lists those being set up (with their step) and how many are waiting for approval | MVP |
-| FR-ONB-9g | No browser-default controls anywhere in the console: fields, dropdowns, checkboxes and disclosure markers are drawn to the AXLE tokens | MVP |
+| FR-ONB-9g | No browser-default controls anywhere in the console: fields, dropdowns, checkboxes and disclosure markers are drawn to the AXLE tokens. A dropdown's list is drawn too, never the browser's own: grouped, keyboard operable (arrows, Home, End, a letter, Enter, Escape) and screen-reader labelled | MVP |
+| FR-ONB-9h | **An empty choice offers to add.** A dropdown with nothing to choose says so ("No organisations yet") and offers the way to add it in place: an organisation by name, or "Track an application" for that organisation. Lists that only filter, and example data, don't (owner feedback, 17 Oct 2026) | MVP |
 | FR-ONB-9e | The prompt can be copied or **downloaded as a .md file**, named after the application, to attach to a ticket or drop into the application's repository for Claude Code or Codex | MVP |
 | FR-ONB-9c | The prompt carries everything a developer, or Claude Code, needs without a meeting: the integration pack's instruction made specific to the application, with a stop for approval of the metrics before building. The page explains how linking works before asking anyone to copy it | MVP |
 | FR-ONB-9d | **Applications** lists every tracked application with its state (being set up with its step, needing a person, waiting for approval or data, live), filters by state, and resumes one being set up | MVP |
@@ -485,7 +486,8 @@ Detailed in [§11](#11-ai-assistance-and-approval-gates).
 | FR-ASK-5 | Ask respects rights: no commercial figures without the Commercial right, only clients the person can see | MVP |
 | FR-ASK-6 | Ask can answer with a small chart or table inline, and suggests follow-up questions from the data | MVP |
 | FR-ASK-7 | Every question and answer is logged (who, when, which figures were read); kept 90 days | MVP |
-| FR-ASK-8 | "Ask about this" from Analytics and project pages opens Ask with the context filled in | P2 |
+| FR-ASK-8 | "Ask about…" on every organisation's results, every application's page and Analytics opens Ask scoped to it | MVP |
+| FR-ASK-9 | **Ask is about one thing at a time:** every organisation, one organisation, or one application, chosen at the top of the page ("Asking about"). Answers, suggestions and charts use only that scope's figures and client context, and each scope keeps its own conversation. With nothing collecting in the scope, Ask says so and offers to track an application there (owner feedback, 17 Oct 2026) | MVP |
 
 ### 8.15 Standard analytics
 
@@ -606,7 +608,7 @@ Open in the mock: the metric catalog is the same six figures for every applicati
 | FR-CAP-6 | Read through an optional Measurement Link route, `GET /capacity`, from the snapshots the capacity check already takes: nothing new is measured. Plan costs never travel on it; a cost is shown only with the Commercial right, read from AX Frame | P2 |
 | FR-CAP-7 | REKA only: hidden in organisation view, reports and exports | P2 |
 
-Open: `GET /capacity` isn't yet in antarax-api docs/14, the integration pack or the contract test. It goes there as a minor version before the first application shares it. In the mock, only the example Document workflow shares a summary.
+`GET /capacity` is in antarax-api docs/14 §14.5a (Measurement Link 1.1.0, an additive minor version), the kit, the integration pack (`examples/capacity.json`) and the contract test. The kit refuses any cost, price, plan, provider account or credential on it before sending. In the mock, only the example Document workflow shares a summary.
 
 ## 9 The measurement interface (Measurement Link)
 
@@ -631,7 +633,7 @@ The brief's L2 contract, written to the AntaraX API framework (`antarax-api` doc
 | GET | `/observations?from=&to=&metric=&cursor=&limit=` | Aggregated observations for whole periods in the range, oldest first within a page | Yes |
 | GET | `/health` | `{ object: "health", status: "ok" \| "degraded" \| "down", checked_at, problems: [snake_case], freshness: { metric_key: last_period_end } }` (the AXLE Link health shape plus freshness) | Yes |
 | GET | `/baselines` | Baseline records with provenance, if the solution holds them | Optional |
-| GET | `/capacity` | Proposed, not yet in docs/14: a read-only summary from the application's `capacity.json` snapshots, for the supplementary Capacity tab (§8.20) | Optional |
+| GET | `/capacity` | A read-only summary from the application's `capacity.json` snapshots, for the supplementary Capacity tab (§8.20). Measurement Link 1.1.0, docs/14 §14.5a; 404 unless the manifest lists `capacity` | Optional |
 | GET | `/openapi.json` | The OpenAPI 3.1 document for this interface | Yes |
 
 Range limits: `/observations` serves at most 92 days per call (as AXLE Link `usage`); backfill asks in windows.

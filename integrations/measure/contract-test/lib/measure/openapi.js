@@ -4,6 +4,7 @@
  * /internal/measure/v1/openapi.json, and the integration pack's
  * openapi.json is written from it, so there is one copy.
  */
+import { CAPABILITIES, CAPACITY_CLASSES, CAPACITY_HOW, CAPACITY_PER, MAX_CAPACITY_OUTAGES, MAX_CAPACITY_RESOURCES, MEASURE_SCHEMA_VERSION } from "./contract.js";
 const ref = (name) => ({ $ref: `#/components/schemas/${name}` });
 const json = (schema, description) => ({ description, content: { "application/json": { schema } } });
 const err = (description) => json(ref("Error"), description);
@@ -29,7 +30,7 @@ export const MEASURE_OPENAPI = {
     openapi: "3.1.0",
     info: {
         title: "Measurement Link",
-        version: "1.0.0",
+        version: MEASURE_SCHEMA_VERSION,
         summary: "The read-only interface a measured solution exposes so Outcomes can collect its daily figures.",
         description: "Every call is a signed GET. Figures are daily totals in the solution's own time zone, never about one person. Missing days are gaps, never zeros. See docs/14-measurement-link.md in haziqfaris/antarax-api.",
     },
@@ -70,6 +71,13 @@ export const MEASURE_OPENAPI = {
                 responses: { "200": json(listOf("Baseline"), "A page of baselines"), ...common },
             },
         },
+        "/capacity": {
+            get: {
+                operationId: "getCapacity",
+                summary: "Optional and supplementary: the latest snapshots of the resources in the application's capacity.json, and its outside check, so Outcomes can show a read-only summary beside the results. The application's own AXLE watches capacity in full. Never costs, plans or accounts. 404 when the manifest does not list the capacity capability. No parameters.",
+                responses: { "200": json(ref("Capacity"), "The capacity summary"), ...common },
+            },
+        },
         "/openapi.json": {
             get: { operationId: "getOpenApi", summary: "This document", responses: { "200": { description: "OpenAPI 3.1", content: { "application/json": {} } }, ...common } },
         },
@@ -95,7 +103,7 @@ export const MEASURE_OPENAPI = {
                     solution_name: { type: "string" },
                     environment: { enum: ["production", "staging", "development"] },
                     time_zone: { type: "string", description: "IANA name, Asia/Kuala_Lumpur" },
-                    capabilities: { type: "array", items: { enum: ["metrics", "observations", "health", "baselines"] } },
+                    capabilities: { type: "array", items: { enum: [...CAPABILITIES] } },
                     metric_catalog_version: { type: "string" },
                     reporting_periods: { type: "array", items: { const: "day" }, minItems: 1, maxItems: 1 },
                     data_policy: {
@@ -171,6 +179,61 @@ export const MEASURE_OPENAPI = {
                     sample_size: { type: ["integer", "null"], minimum: 1 },
                     evidence: { type: "string" },
                     recorded_at: moment,
+                },
+            },
+            Capacity: {
+                type: "object",
+                required: ["object", "snapshot_at", "capacity_updated", "resources", "availability"],
+                additionalProperties: false,
+                description: "Read from the snapshots the application's capacity check already takes. Nothing about money, plans, provider accounts or people: what a plan costs lives in AX Frame.",
+                properties: {
+                    object: { const: "capacity" },
+                    snapshot_at: { ...moment, description: "When the latest nightly snapshot was taken" },
+                    capacity_updated: { ...day, description: "capacity.json's updated" },
+                    resources: { type: "array", minItems: 1, maxItems: MAX_CAPACITY_RESOURCES, items: ref("CapacityResource") },
+                    availability: { oneOf: [ref("CapacityAvailability"), { type: "null" }], description: "The outside check, or null when there is none" },
+                },
+            },
+            CapacityResource: {
+                type: "object",
+                required: ["id", "class", "name", "unit", "used", "limit", "per", "percent", "runway_days", "measured_at", "how"],
+                additionalProperties: false,
+                description: 'how "none": used, percent, runway_days and measured_at are null and why_not says why. Otherwise used is a number and measured_at a moment, and why_not is left out.',
+                properties: {
+                    id: { type: "string", pattern: "^[a-z][a-z0-9-]{0,39}$", description: "The resource's id in capacity.json" },
+                    class: { enum: [...CAPACITY_CLASSES], description: "The capacity kit's classes, unchanged" },
+                    name: { type: "string", maxLength: 120 },
+                    unit: { type: "string", description: "byte, request, message, percent, minute and the other metric units; or x.<name>, such as x.token or x.connection. Never money" },
+                    used: { type: ["number", "null"], minimum: 0 },
+                    limit: { type: ["number", "null"], exclusiveMinimum: 0, description: "The plan's limit, or the budget set where the plan has none" },
+                    per: { enum: [...CAPACITY_PER], description: "What the limit counts over; a billing cycle is month" },
+                    percent: { type: ["number", "null"], minimum: 0, description: "used / limit × 100, rounded; null when either is null" },
+                    runway_days: { type: ["integer", "null"], minimum: 0 },
+                    measured_at: { oneOf: [moment, { type: "null" }] },
+                    how: { enum: [...CAPACITY_HOW], description: "capacity.json's measure.how" },
+                    why_not: { type: "string", maxLength: 120 },
+                },
+            },
+            CapacityAvailability: {
+                type: "object",
+                required: ["every_minutes", "last_checked_at", "last_result", "up_share_90d", "outages"],
+                additionalProperties: false,
+                properties: {
+                    every_minutes: { type: "integer", minimum: 1, maximum: 15 },
+                    last_checked_at: moment,
+                    last_result: { enum: ["up", "down"] },
+                    up_share_90d: { type: ["number", "null"], minimum: 0, maximum: 1 },
+                    outages: {
+                        type: "array",
+                        maxItems: MAX_CAPACITY_OUTAGES,
+                        description: "The last 90 days, oldest first",
+                        items: {
+                            type: "object",
+                            required: ["started_at", "ended_at", "minutes"],
+                            additionalProperties: false,
+                            properties: { started_at: moment, ended_at: { oneOf: [moment, { type: "null" }] }, minutes: { type: ["integer", "null"], minimum: 0 } },
+                        },
+                    },
                 },
             },
             Error: {

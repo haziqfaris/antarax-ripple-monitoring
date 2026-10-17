@@ -1,7 +1,7 @@
 // Generated from haziqfaris/antarax-api packages/lapisan-core/src by scripts/build-measure-pack.mjs. Do not edit.
 import { fromBase64Url, toBase64Url } from "../crypto.js";
 import { checkMeasureCall } from "./auth.js";
-import { DEFAULT_LIMIT, MAX_LIMIT, MAX_OBSERVATION_DAYS, MEASURE_ERRORS, MEASURE_PATHS, MEASURE_SCHEMA_VERSION, catalogMap, checkBaseline, checkHealth, checkManifest, checkObservation, dayBounds, daysBetween, isDate, momentOf, observationOrder, } from "./contract.js";
+import { DEFAULT_LIMIT, MAX_LIMIT, MAX_OBSERVATION_DAYS, MEASURE_ERRORS, MEASURE_PATHS, MEASURE_SCHEMA_VERSION, catalogMap, checkBaseline, checkCapacity, checkHealth, checkManifest, checkObservation, dayBounds, daysBetween, isDate, momentOf, observationOrder, } from "./contract.js";
 import { MEASURE_OPENAPI } from "./openapi.js";
 export class MeasureError extends Error {
     status;
@@ -42,6 +42,7 @@ const ALLOWED = {
     observations: ["from", "to", "metric", "cursor", "limit"],
     health: [],
     baselines: ["cursor", "limit"],
+    capacity: [],
     "openapi.json": [],
 };
 function limitOf(url) {
@@ -85,6 +86,8 @@ export function measureLink(adapter, options) {
         const capabilities = ["metrics", "observations", "health"];
         if (adapter.baselines)
             capabilities.push("baselines");
+        if (adapter.capacity)
+            capabilities.push("capacity");
         const m = {
             object: "manifest",
             schema_version: MEASURE_SCHEMA_VERSION,
@@ -193,6 +196,39 @@ export function measureLink(adapter, options) {
             const p = page(list, url, `baselines|${list.length}`);
             return { body: { object: "list", data: p.data, next: p.next }, count: p.data.length };
         },
+        async capacity(_url, now) {
+            if (!adapter.capacity)
+                throw new MeasureError("not_found", "There is nothing here.");
+            const { snapshot_at, capacity_updated, resources, availability, ...extra } = await adapter.capacity(now);
+            const body = {
+                object: "capacity",
+                snapshot_at,
+                capacity_updated,
+                resources: (resources ?? []).map(({ id, class: cls, name, unit, used, limit, per, percent, runway_days, measured_at, how, why_not, ...rest }) => ({
+                    id,
+                    class: cls,
+                    name,
+                    unit,
+                    used,
+                    limit,
+                    per,
+                    percent: percent !== undefined ? percent : typeof used === "number" && typeof limit === "number" && limit > 0 ? Math.round((used / limit) * 1000) / 10 : null,
+                    runway_days: runway_days ?? null,
+                    measured_at,
+                    how,
+                    ...(why_not !== undefined ? { why_not } : {}),
+                    ...rest,
+                })),
+                availability,
+                ...extra,
+            };
+            if (strict) {
+                const problems = checkCapacity(body);
+                if (problems.length)
+                    throw new BadFigures(problems);
+            }
+            return { body };
+        },
         async "openapi.json"() {
             return { body: MEASURE_OPENAPI };
         },
@@ -210,6 +246,9 @@ export function measureLink(adapter, options) {
         const path = url.pathname.replace(/\/+$/, "");
         const name = names.get(path);
         if (request.method !== "GET" || !name)
+            return notHere();
+        // An optional route the solution does not offer is not there, the same answer as a wrong path.
+        if ((name === "baselines" && !adapter.baselines) || (name === "capacity" && !adapter.capacity))
             return notHere();
         const now = clock();
         const checked = await checkMeasureCall([key, await read(options.nextKey ?? null)], request.method, url, request.headers, Math.floor(now / 1000));

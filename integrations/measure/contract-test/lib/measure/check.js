@@ -1,6 +1,6 @@
 // Generated from haziqfaris/antarax-api packages/lapisan-core/src by scripts/build-measure-pack.mjs. Do not edit.
 import { newMeasureKey, signMeasureCall } from "./auth.js";
-import { MAX_DIMENSION_VALUES, MAX_OBSERVATION_DAYS, addLocalDays, catalogMap, checkBaseline, checkHealth, checkManifest, checkMetric, checkObservation, dimensionKey, localDate, observationOrder, } from "./contract.js";
+import { MAX_DIMENSION_VALUES, MAX_OBSERVATION_DAYS, addLocalDays, catalogMap, checkBaseline, checkCapacity, checkHealth, checkManifest, checkMetric, checkObservation, dimensionKey, localDate, observationOrder, } from "./contract.js";
 const MAX_SHOWN = 8;
 const lines = (problems) => problems.slice(0, MAX_SHOWN).map((p) => `${p.at}: ${p.message}`).concat(problems.length > MAX_SHOWN ? [`and ${problems.length - MAX_SHOWN} more`] : []);
 export async function checkMeasureLink(options) {
@@ -177,7 +177,7 @@ export async function checkMeasureLink(options) {
     add("unknown_metric", "Refuses a metric it does not have", badMetric.status === 422 ? "pass" : "fail", expectError(badMetric, 422, "invalid_request"));
     const badDay = await call(`observations?from=yesterday&to=${to}`);
     add("bad_day", "Refuses a day that is not YYYY-MM-DD", badDay.status === 422 ? "pass" : "fail", expectError(badDay, 422, "invalid_request"));
-    // 6. Health, baselines, the document, and nothing else
+    // 6. Health, baselines, capacity, the document, and nothing else
     const health = await call("health");
     if (health.status !== 200)
         add("health", "Health", "fail", [`GET health answered ${health.status}.`]);
@@ -206,6 +206,22 @@ export async function checkMeasureLink(options) {
     else {
         const bl = await call("baselines");
         add("baselines", "No baselines endpoint unless the manifest lists it", bl.status === 404 ? "pass" : "fail", expectError(bl, 404, "not_found"));
+    }
+    if (manifest.capabilities.includes("capacity")) {
+        const cap = await call("capacity");
+        const cp = cap.status === 200 ? checkCapacity(cap.body) : [{ at: "capacity", message: `GET capacity answered ${cap.status}${code(cap) ? ` ${code(cap)}` : ""}.` }];
+        personalSeen.push(...personal(cp));
+        const warn = [];
+        const snapshot = cap.body?.snapshot_at;
+        if (!cp.length && snapshot && now - Date.parse(snapshot) > 2 * 86_400_000)
+            warn.push(`The latest snapshot is from ${snapshot}; the capacity check runs nightly.`);
+        add("capacity", "Capacity summary, read-only, no costs", cp.length ? "fail" : warn.length ? "warn" : "pass", cp.length ? lines(cp) : warn);
+        const capParam = await call("capacity?colour=blue");
+        add("capacity_parameter", "Capacity refuses parameters", capParam.status === 422 && code(capParam) === "invalid_request" ? "pass" : "fail", expectError(capParam, 422, "invalid_request"));
+    }
+    else {
+        const cap = await call("capacity");
+        add("capacity", "No capacity endpoint unless the manifest lists it", cap.status === 404 ? "pass" : "fail", expectError(cap, 404, "not_found"));
     }
     const doc = await call("openapi.json");
     const openapi = doc.body?.openapi ?? "";

@@ -55,6 +55,7 @@ In the demo workspace, the dashed **Demo studio** button in the top bar shows th
 | Mode | Where | What it shows |
 |---|---|---|
 | Dashboard: client data (Outcomes only, first) | **Applications** (`#applications`) | Every tracked application and its state; resume one being set up |
+| | **Ask** (`#ask`) | About one thing at a time: every organisation, one organisation or one application ("Asking about"), each with its own conversation and suggestions. "Ask about…" on an organisation's results, an application's page or Analytics opens it scoped. With nothing collecting, it offers to track an application |
 | | **Capacity** (the last tab on an application's page) | Supplementary, never a monitor: did the platform affect the results, then a read-only summary of its limits from its `capacity.json`, linking to its own AXLE. The example Document workflow shares one; the rest show "Not shared, and that's fine". Cost needs the Commercial right (switch to Aisyah Rahman). Hidden in organisation view |
 | | **Results** (`#results`, `#results-…`) | Every organisation's figures and hours saved over time; then one organisation's figures, hours saved by project, the monthly summary, outcomes by project and reports, with staff view and organisation view |
 | | **Reports**, **Approvals**, **Analytics**, **Ask** | Reports by organisation; separation of duties; any measure by organisation or solution; questions in plain words, including "What has Contoh told us?" |

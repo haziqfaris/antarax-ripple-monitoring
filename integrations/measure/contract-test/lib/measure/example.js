@@ -1,5 +1,5 @@
 // Generated from haziqfaris/antarax-api packages/lapisan-core/src by scripts/build-measure-pack.mjs. Do not edit.
-import { addLocalDays, daysBetween, localDate } from "./contract.js";
+import { addLocalDays, daysBetween, localDate, momentOf } from "./contract.js";
 /**
  * An invented solution for tests, the integration pack's examples and the
  * contract test's --example run: a document workflow at "Contoh Logistik"
@@ -25,6 +25,37 @@ function noise(text) {
     for (let i = 0; i < text.length; i++)
         h = Math.imul(h ^ text.charCodeAt(i), 16777619);
     return ((h >>> 0) % 10_000) / 10_000;
+}
+/**
+ * The example's capacity summary: what its nightly capacity check took at
+ * 06:00 Kuala Lumpur (22:00 UTC) before now. Invented figures, as if read
+ * from an example capacity.json; no costs or plans, as the contract says.
+ */
+export function exampleCapacity(now) {
+    const day = 86_400_000;
+    const snapshot = Math.floor((now - 22 * 3_600_000) / day) * day + 22 * 3_600_000;
+    const at = momentOf(snapshot);
+    const outageDay = new Date(snapshot - 6 * day).toISOString().slice(0, 10);
+    const started = Date.parse(`${outageDay}T03:12:00Z`);
+    return {
+        snapshot_at: at,
+        capacity_updated: "2026-10-01",
+        resources: [
+            { id: "database", class: "data", name: "Database size (example)", unit: "byte", used: 6_550_000_000, limit: 8_589_934_592, per: "none", runway_days: 150, measured_at: at, how: "query" },
+            { id: "files", class: "files", name: "Stored documents (example)", unit: "byte", used: 44_200_000_000, limit: 107_374_182_400, per: "none", runway_days: 410, measured_at: at, how: "provider-api" },
+            { id: "db-connections", class: "connections", name: "Database connections at the busiest hour (example)", unit: "x.connection", used: 54, limit: 60, per: "none", runway_days: null, measured_at: at, how: "query" },
+            { id: "requests", class: "requests", name: "Requests this month (example)", unit: "request", used: 1_840_000, limit: 5_000_000, per: "month", runway_days: null, measured_at: at, how: "provider-api" },
+            { id: "ai-tokens", class: "ai", name: "AI tokens this month (example)", unit: "x.token", used: 12_400_000, limit: 20_000_000, per: "month", runway_days: null, measured_at: at, how: "log" },
+            { id: "egress", class: "transfer", name: "Bandwidth out (example)", unit: "byte", used: null, limit: 107_374_182_400, per: "month", measured_at: null, how: "none", why_not: "The host has no usage API yet" },
+        ],
+        availability: {
+            every_minutes: 5,
+            last_checked_at: momentOf(Math.floor(now / 300_000) * 300_000),
+            last_result: "up",
+            up_share_90d: Math.round((1 - 14 / (90 * 1440)) * 10_000) / 10_000,
+            outages: [{ started_at: momentOf(started), ended_at: momentOf(started + 14 * 60_000), minutes: 14 }],
+        },
+    };
 }
 /** One day's figures for the example solution. */
 export function exampleDay(date) {
@@ -54,6 +85,7 @@ export function exampleAdapter(o = {}) {
     const goLive = o.goLive ?? "2026-06-01";
     const tz = o.timeZone ?? "Asia/Kuala_Lumpur";
     const missing = new Set(o.missing ?? []);
+    const withCapacity = o.capacity ?? true;
     const description = {
         solution_id: "contoh-document-workflow",
         solution_name: "Document workflow (example)",
@@ -63,7 +95,7 @@ export function exampleAdapter(o = {}) {
         metrics: EXAMPLE_METRICS,
         retention_days: 400,
     };
-    return {
+    const adapter = {
         describe: () => description,
         async observations({ from, to, metric }) {
             const out = [];
@@ -98,4 +130,7 @@ export function exampleAdapter(o = {}) {
             ];
         },
     };
+    if (withCapacity)
+        adapter.capacity = async (now) => exampleCapacity(now);
+    return adapter;
 }

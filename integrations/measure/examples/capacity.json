@@ -1,0 +1,99 @@
+{
+  "object": "capacity",
+  "snapshot_at": "2026-10-14T22:00:00Z",
+  "capacity_updated": "2026-10-01",
+  "resources": [
+    {
+      "id": "database",
+      "class": "data",
+      "name": "Database size (example)",
+      "unit": "byte",
+      "used": 6550000000,
+      "limit": 8589934592,
+      "per": "none",
+      "percent": 76.3,
+      "runway_days": 150,
+      "measured_at": "2026-10-14T22:00:00Z",
+      "how": "query"
+    },
+    {
+      "id": "files",
+      "class": "files",
+      "name": "Stored documents (example)",
+      "unit": "byte",
+      "used": 44200000000,
+      "limit": 107374182400,
+      "per": "none",
+      "percent": 41.2,
+      "runway_days": 410,
+      "measured_at": "2026-10-14T22:00:00Z",
+      "how": "provider-api"
+    },
+    {
+      "id": "db-connections",
+      "class": "connections",
+      "name": "Database connections at the busiest hour (example)",
+      "unit": "x.connection",
+      "used": 54,
+      "limit": 60,
+      "per": "none",
+      "percent": 90,
+      "runway_days": null,
+      "measured_at": "2026-10-14T22:00:00Z",
+      "how": "query"
+    },
+    {
+      "id": "requests",
+      "class": "requests",
+      "name": "Requests this month (example)",
+      "unit": "request",
+      "used": 1840000,
+      "limit": 5000000,
+      "per": "month",
+      "percent": 36.8,
+      "runway_days": null,
+      "measured_at": "2026-10-14T22:00:00Z",
+      "how": "provider-api"
+    },
+    {
+      "id": "ai-tokens",
+      "class": "ai",
+      "name": "AI tokens this month (example)",
+      "unit": "x.token",
+      "used": 12400000,
+      "limit": 20000000,
+      "per": "month",
+      "percent": 62,
+      "runway_days": null,
+      "measured_at": "2026-10-14T22:00:00Z",
+      "how": "log"
+    },
+    {
+      "id": "egress",
+      "class": "transfer",
+      "name": "Bandwidth out (example)",
+      "unit": "byte",
+      "used": null,
+      "limit": 107374182400,
+      "per": "month",
+      "percent": null,
+      "runway_days": null,
+      "measured_at": null,
+      "how": "none",
+      "why_not": "The host has no usage API yet"
+    }
+  ],
+  "availability": {
+    "every_minutes": 5,
+    "last_checked_at": "2026-10-15T02:00:00Z",
+    "last_result": "up",
+    "up_share_90d": 0.9999,
+    "outages": [
+      {
+        "started_at": "2026-10-08T03:12:00Z",
+        "ended_at": "2026-10-08T03:26:00Z",
+        "minutes": 14
+      }
+    ]
+  }
+}

@@ -1,6 +1,6 @@
 {
   "object": "manifest",
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "solution_id": "contoh-document-workflow",
   "solution_name": "Document workflow (example)",
   "environment": "production",
@@ -9,7 +9,8 @@
     "metrics",
     "observations",
     "health",
-    "baselines"
+    "baselines",
+    "capacity"
   ],
   "metric_catalog_version": "2026-10-15",
   "reporting_periods": [

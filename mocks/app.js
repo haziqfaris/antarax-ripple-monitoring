@@ -90,7 +90,7 @@
   const atLeast = (rung) => RUNGS.indexOf(me().rung) >= RUNGS.indexOf(rung);
   const demo = () => state.mode === 'demo';
   // Workspaces: your real one, a demo workspace (Demo studio and the guided demo live only here), and the example organisations.
-  const WS_FIELDS = ['orgs', 'sims', 'myApprovals', 'myAudit', 'simReports', 'focusSim', 'simDay', 'wiz', 'sf', 'eventSim', 'an', 'bld', 'chat'];
+  const WS_FIELDS = ['orgs', 'sims', 'myApprovals', 'myAudit', 'simReports', 'focusSim', 'simDay', 'wiz', 'sf', 'eventSim', 'an', 'bld', 'chat', 'chats', 'askScope'];
   const freshWs = () => ({ orgs: [], sims: [], myApprovals: [], myAudit: [], simReports: {}, focusSim: null, simDay: START_DAY, wiz: freshWizard(), sf: null, eventSim: null, an: null, bld: null, chat: [] });
   const sandbox = () => state.mode === 'new' && state.ws === 'sandbox';
   function setWs(kind) {
@@ -1262,7 +1262,7 @@
     if (!acct) state.coView = 'results';
     return `${head({ crumbs: acct ? crumbs(['Organisations', '#organisations'], [c.short]) : crumbs(['Results', '#results'], [c.short]), title: orgTitle(c.name), topTitle: `${c.short} · ${acct ? 'Account' : 'Results'}`, kind: acct ? 'manage' : 'data',
       meta: `<span class="mono">${slug(c.short)}</span><span>${esc(c.industry)}</span><span class="pill ${c.stage === 'live' ? 'info' : 'idle'}">${cap(c.stage)}</span>${statusPill(coStatus(c))}${c.renewal !== '–' ? `<span>Renews ${esc(c.renewal)}</span>` : ''}`,
-      actions: acct ? `${coProjs(c).length ? `<a class="btn" href="#results-${c.id}">${icon('analytics', 'sm')}Open results</a>` : ''}${c.example ? '' : `<button type="button" class="btn" data-act="proj-for" data-org="${c.id}">${icon('plus', 'sm')}New project</button>`}` : `<a class="btn sm ghost" href="#organisation-${c.id}">${icon('organisation', 'sm')}Account</a><button type="button" class="btn sm" data-act="ask-client" data-name="${esc(c.short)}"><img src="${SPARK}" alt="" style="width:16px">Ask about ${esc(c.short)}</button>${coProjs(c).length ? `<div class="seg" role="group" aria-label="View as"><button type="button" data-aud="staff" aria-pressed="${!organisation}">Staff view</button><button type="button" data-aud="client" aria-pressed="${organisation}">Organisation view</button></div>${rangeSeg()}` : ''}` })}
+      actions: acct ? `${coProjs(c).length ? `<a class="btn" href="#results-${c.id}">${icon('analytics', 'sm')}Open results</a>` : ''}${c.example ? '' : `<button type="button" class="btn" data-act="proj-for" data-org="${c.id}">${icon('plus', 'sm')}New project</button>`}` : `<a class="btn sm ghost" href="#organisation-${c.id}">${icon('organisation', 'sm')}Account</a><button type="button" class="btn sm" data-act="ask-client" data-org="${c.id}" data-name="${esc(c.short)}"><img src="${SPARK}" alt="" style="width:16px">Ask about ${esc(c.short)}</button>${coProjs(c).length ? `<div class="seg" role="group" aria-label="View as"><button type="button" data-aud="staff" aria-pressed="${!organisation}">Staff view</button><button type="button" data-aud="client" aria-pressed="${organisation}">Organisation view</button></div>${rangeSeg()}` : ''}` })}
     ${organisation ? `<div class="callout info">${icon('client-view')}<span><b>You’re seeing what ${esc(c.short)} sees.</b> Fees, notes, activity and anything not yet approved are hidden.</span></div>` : ''}
     ${acct ? readinessBlock(c) : ''}
     <div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button type="button" role="tab" data-cotab="${k}" aria-selected="${tab === k}">${l}</button>`).join('')}</div>
@@ -1402,12 +1402,12 @@
     },
   };
   const capOf = (id) => CAP_EX[id] || null;
-  const capPrompt = (app) => `## Optional: a capacity summary
-Only if ${app} has a capacity.json (AntaraX Dashboard-kit, capacity/). Its own AXLE watches capacity in full and raises the warnings; Outcomes shows a short read-only summary beside the results, to explain them. Skip this if there is no capacity.json: nothing else depends on it.
-- GET /capacity: for each resource in capacity.json, its class, name, used, limit, unit, runway_days, measured_at and how it is measured; plus availability (the outside check's share up over 90 days, and each outage with its length).
-- Read from the nightly snapshots the capacity check already takes. Measure nothing new.
-- Never send plan costs: those come from AX Frame.
-- This route is proposed for the contract's next minor version; the contract test doesn't check it yet.`;
+  const capPrompt = (app) => `## Optional: a capacity summary (Measurement Link 1.1, docs/14 §14.5a)
+Only if ${app} has a capacity.json (AntaraX Dashboard-kit, capacity/) and its nightly capacity check already writes snapshots. Its own AXLE watches capacity in full and raises the warnings; Outcomes shows a short read-only summary beside the results, to explain them. Otherwise skip this and say so in the hand-over: nothing else depends on it.
+- With the TypeScript kit, give the adapter a capacity(now) function; the manifest then lists "capacity" by itself. Otherwise list "capacity" in the manifest's capabilities.
+- GET /capacity takes no parameters (any parameter: 422). It answers object "capacity", snapshot_at, capacity_updated, and for each resource in capacity.json: id, class, name, unit, used, limit, per (none, day or month), percent, runway_days, measured_at and how (provider-api, query, log, manual or none; with none, why_not and nulls). Then availability: every_minutes, last_checked_at, last_result, up_share_90d and the outages. See examples/capacity.json.
+- Read from the snapshots. Measure nothing new.
+- Never send a cost, price, plan, provider account or credential: costs live in AX Frame, and the kit refuses them.`;
   const capTab = (id, app, sim) => {
     const c = capOf(id);
     const lead = `<div class="callout info cap-lead">${icon('target')}<span style="flex:1"><b>Supplementary.</b> Outcomes measures what ${esc(app)} delivers. How close it runs to its limits is watched in full by its own AXLE, which also raises the warnings. This is a read-only summary, here only to explain the results.</span>${c ? `<span class="btn sm" aria-disabled="true" title="${esc(c.axle)} isn’t drawn in this mock">Open its AXLE ${icon('chev', 'sm')}</span>` : ''}</div>`;
@@ -1489,7 +1489,7 @@ Only if ${app} has a capacity.json (AntaraX Dashboard-kit, capacity/). Its own A
       </tbody></table></div></section>`;
     }
     return `
-    ${head({ crumbs: crumbs(['Results', '#results'], [o.short, '#results-' + o.id], [o.projects.find((x) => x.solutions.includes(s.id)).name], [s.name]), title: esc(s.name), meta: `${statusPill(st)}<span>${esc(o.projects[0].name)}</span><span>Live since ${day(s.live)}</span>`, actions: rangeSeg() })}
+    ${head({ crumbs: crumbs(['Results', '#results'], [o.short, '#results-' + o.id], [o.projects.find((x) => x.solutions.includes(s.id)).name], [s.name]), title: esc(s.name), meta: `${statusPill(st)}<span>${esc(o.projects[0].name)}</span><span>Live since ${day(s.live)}</span>`, actions: `<button type="button" class="btn sm" data-act="ask-about" data-k="p:${s.id}"><img src="${SPARK}" alt="" style="width:16px">Ask about ${esc(s.name)}</button>${rangeSeg()}` })}
     ${banner}
     <div class="tabs" role="tablist">${tabs.map(([k, l, aux]) => `<button type="button" role="tab" data-tab="${k}" aria-selected="${state.solTab === k}"${aux ? ' class="aux" title="Supplementary: watched in full by its own AXLE"' : ''}>${l}</button>`).join('')}</div>
     ${body}
@@ -1542,7 +1542,7 @@ Only if ${app} has a capacity.json (AntaraX Dashboard-kit, capacity/). Its own A
         ${!s.reportScheduled ? `<section class="card"><div class="row" style="border:0;padding:0"><span class="ico info">${icon('reports', 'sm')}</span><div><div class="what">Schedule the organisation report</div><div class="meta">${esc(s.project.cadence)} · drafted for you, sent only after you check it</div></div><button type="button" class="btn primary sm" data-act="schedule-report" data-sim="${s.id}">Schedule report</button></div></section>`
         : `<section class="card"><div class="row" style="border:0;padding:0"><span class="ico ${rs.st === 'ready' ? 'warn' : 'ok'}">${icon('reports', 'sm')}</span><div><div class="what">${rs.st === 'ready' ? `${monthName(rs.ym)} report is ready to review` : rs.st === 'approved' ? `${monthName(rs.ym)} report approved` : `${esc(s.project.cadence)} report scheduled`}</div><div class="meta">${rs.st === 'waiting' ? `First draft on ${nextMonthStart()}, once a full month of figures is in. Move the date forward in Demo studio to see it.` : 'Drafted from the figures above'}</div></div>${rs.st !== 'waiting' ? `<a class="btn sm ${rs.st === 'ready' ? 'primary' : ''}" href="#report-${s.id}">Open report</a>` : ''}</div></section>`}`;
     }
-    return `${head({ crumbs: crumbs(['Results', '#results'], [o.name, '#results-' + o.id], [s.project.name], [s.name]), title: esc(s.name), meta: `${statusPill(st)}<span>${esc(s.project.name)}</span><span>${K.label}</span>`, actions: s.stage === 'collecting' ? rangeSeg() : '' })}
+    return `${head({ crumbs: crumbs(['Results', '#results'], [o.name, '#results-' + o.id], [s.project.name], [s.name]), title: esc(s.name), meta: `${statusPill(st)}<span>${esc(s.project.name)}</span><span>${K.label}</span>`, actions: s.stage === 'collecting' ? `<button type="button" class="btn sm" data-act="ask-about" data-k="p:${s.id}"><img src="${SPARK}" alt="" style="width:16px">Ask about ${esc(s.name)}</button>${rangeSeg()}` : '' })}
       ${strip}${body}${s.stage !== 'collecting' && s.stage !== 'draft' ? blueprint(bpFrom(s), 'sim') : ''}`;
   };
   pages.sim.after = (id) => {
@@ -1614,6 +1614,7 @@ Every answer is JSON with Cache-Control: no-store and X-Request-Id: req_…
 - GET /health: ok, degraded or down; named problems (for example aggregates_late); each metric's last complete day.
 - GET /openapi.json: the contract document from the pack.
 - GET /baselines only if ${app} already holds "before" figures with evidence.
+- GET /capacity only if ${app} has a capacity.json: see the optional section below.
 Unknown query parameters: 422 invalid_request, naming the parameter. Any other path: 404 not_found.
 
 TypeScript: use measureLink(adapter, { key, nextKey }) from the kit and write only the adapter (describe, observations, health). In Next.js that is app/internal/measure/v1/[...path]/route.ts exporting GET. Other languages: follow openapi.json and examples/, and check signatures as reference/python/measure_sign.py does.
@@ -2413,8 +2414,8 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
     if (!atLeast('Support')) return '<p class="needs">Needs Support to add client context</p>';
     return `<form id="f-ctx" class="card ctx-form" novalidate><div class="card-head"><div><h2>Add what they told you or gave you</h2><p class="sub">A note, a document, a photo, a voice note or a link. Record the person’s role, never their name, email or phone.</p></div></div>
       <div class="form-grid">
-        ${orgId ? `<input type="hidden" id="ctx-org" value="${orgId}">` : `<div class="field"><label for="ctx-org">Organisation</label><select id="ctx-org">${orgs.map((o) => `<option value="${o.id}" ${o.id === sel ? 'selected' : ''}>${esc(o.short)}</option>`).join('')}</select></div>`}
-        <div class="field"><label for="ctx-proj">About</label><select id="ctx-proj"><option value="">The whole organisation</option>${c ? coSolutions(c).map((x) => `<option value="${x.id}" ${d.proj === x.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('') : ''}</select></div>
+        ${orgId ? `<input type="hidden" id="ctx-org" value="${orgId}">` : `<div class="field"><label for="ctx-org">Organisation</label><select id="ctx-org"${demo() ? '' : ' data-add="org"'}>${orgs.map((o) => `<option value="${o.id}" ${o.id === sel ? 'selected' : ''}>${esc(o.short)}</option>`).join('')}</select></div>`}
+        <div class="field"><label for="ctx-proj">About</label><select id="ctx-proj"${demo() ? '' : ` data-add="app" data-add-org="${sel || ''}"`}><option value="">The whole organisation</option>${c ? coSolutions(c).map((x) => `<option value="${x.id}" ${d.proj === x.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('') : ''}</select></div>
         <div class="field full"><span class="lab">Attach what they gave you, optional</span>
           <div class="ctx-drop" id="ctx-drop">
             <div class="ctx-tools">
@@ -3082,19 +3083,36 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
   }
   const citeOf = (p) => `<a class="cite" href="${p.href}">${esc(p.sol)}</a>`;
   // "What has <organisation> told us?": the client context, quoted with who said it and when. Staff only, like Ask.
-  function ctxAsk(ql) {
+  function ctxAsk(ql, dflt) {
     if (!/(told|tell us|feedback|said|say|context|concern|complain|asked for|care about|goals?\b|priorit)/.test(ql)) return null;
-    const co = companies().find((c) => [c.name, c.short].some((x) => ql.includes(x.toLowerCase())) || ql.includes(c.short.split(' ')[0].toLowerCase()));
+    const co = companies().find((c) => [c.name, c.short].some((x) => ql.includes(x.toLowerCase())) || ql.includes(c.short.split(' ')[0].toLowerCase())) || dflt;
     if (!co) return null;
     const list = ctxFor(co.id).sort((a, b) => b.date.localeCompare(a.date)), link = `<a href="#results-${co.id}" data-act="to-ctx" data-org="${co.id}">client context for ${esc(co.short)}</a>`;
     if (!list.length) return { html: `<p>Nothing recorded from <b>${esc(co.short)}</b> yet. After a meeting or a call, add what they said to the ${link}.</p>` };
     return { html: `<p>What <b>${esc(co.short)}</b> has told the account team, newest first:</p><ul>${list.slice(0, 5).map((e) => `<li>“${esc(e.text)}” <span class="muted">· ${esc(e.from)}, ${esc(e.source.toLowerCase())}, ${dayShort(e.date)}${(e.items || []).length ? ` · ${(e.items || []).map((x) => esc(x.name)).join(', ')}` : ''}${e.ai ? '' : ' · not for AI'}</span></li>`).join('')}</ul>${list.length > 5 ? `<p class="small">And ${list.length - 5} more in the ${link}.</p>` : `<p class="small">From the ${link}.</p>`}
       <p class="xs muted">Quoted as recorded, by role. REKA only: never shown to ${esc(co.short)}. Numbers in what people said are their words, not measured figures.</p>` };
   }
+  // Ask is about one thing at a time: every organisation, one organisation, or one application. Each keeps its own
+  // conversation and its own suggestions, and answers only from that scope's figures.
+  function askScopeOf(k) {
+    k = k || '';
+    if (k.startsWith('c:')) { const c = coById(k.slice(2)); if (c) return { k, c, p: null, ps: coProjs(c), name: c.short }; }
+    if (k.startsWith('p:')) { const p = projById(k.slice(2)); if (p) { const c = companies().find((x) => coProjs(x).some((y) => y.id === p.id)) || null; return { k, c, p, ps: [p], name: p.sol }; } }
+    return { k: '', c: null, p: null, ps: projects(), name: 'All organisations' };
+  }
+  function askSetScope(k) {
+    state.chats = state.chats || {};
+    state.chats[state.askScope || ''] = state.chat || [];
+    state.askScope = askScopeOf(k).k; state.chat = state.chats[state.askScope] || []; state.askDraft = '';
+  }
+  const askEmpty = (sc) => {
+    const add = demo() ? '' : `<div class="head-actions" style="margin-top:4px"><button type="button" class="btn sm" ${sc.c ? `data-act="proj-for" data-org="${sc.c.id}"` : 'data-act="ask-track"'}>${icon('plus', 'sm')}Track an application${sc.c ? ` for ${esc(sc.c.short)}` : ''}</button><a class="btn sm ghost" href="#applications">See applications</a></div>`;
+    return { html: `<p>${sc.c ? `<b>${esc(sc.name)}</b> has no application sending figures yet` : 'There are no figures to answer from yet'}. Track an application and Ask answers once its first figures arrive.</p>${add}` };
+  };
   function askAnswer(raw) {
-    const ql = raw.toLowerCase(), ps = projects();
-    const cxa = ctxAsk(ql); if (cxa) return cxa;
-    if (!ps.length) return { html: '<p>There are no figures to answer from yet. Connect a solution, or simulate one in Demo studio, and ask again.</p>' };
+    const ql = raw.toLowerCase(), sc = askScopeOf(state.askScope), ps = sc.ps;
+    const cxa = ctxAsk(ql, sc.c); if (cxa) return cxa;
+    if (!ps.length) return askEmpty(sc);
     const xpa = exploreAsk(ql, ps); if (xpa) return xpa;
     const per = askPeriod(ql);
     const ment = ps.filter((p) => [p.name, p.sol, p.org].some((x) => ql.includes(x.toLowerCase())) || ql.includes(p.org.split(' ')[0].toLowerCase()));
@@ -3106,7 +3124,7 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
     const missing = scope.reduce((a, p) => a + T(p, per.days).missing, 0);
     const src = `<p class="xs muted">Worked out from ${scope.length} project${scope.length === 1 ? '' : 's'}, ${esc(per.label)}${missing ? `. ${missing} missing day${missing === 1 ? '' : 's'} not counted` : ''}.${m.quality === 'estimated' ? ' Estimates come from agreed baselines.' : ''}</p>`;
     const pc = (x, y) => y ? (x - y) / Math.abs(y) * 100 : 0;
-    const co = companies().find((c) => [c.name, c.short].some((x) => ql.includes(x.toLowerCase())));
+    const co = companies().find((c) => [c.name, c.short].some((x) => ql.includes(x.toLowerCase()))) || sc.c;
     if (/attention|needs? (me|you)|problem|wrong|issue|alert|broken|stuck/.test(ql)) {
       const list = co ? coNeeds(co) : demo() ? demoAtt() : needsYou();
       return { html: list.length ? `<p>${list.length} thing${list.length === 1 ? '' : 's'} need you, worst first:</p><ul>${list.slice(0, 6).map(([, , t, mm, h]) => `<li><a href="${h}">${esc(t)}</a> <span class="muted">· ${esc(mm)}</span></li>`).join('')}</ul>` : '<p>Nothing needs you. Every solution sent its figures on time.</p>' };
@@ -3154,8 +3172,8 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
       return { html: `<p>${scope.length} project${scope.length === 1 ? '' : 's'}, ${esc(per.label)}:</p><div class="table-wrap"><table><thead><tr><th>Project</th>${keys.map((k) => `<th class="num">${esc(mByKey(k).name)}</th>`).join('')}</tr></thead><tbody>${scope.map((p) => { const t = T(p, per.days); return `<tr><td>${esc(p.org)} · ${esc(p.name)}</td>${keys.map((k) => `<td class="num">${fmtM(mByKey(k), mByKey(k).calc(t)) || '–'}</td>`).join('')}</tr>`; }).join('')}</tbody></table></div><p class="xs muted">Rates are worked out per project from its own totals. A dash means that solution doesn’t share the figure.</p>${src}` };
     }
     if (/trend|chart|graph|over time|show me|show the|plot/.test(ql)) {
-      const p = ment[0] || null;
-      return { html: `<p><b>${esc(m.name)}</b> by week, last 12 weeks, ${p ? citeOf(p) : 'all projects'}:</p>`, chart: { proj: p ? p.id : 'all', m: m.key } };
+      const p = ment[0] || sc.p || null;
+      return { html: `<p><b>${esc(m.name)}</b> by week, last 12 weeks, ${p ? citeOf(p) : sc.c ? `every application at ${esc(sc.name)}` : 'all projects'}:</p>`, chart: { proj: p ? p.id : 'all', ids: ps.map((x) => x.id), m: m.key } };
     }
     if (mw) {
       const t = mergeTotals(scope.map((p) => T(p, per.days))), v = m.calc(t), rg = m.range ? m.range(t) : null;
@@ -3165,30 +3183,41 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
     return { html: '<p>I can only answer from the figures Outcomes collects: hours saved, work handled, turnaround, time agreed, corrections, people using it and failed runs, for any project and period.</p><p>Try one of the suggestions below.</p>' };
   }
   function askSuggestions() {
-    const p = projects()[0];
-    const c = companies().find((x) => coProjs(x).length);
-    return [`How many hours did we save in ${monthName(lastFullMonth())}?`, 'What needs my attention?', c ? `How is ${c.short} doing this month?` : null, c ? `What has ${c.short} told us?` : null, p ? `Why did ${p.sol} change this week?` : null, p ? `What else could we measure for ${p.sol}?` : null, 'Which project improved most this month?', 'Compare all projects', 'Show the trend of work handled', 'How is hours saved worked out?'].filter(Boolean);
+    const sc = askScopeOf(state.askScope), lm = monthName(lastFullMonth());
+    if (sc.p) return [`How many hours did ${sc.p.sol} save in ${lm}?`, `Why did ${sc.p.sol} change this week?`, `What else could we measure for ${sc.p.sol}?`, 'Show the trend of work handled', 'How is hours saved worked out?', sc.c ? `What has ${sc.c.short} told us?` : null].filter(Boolean);
+    if (sc.c) return [`How is ${sc.c.short} doing this month?`, `What needs my attention at ${sc.c.short}?`, `What has ${sc.c.short} told us?`, ...(sc.ps.length > 1 ? ['Which application improved most this month?', 'Compare all applications'] : []), sc.ps[0] ? `Why did ${sc.ps[0].sol} change this week?` : null, `How many hours did ${sc.c.short} save in ${lm}?`].filter(Boolean);
+    const p = projects()[0], c = companies().find((x) => coProjs(x).length);
+    return [`How many hours did we save in ${lm}?`, 'What needs my attention?', c ? `How is ${c.short} doing this month?` : null, c ? `What has ${c.short} told us?` : null, p ? `Why did ${p.sol} change this week?` : null, 'Which project improved most this month?', 'Compare all projects'].filter(Boolean);
   }
+  const askScopeSelect = () => {
+    const sc = askScopeOf(state.askScope), cos = companies();
+    return `<div class="ask-scope"><div class="field"><label for="ask-scope">Asking about</label><select id="ask-scope"><option value="" ${!sc.k ? 'selected' : ''}>All organisations</option>${cos.map((c) => `<optgroup label="${esc(c.short)}"><option value="c:${c.id}" ${sc.k === 'c:' + c.id ? 'selected' : ''}>All of ${esc(c.short)}</option>${coProjs(c).map((p) => `<option value="p:${p.id}" ${sc.k === 'p:' + p.id ? 'selected' : ''}>${esc(p.sol)}</option>`).join('')}</optgroup>`).join('')}</select></div>
+      <p class="xs muted">${sc.p ? `Only ${esc(sc.p.sol)}’s figures${sc.c ? `, and what ${esc(sc.c.short)} told the account team` : ''}.` : sc.c ? `Only ${esc(sc.c.short)}’s applications and what they told the account team.` : 'Every organisation’s figures.'} Each choice keeps its own conversation.</p></div>`;
+  };
   pages.ask = () => {
-    const chat = state.chat = state.chat || [];
-    return `${head({ title: 'Ask', lead: 'Ask about your projects in plain words. Answers come only from the figures Outcomes collects, and show where each number came from.', actions: chat.length ? '<button type="button" class="btn sm ghost" data-act="ask-clear">New conversation</button>' : '' })}
+    if (state.askScope === undefined) askSetScope(state.scope ? 'c:' + state.scope : '');
+    if (state.askScope && !askScopeOf(state.askScope).k) askSetScope('');
+    const chat = state.chat = state.chat || [], sc = askScopeOf(state.askScope);
+    return `${head({ title: sc.k ? `Ask about ${esc(sc.name)}` : 'Ask', lead: 'Ask about one organisation or one application in plain words. Answers come only from its figures, and show where each number came from.', actions: chat.length ? '<button type="button" class="btn sm ghost" data-act="ask-clear">New conversation</button>' : '' })}
     <section class="card" style="display:grid;gap:16px">
+      ${askScopeSelect()}
       ${chat.length ? `<div class="grid" style="gap:16px" id="chat">${chat.map((x, i) => x.role === 'user'
         ? `<div style="justify-self:end;max-width:min(75%,560px);background:var(--primary);color:var(--on-primary);padding:10px 14px;border-radius:16px 16px 4px 16px">${esc(x.text)}</div>`
         : `<div style="display:grid;grid-template-columns:32px minmax(0,1fr);gap:12px;align-items:start"><span class="ico ai" style="width:32px;height:32px;border-radius:10px;display:grid;place-items:center"><img src="${SPARK}" alt="" style="width:18px${x.thinking && !reduceMotion ? ';animation:breathe 1.2s infinite alternate' : ''}"></span><div class="narrative" style="font-size:.9375rem;max-width:none;min-width:0">${x.thinking ? '<p class="muted">Working it out from the figures…</p>' : x.html}${x.chart ? `<div class="chart" id="ask-ch-${i}"></div>` : ''}</div></div>`).join('')}</div>`
-      : `<div class="empty" style="padding:12px"><span class="ico ai" style="width:52px;height:52px;border-radius:14px;display:grid;place-items:center"><img src="${SPARK}" alt="" style="width:28px"></span><h3>What do you want to know?</h3><p>For example, how much time an organisation saved last month, why a figure moved, or which project is improving fastest.</p></div>`}
+      : `<div class="empty" style="padding:12px"><span class="ico ai" style="width:52px;height:52px;border-radius:14px;display:grid;place-items:center"><img src="${SPARK}" alt="" style="width:28px"></span><h3>${sc.k ? `What do you want to know about ${esc(sc.name)}?` : 'What do you want to know?'}</h3>${sc.ps.length ? `<p>For example, ${sc.p ? 'how much time it saved last month, or why a figure moved' : 'how much time was saved last month, why a figure moved, or which application is improving fastest'}.</p>` : askEmpty(sc).html}</div>`}
       <div class="chips">${askSuggestions().map((t) => `<button type="button" class="chip" data-askq="${esc(t)}">${esc(t)}</button>`).join('')}</div>
-      <form id="f-ask" style="display:flex;gap:8px;align-items:flex-end"><div class="field" style="flex:1"><input id="ask-q" placeholder="Ask about hours saved, turnaround, corrections, any project…" aria-label="Your question" autocomplete="off" value="${esc(state.askDraft || '')}"></div><button type="submit" class="btn primary" style="min-height:44px">Ask</button></form>
+      <form id="f-ask" style="display:flex;gap:8px;align-items:flex-end"><div class="field" style="flex:1"><input id="ask-q" placeholder="${sc.k ? `Ask about ${esc(sc.name)}: hours saved, turnaround, corrections…` : 'Ask about hours saved, turnaround, corrections, any project…'}" aria-label="Your question" autocomplete="off" value="${esc(state.askDraft || '')}"></div><button type="submit" class="btn primary" style="min-height:44px">Ask</button></form>
       <p class="xs muted">Ask never makes up a figure, says when it can’t answer, and doesn’t claim what caused a change. ${demo() ? 'Answers here use the example data.' : 'Answers use your workspace.'}</p>
     </section>`;
   };
   pages.ask.after = () => {
     (state.chat || []).forEach((x, i) => {
       if (!x.chart) return;
-      const el = $('#ask-ch-' + i), ps = x.chart.proj === 'all' ? projects() : [projById(x.chart.proj)].filter(Boolean), m = mByKey(x.chart.m), wk = weeksOf(aWindow(84));
+      const el = $('#ask-ch-' + i), ps = x.chart.proj === 'all' ? (x.chart.ids ? x.chart.ids.map(projById).filter(Boolean) : projects()) : [projById(x.chart.proj)].filter(Boolean), m = mByKey(x.chart.m), wk = weeksOf(aWindow(84));
       drawLines(el, wk.map((w) => dayShort(w[0])), [{ name: m.name, vals: wk.map((w) => m.calc(mergeTotals(ps.map((p) => totals(p, w))))), color: 'var(--s1)' }], { label: m.name, height: 180, fmt: (v) => fmtM(m, v), tipLabel: (i2) => 'Week of ' + day(wk[i2][0]) });
     });
     $('#f-ask').addEventListener('submit', (e) => { e.preventDefault(); askSubmit($('#ask-q').value); });
+    $('#ask-scope').addEventListener('change', (e) => { askSetScope(e.target.value); render(); });
     $('#ask-q').addEventListener('input', (e) => { state.askDraft = e.target.value; });
     if (state.askScroll) { const c = $('#chat'); if (c && c.lastElementChild) c.lastElementChild.scrollIntoView({ block: 'nearest' }); state.askScroll = false; }
   };
@@ -3345,7 +3374,7 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
     { t: 'More than three numbers', d: 'Every project gets the same library of measures across health, usage, operations, impact and cost, so projects can be compared fairly.', go() { state.solTab = 'measures'; state.bld = null; go('sim-' + T.simId); } },
     { t: 'Add your own measure', d: 'Build a measure from the figures the solution shares, with a live preview. Here, hours saved per person. It goes for approval like any KPI.', mark: '#bld', go() { state.solTab = 'measures'; state.bld = { proj: T.simId, name: 'Hours saved per person', op: 'per', a: 'hours', b: 'people', rate: 2, target: '', aud: 'client' }; go('sim-' + T.simId); setTimeout(() => { const b = $('#bld'); if (b) b.scrollIntoView({ block: 'center' }); }, 60); } },
     { t: 'Standard analytics', d: 'Any measure over time against the period before, by project and by weekday. Rates are always worked out from totals, never averaged.', go() { state.bld = null; state.an = { measure: 'hours', proj: 'all', range: 90 }; go('analytics'); } },
-    { t: 'Ask the data', d: 'Ask in plain words. Answers come only from the collected figures, show where each number came from, and never claim a cause.', go() { state.chat = []; go('ask'); askSubmit('Which project improved most this month?'); const k = state.tour; setTimeout(() => { if (state.tour === k) askSubmit('Why did Invoice reader change this week?'); }, reduceMotion ? 10 : 1000); } },
+    { t: 'Ask the data', d: 'Ask in plain words. Answers come only from the collected figures, show where each number came from, and never claim a cause.', go() { askSetScope(''); state.chat = []; go('ask'); askSubmit('Which project improved most this month?'); const k = state.tour; setTimeout(() => { if (state.tour === k) askSubmit('Why did Invoice reader change this week?'); }, reduceMotion ? 10 : 1000); } },
     { t: 'Your turn', d: 'Open Demo studio to create projects, move the date forward or cause problems. Everything updates as you go.', go() { state.studio = true; go('home'); } },
   ];
   function wizTo(n) {
@@ -3521,6 +3550,105 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
     if (last !== raw) { window.scrollTo(0, 0); last = raw; } else window.scrollTo(0, scroll);
   }
 
+  // ------------------------------------------------------------------ DROPDOWNS: never the browser's own list
+  // Every <select> is drawn as a button and a list in the AXLE look. The native select stays underneath, hidden,
+  // holding the value and firing the same change event, so every page reads it exactly as before. A select
+  // marked data-add offers to add what's missing, and says so when it's empty.
+  const SEL_ADD = {
+    org: { empty: 'No organisations yet', label: 'Add an organisation', placeholder: 'Organisation name',
+      add(name) { const o = newOrg(name, 'Other'); log(`Added organisation ${name}`); toast(`${name} added. Add its industry and data agreement from Organisations.`); return { value: o.id, label: name }; } },
+    app: { empty: 'No applications yet', label: 'Track an application', go: '#track' },
+  };
+  const cselLabel = (sel) => { const o = sel.options[sel.selectedIndex]; return o ? o.textContent : ''; };
+  function cselClose(focusBtn) {
+    const l = $('#csel-list'); if (!l) return;
+    const btn = l._btn; l.remove();
+    if (btn) { btn.setAttribute('aria-expanded', 'false'); if (focusBtn) btn.focus(); }
+  }
+  function cselPick(sel, value) {
+    if (sel.value !== value) { sel.value = value; sel.dispatchEvent(new Event('input', { bubbles: true })); sel.dispatchEvent(new Event('change', { bubbles: true })); }
+    const btn = sel._csel; if (btn && btn.isConnected) btn.querySelector('.csel-v').textContent = cselLabel(sel);
+    cselClose(true);
+  }
+  function cselOpen(btn, sel) {
+    cselClose();
+    const add = SEL_ADD[sel.dataset.add], opts = [...sel.options];
+    const rows = [];
+    [...sel.children].forEach((ch) => {
+      if (ch.tagName === 'OPTGROUP') { rows.push(`<div class="csel-g" role="presentation">${esc(ch.label)}</div>`); [...ch.children].forEach((o) => rows.push(o)); } else rows.push(ch);
+    });
+    const opt = (o) => `<div class="csel-opt" role="option" id="csel-o${opts.indexOf(o)}" data-i="${opts.indexOf(o)}" aria-selected="${o.selected}"${o.disabled ? ' aria-disabled="true"' : ''}><span>${esc(o.textContent)}</span>${o.selected ? icon('check', 'sm') : ''}</div>`;
+    const l = document.createElement('div');
+    l.id = 'csel-list'; l.className = 'csel-list'; l.setAttribute('role', 'listbox');
+    l.setAttribute('aria-label', btn.getAttribute('aria-label') || (btn.labels && btn.labels[0] ? btn.labels[0].textContent : 'Choose'));
+    l.innerHTML = (opts.length ? rows.map((r) => typeof r === 'string' ? r : opt(r)).join('') : `<div class="csel-empty">${esc(add ? add.empty : 'Nothing to choose yet')}</div>`)
+      + (add ? (add.go ? (sel.dataset.addOrg ? `<button type="button" class="csel-add" data-act="proj-for" data-org="${esc(sel.dataset.addOrg)}">${icon('plus', 'sm')}<span>${esc(add.label)}</span></button>` : `<a class="csel-add" href="${add.go}">${icon('plus', 'sm')}<span>${esc(add.label)}</span></a>`)
+        : `<form class="csel-addf" novalidate><span class="csel-g">${esc(add.label)}</span><div class="csel-addrow"><input type="text" aria-label="${esc(add.placeholder)}" placeholder="${esc(add.placeholder)}" maxlength="80"><button type="submit" class="btn sm">${icon('plus', 'sm')}Add</button></div></form>`) : '');
+    l._btn = btn; l._sel = sel;
+    document.body.appendChild(l);
+    cselPlace(l, btn);
+    btn.setAttribute('aria-expanded', 'true');
+    const cur = l.querySelector('[aria-selected="true"]') || l.querySelector('.csel-opt:not([aria-disabled])');
+    if (cur) cselFocus(l, cur); else { const inp = l.querySelector('input'); if (inp) inp.focus({ preventScroll: true }); }
+    const f = l.querySelector('.csel-addf');
+    if (f) f.addEventListener('submit', (e) => { e.preventDefault(); const v = f.querySelector('input').value.trim(); if (!v) { f.querySelector('input').focus(); return; }
+      const made = add.add(v); const o = new Option(made.label, made.value); sel.appendChild(o); cselPick(sel, made.value); });
+  }
+  // Below the button, or above it when there's more room there; it follows the button as the page scrolls.
+  function cselPlace(l, btn) {
+    const r = btn.getBoundingClientRect(), below = innerHeight - r.bottom;
+    l.style.minWidth = r.width + 'px'; l.style.top = l.style.bottom = '';
+    l.style.left = Math.max(8, Math.min(r.left, innerWidth - l.offsetWidth - 8)) + 'px';
+    if (below < Math.min(l.scrollHeight, 300) + 12 && r.top > below) { l.style.bottom = (innerHeight - r.top + 6) + 'px'; l.style.maxHeight = Math.min(300, r.top - 14) + 'px'; }
+    else { l.style.top = (r.bottom + 6) + 'px'; l.style.maxHeight = Math.max(160, Math.min(300, below - 14)) + 'px'; }
+  }
+  function cselFocus(l, el) {
+    l.querySelectorAll('.csel-opt.on').forEach((x) => x.classList.remove('on'));
+    el.classList.add('on'); l.setAttribute('aria-activedescendant', el.id); l.tabIndex = -1; l.focus({ preventScroll: true });
+    if (el.offsetTop < l.scrollTop) l.scrollTop = el.offsetTop - 6; else if (el.offsetTop + el.offsetHeight > l.scrollTop + l.clientHeight) l.scrollTop = el.offsetTop + el.offsetHeight - l.clientHeight + 6;
+  }
+  function cselEnhance(sel) {
+    if (sel._csel || sel.closest('.csel-skip')) return;
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'csel'; btn.setAttribute('aria-haspopup', 'listbox'); btn.setAttribute('aria-expanded', 'false');
+    if (sel.id) { btn.id = sel.id + '-btn'; const lab = document.querySelector(`label[for="${sel.id}"]`); if (lab) { lab.htmlFor = btn.id; } }
+    if (sel.getAttribute('aria-label')) btn.setAttribute('aria-label', sel.getAttribute('aria-label'));
+    btn.disabled = sel.disabled;
+    btn.innerHTML = `<span class="csel-v"></span><svg class="csel-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>`;
+    btn.querySelector('.csel-v').textContent = sel.options.length ? cselLabel(sel) : (SEL_ADD[sel.dataset.add] ? SEL_ADD[sel.dataset.add].empty : 'Nothing to choose yet');
+    if (!sel.options.length) btn.classList.add('none');
+    sel.classList.add('csel-native'); sel.tabIndex = -1; sel.setAttribute('aria-hidden', 'true');
+    sel.after(btn); sel._csel = btn;
+    btn.addEventListener('click', () => (btn.getAttribute('aria-expanded') === 'true' ? cselClose(true) : cselOpen(btn, sel)));
+    btn.addEventListener('keydown', (e) => { if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(e.key)) { e.preventDefault(); cselOpen(btn, sel); } });
+    sel.addEventListener('change', () => { if (btn.isConnected) btn.querySelector('.csel-v').textContent = cselLabel(sel); });
+  }
+  const cselAll = (root) => (root.querySelectorAll ? root.querySelectorAll('select') : []).forEach(cselEnhance);
+  new MutationObserver((ms) => ms.forEach((m) => m.addedNodes.forEach((n) => { if (n.nodeType !== 1) return; if (n.tagName === 'SELECT') cselEnhance(n); else cselAll(n); }))).observe(document.body, { childList: true, subtree: true });
+  document.addEventListener('click', (e) => {
+    const l = $('#csel-list'); if (!l) return;
+    const o = e.target.closest('.csel-opt');
+    if (o && l.contains(o)) { if (!o.hasAttribute('aria-disabled')) cselPick(l._sel, l._sel.options[+o.dataset.i].value); return; }
+    if (e.target.closest('.csel-add')) { cselClose(); return; }
+    if (!l.contains(e.target) && !e.target.closest('.csel')) cselClose();
+  });
+  document.addEventListener('keydown', (e) => {
+    const l = $('#csel-list'); if (!l) return;
+    if (e.key === 'Escape') { e.preventDefault(); cselClose(true); return; }
+    if (e.key === 'Tab') { if (!e.target.closest('.csel-addf')) cselClose(); return; }
+    if (e.target.closest('.csel-addf')) return;
+    const all = [...l.querySelectorAll('.csel-opt:not([aria-disabled])')], i = all.indexOf(l.querySelector('.csel-opt.on'));
+    if (!all.length) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); cselFocus(l, all[Math.min(all.length - 1, i + 1)]); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); cselFocus(l, all[Math.max(0, i - 1)]); }
+    else if (e.key === 'Home') { e.preventDefault(); cselFocus(l, all[0]); }
+    else if (e.key === 'End') { e.preventDefault(); cselFocus(l, all[all.length - 1]); }
+    else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (i >= 0) cselPick(l._sel, l._sel.options[+all[i].dataset.i].value); }
+    else if (e.key.length === 1) { const k = e.key.toLowerCase(), from = all.slice(i + 1).concat(all.slice(0, i + 1)), hit = from.find((x) => x.textContent.trim().toLowerCase().startsWith(k)); if (hit) cselFocus(l, hit); }
+  });
+  window.addEventListener('resize', () => { const l = $('#csel-list'); if (l && l._btn.isConnected) cselPlace(l, l._btn); else cselClose(); });
+  window.addEventListener('scroll', (e) => { const l = $('#csel-list'); if (!l || l.contains(e.target)) return; if (!l._btn.isConnected) { cselClose(); return; } const r = l._btn.getBoundingClientRect(); if (r.bottom < 0 || r.top > innerHeight) cselClose(); else cselPlace(l, l._btn); }, true);
+
   // ------------------------------------------------------------------ events
   const closePops = (except) => ['#new-pop', '#bell-pop', '#user-pop', '#ws-pop', '#scope-pop'].forEach((s) => { const p = $(s); if (p && s !== except) p.hidden = true; });
   const toggle = (sel) => { const p = $(sel); closePops(sel); p.hidden = !p.hidden; };
@@ -3633,10 +3761,12 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
     },
     'cm-approve': (d) => { const pj = projById(d.proj), cm = pj.custom().find((x) => x.id === d.cm); cm.status = 'live'; const a = pj.approvals().find((x) => x.cmId === cm.id); if (a) a.status = 'approved'; log(`Approved the measure \u201c${cm.name}\u201d`, 'Aisyah Rahman'); render(); toast('Aisyah approved the measure.'); },
     'ask-clear': () => { state.chat = []; render(); },
-    'an-ask': () => { const m = mByKey(state.an.measure), c = state.an.proj.startsWith('c:') ? coById(state.an.proj.slice(2)) : null; askSubmit(c ? `How is ${c.short} doing this month?` : `Which project improved most on ${m.name.toLowerCase()} this month?`); },
+    'an-ask': () => { const m = mByKey(state.an.measure), c = state.an.proj.startsWith('c:') ? coById(state.an.proj.slice(2)) : null; askSetScope(state.an.proj === 'all' ? '' : c ? state.an.proj : 'p:' + state.an.proj); askSubmit(c ? `How is ${c.short} doing this month?` : `Which project improved most on ${m.name.toLowerCase()} this month?`); },
     export: () => toast('Exports download in the real product. The mock can\u2019t save files.'),
     'tour-start': () => { tourGo(0); },
-    'ask-client': (d) => askSubmit(`How is ${d.name} doing this month?`),
+    'ask-client': (d) => { askSetScope('c:' + d.org); askSubmit(`How is ${d.name} doing this month?`); },
+    'ask-about': (d) => { askSetScope(d.k); go('ask'); },
+    'ask-track': () => { state.trk = trkFresh(); go('track'); },
     'to-ctx': (d) => { state.coFor = d.org + 'results'; state.resTab = 'context'; state.audience = 'staff'; go('results-' + d.org); },
     'ctx-pick': (d) => { const el = $('#' + d.for); if (el) el.click(); },
     'ctx-rec': () => { ctxRecord(); },

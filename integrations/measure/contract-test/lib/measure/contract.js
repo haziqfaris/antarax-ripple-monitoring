@@ -17,9 +17,10 @@ export const MEASURE_PATHS = {
     observations: `${MEASURE_BASE}/observations`,
     health: `${MEASURE_BASE}/health`,
     baselines: `${MEASURE_BASE}/baselines`,
+    capacity: `${MEASURE_BASE}/capacity`,
     openapi: `${MEASURE_BASE}/openapi.json`,
 };
-export const MEASURE_SCHEMA_VERSION = "1.0.0";
+export const MEASURE_SCHEMA_VERSION = "1.1.0";
 /** The longest window one observations read covers, in local days, both ends counted. */
 export const MAX_OBSERVATION_DAYS = 92;
 /** Page sizes, as every list in the contract (docs/03, 3.6). */
@@ -55,9 +56,25 @@ export const AGGREGATIONS = {
     duration: ["mean", "median", "p90"],
     gauge: ["last", "mean"],
 };
-export const CAPABILITIES = ["metrics", "observations", "health", "baselines"];
+export const CAPABILITIES = ["metrics", "observations", "health", "baselines", "capacity"];
 export const ENVIRONMENTS = ["production", "staging", "development"];
 export const BASELINE_METHODS = ["timed_sample", "historical_records", "client_estimate"];
+/**
+ * Capacity (docs/14, 14.5a): optional and supplementary. The application's
+ * own AXLE watches capacity in full; this only lets Outcomes show a
+ * read-only summary beside the results. It serves the latest snapshots the
+ * application's capacity check already takes, as its capacity.json describes
+ * them (AntaraX-Dashboard-kit capacity/). The classes and the ways of
+ * measuring are that kit's, unchanged. Never money, plans or accounts:
+ * what a plan costs lives in AX Frame.
+ */
+export const CAPACITY_CLASSES = ["data", "files", "transfer", "requests", "compute", "connections", "deployables", "jobs", "messages", "ai", "outside-apis", "backups"];
+/** capacity.json's measure.how. */
+export const CAPACITY_HOW = ["provider-api", "query", "log", "manual", "none"];
+/** What a limit counts over. capacity.json's "billing-cycle" is sent as "month". */
+export const CAPACITY_PER = ["none", "day", "month"];
+export const MAX_CAPACITY_RESOURCES = 50;
+export const MAX_CAPACITY_OUTAGES = 100;
 // ---------------------------------------------------------------------------
 // Days and moments
 // ---------------------------------------------------------------------------
@@ -408,6 +425,161 @@ export function checkBaseline(x, metrics, at = "baseline") {
         out.push({ at: `${at}.evidence`, message: "The evidence seems to hold personal data." });
     if (!isMoment(o.recorded_at))
         out.push({ at: `${at}.recorded_at`, message: "recorded_at is a UTC moment with Z." });
+    return out;
+}
+const CAPACITY_ID = /^[a-z][a-z0-9-]{0,39}$/;
+/** Field names that would carry money, a plan, an account or a secret. Refused with their own message. */
+const COSTLY_FIELD = /cost|price|fee|amount|currency|money|spend|bill|charge|plan|tier|provider|account|asset|credential|secret|password|token_key|api_key|owner|email/i;
+/** Text that names an amount of money: RM450, US$25, $25, 12 USD. */
+export function looksLikeMoney(text) {
+    return /(\bRM\s?\d|\$\s?\d|[€£¥]\s?\d|\b\d[\d,.]*\s?(MYR|USD|SGD|EUR|GBP)\b|\b(MYR|USD|SGD|EUR|GBP)\s?\d)/.test(text);
+}
+const MONEY_UNIT = /money|cost|price|usd|myr|sgd|eur|gbp|ringgit|dollar|currency/i;
+function capacityFields(o, allowed, at, out) {
+    for (const k of fieldsOf(o)) {
+        if (allowed.includes(k))
+            continue;
+        if (COSTLY_FIELD.test(k))
+            out.push({ at: `${at}.${k}`, message: `"${k}" is not allowed: capacity never carries money, plans, provider accounts or credentials. Costs live in AX Frame.` });
+        else
+            out.push({ at: `${at}.${k}`, message: `"${k}" is not a field here.` });
+    }
+}
+function plainWords(v, at, what, out) {
+    if (typeof v !== "string" || !v.trim() || v.length > 120)
+        return out.push({ at, message: `${what} is plain words, up to 120 characters.` });
+    if (looksPersonal(v))
+        out.push({ at, message: `${what} seems to hold personal data.` });
+    else if (looksLikeMoney(v))
+        out.push({ at, message: `${what} names an amount of money; capacity never carries costs. They live in AX Frame.` });
+}
+const RESOURCE_FIELDS = ["id", "class", "name", "unit", "used", "limit", "per", "percent", "runway_days", "measured_at", "how", "why_not"];
+export function checkCapacityResource(x, at = "resource") {
+    if (!x || typeof x !== "object" || Array.isArray(x))
+        return [{ at, message: "A resource is an object." }];
+    const o = x;
+    const out = [];
+    capacityFields(o, RESOURCE_FIELDS, at, out);
+    if (typeof o.id !== "string" || !CAPACITY_ID.test(o.id))
+        out.push({ at: `${at}.id`, message: "id is a short lower-case code, as in capacity.json: disk, ai-tokens." });
+    if (!CAPACITY_CLASSES.includes(o.class))
+        out.push({ at: `${at}.class`, message: `class is one of the capacity kit's: ${CAPACITY_CLASSES.join(", ")}.` });
+    plainWords(o.name, `${at}.name`, "name", out);
+    if (!isUnit(o.unit) || MONEY_UNIT.test(String(o.unit)))
+        out.push({ at: `${at}.unit`, message: `unit is one of ${METRIC_UNITS.join(", ")}, or x. and a name (x.token), and never money.` });
+    if (!CAPACITY_PER.includes(o.per))
+        out.push({ at: `${at}.per`, message: `per is one of ${CAPACITY_PER.join(", ")}.` });
+    const nonNegative = (v) => typeof v === "number" && Number.isFinite(v) && v >= 0;
+    if (o.limit !== null && (!nonNegative(o.limit) || o.limit === 0))
+        out.push({ at: `${at}.limit`, message: "limit is a number above zero, in unit, or null when there is none." });
+    const how = o.how;
+    if (!CAPACITY_HOW.includes(how))
+        out.push({ at: `${at}.how`, message: `how is one of ${CAPACITY_HOW.join(", ")}, as capacity.json's measure.how.` });
+    if (how === "none") {
+        for (const f of ["used", "percent", "runway_days", "measured_at"])
+            if (o[f] !== null)
+                out.push({ at: `${at}.${f}`, message: `A resource that is not measured has ${f} null.` });
+        if (o.why_not === undefined)
+            out.push({ at: `${at}.why_not`, message: "A resource that is not measured says why_not." });
+        else
+            plainWords(o.why_not, `${at}.why_not`, "why_not", out);
+    }
+    else {
+        if (!nonNegative(o.used))
+            out.push({ at: `${at}.used`, message: "used is a number, zero or more, in unit." });
+        if (!isMoment(o.measured_at))
+            out.push({ at: `${at}.measured_at`, message: "measured_at is a UTC moment with Z." });
+        if (o.why_not !== undefined)
+            out.push({ at: `${at}.why_not`, message: "why_not is only for a resource whose how is none." });
+    }
+    if (typeof o.used === "number" && typeof o.limit === "number" && o.limit > 0) {
+        const exact = (o.used / o.limit) * 100;
+        if (typeof o.percent !== "number" || !Number.isFinite(o.percent) || Math.abs(o.percent - exact) > 0.5 + 1e-9)
+            out.push({ at: `${at}.percent`, message: `percent is used / limit × 100: ${Math.round(exact * 10) / 10}.` });
+    }
+    else if (o.percent !== null)
+        out.push({ at: `${at}.percent`, message: "percent is null when used or limit is." });
+    if (o.runway_days !== null && (!Number.isInteger(o.runway_days) || o.runway_days < 0))
+        out.push({ at: `${at}.runway_days`, message: "runway_days is a whole number of days, or null." });
+    return out;
+}
+export function checkCapacity(x) {
+    if (!x || typeof x !== "object" || Array.isArray(x))
+        return [{ at: "capacity", message: "Capacity is an object." }];
+    const o = x;
+    const out = [];
+    capacityFields(o, ["object", "snapshot_at", "capacity_updated", "resources", "availability"], "capacity", out);
+    if (o.object !== "capacity")
+        out.push({ at: "capacity.object", message: 'object is "capacity".' });
+    if (!isMoment(o.snapshot_at))
+        out.push({ at: "capacity.snapshot_at", message: "snapshot_at is a UTC moment with Z: when the latest nightly snapshot was taken." });
+    if (!isDate(o.capacity_updated))
+        out.push({ at: "capacity.capacity_updated", message: "capacity_updated is capacity.json's updated, YYYY-MM-DD." });
+    const rs = o.resources;
+    if (!Array.isArray(rs) || !rs.length)
+        out.push({ at: "capacity.resources", message: "resources is a list of at least one, from capacity.json." });
+    else {
+        if (rs.length > MAX_CAPACITY_RESOURCES)
+            out.push({ at: "capacity.resources", message: `At most ${MAX_CAPACITY_RESOURCES} resources.` });
+        const ids = new Set();
+        rs.forEach((r, i) => {
+            out.push(...checkCapacityResource(r, `capacity.resources[${i}]`));
+            const id = r?.id;
+            if (typeof id === "string") {
+                if (ids.has(id))
+                    out.push({ at: `capacity.resources[${i}].id`, message: `"${id}" is listed twice.` });
+                ids.add(id);
+            }
+        });
+    }
+    const a = o.availability;
+    if (a === undefined)
+        out.push({ at: "capacity.availability", message: "availability is the outside check's summary, or null." });
+    else if (a !== null) {
+        if (typeof a !== "object" || Array.isArray(a))
+            out.push({ at: "capacity.availability", message: "availability is an object, or null." });
+        else {
+            const v = a;
+            capacityFields(v, ["every_minutes", "last_checked_at", "last_result", "up_share_90d", "outages"], "capacity.availability", out);
+            if (!Number.isInteger(v.every_minutes) || v.every_minutes < 1 || v.every_minutes > 15)
+                out.push({ at: "capacity.availability.every_minutes", message: "every_minutes is a whole number from 1 to 15, as capacity.json says." });
+            if (!isMoment(v.last_checked_at))
+                out.push({ at: "capacity.availability.last_checked_at", message: "last_checked_at is a UTC moment with Z." });
+            if (v.last_result !== "up" && v.last_result !== "down")
+                out.push({ at: "capacity.availability.last_result", message: 'last_result is "up" or "down".' });
+            if (v.up_share_90d !== null && (typeof v.up_share_90d !== "number" || v.up_share_90d < 0 || v.up_share_90d > 1))
+                out.push({ at: "capacity.availability.up_share_90d", message: "up_share_90d is a share from 0 to 1, or null." });
+            if (!Array.isArray(v.outages))
+                out.push({ at: "capacity.availability.outages", message: "outages is a list; empty when there were none." });
+            else {
+                if (v.outages.length > MAX_CAPACITY_OUTAGES)
+                    out.push({ at: "capacity.availability.outages", message: `At most ${MAX_CAPACITY_OUTAGES} outages.` });
+                v.outages.forEach((g, i) => {
+                    const at = `capacity.availability.outages[${i}]`;
+                    if (!g || typeof g !== "object" || Array.isArray(g))
+                        return out.push({ at, message: "An outage is an object." });
+                    const q = g;
+                    capacityFields(q, ["started_at", "ended_at", "minutes"], at, out);
+                    if (!isMoment(q.started_at))
+                        out.push({ at: `${at}.started_at`, message: "started_at is a UTC moment with Z." });
+                    if (q.ended_at === null) {
+                        if (q.minutes !== null)
+                            out.push({ at: `${at}.minutes`, message: "minutes is null while the outage lasts." });
+                    }
+                    else if (!isMoment(q.ended_at) || (isMoment(q.started_at) && q.ended_at < q.started_at))
+                        out.push({ at: `${at}.ended_at`, message: "ended_at is a UTC moment with Z, after started_at, or null while it lasts." });
+                    else if (isMoment(q.started_at)) {
+                        const mins = (Date.parse(q.ended_at) - Date.parse(q.started_at)) / 60_000;
+                        if (!Number.isInteger(q.minutes) || Math.abs(q.minutes - mins) > 1)
+                            out.push({ at: `${at}.minutes`, message: `minutes is the outage's length, whole: ${Math.round(mins)}.` });
+                    }
+                    const prev = v.outages[i - 1];
+                    if (i > 0 && typeof prev?.started_at === "string" && typeof q.started_at === "string" && q.started_at < prev.started_at)
+                        out.push({ at, message: "Outages are oldest first." });
+                });
+            }
+        }
+    }
     return out;
 }
 /** The catalog as a map by key, for the observation and baseline checks. */

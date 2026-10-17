@@ -15,9 +15,16 @@ Read-only `GET` endpoints at `/internal/measure/v1` on the solution's own host, 
 | `/observations?from=&to=` | Daily figures for finished local days, at most 92 days per call |
 | `/health` | `ok`, `degraded` or `down`, and each metric's last complete day |
 | `/baselines` | Optional: baselines the solution already holds, with evidence |
+| `/capacity` | Optional: a read-only capacity summary, only for an application with a `capacity.json` (below) |
 | `/openapi.json` | The interface's OpenAPI document (this pack's `openapi.json`) |
 
 Every call is signed by Outcomes with the integration's key, `ax_msr_…`, which Outcomes shows once when the solution is connected. Keep it as a secret, `AX_MEASURE_KEY`. Daily totals only: never document text, names or anything about one person.
+
+## Capacity, optional
+
+Only for an application that already has a `capacity.json` and a nightly capacity check (AntaraX-Dashboard-kit `capacity/`). Skip it otherwise: nothing else changes.
+
+Outcomes is about outcomes. The application's own AXLE watches capacity in full and raises the warnings; `/capacity` only feeds a short read-only summary beside the results. It serves the latest snapshots the capacity check already takes, measures nothing new, takes no parameters, and never carries a cost, price, plan name, provider account or credential (costs live in AX Frame). With the kit, add `capacity: async (now) => …` to the adapter; the manifest then lists `capacity`. The shape is in `examples/capacity.json` and antarax-api docs/14, 14.5a.
 
 ## Start here
 

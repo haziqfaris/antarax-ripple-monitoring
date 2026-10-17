@@ -1250,3 +1250,40 @@ details.how summary::after, details.how[open] summary::after { content: none; }
   .tabs button.aux { margin-left: 0; }
 }
 .cap-lead > span:nth-child(2) { flex: 1 1 260px !important; min-width: 0; }
+
+/* Dropdowns drawn in the AXLE look; the browser's own list never shows (owner feedback, 17 Oct 2026) */
+select.csel-native { position: absolute !important; width: 1px !important; height: 1px !important; min-height: 0 !important; padding: 0 !important; border: 0 !important; opacity: 0; pointer-events: none; clip-path: inset(50%); }
+.csel { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 10px 12px 10px 14px; text-align: left; cursor: pointer;
+  background: var(--surface); color: var(--ink); border: 1.5px solid var(--line-strong); border-radius: 12px; font: inherit; font-size: .9375rem; transition: border-color .15s, box-shadow .15s; }
+.csel:hover { border-color: var(--primary); }
+.csel:focus-visible, .csel[aria-expanded="true"] { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-tint); }
+.csel:disabled { opacity: .55; cursor: not-allowed; }
+.csel.none .csel-v { color: var(--muted); }
+.csel-v { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.csel-chev { width: 18px; height: 18px; flex: none; fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .2s; }
+.csel[aria-expanded="true"] .csel-chev { transform: rotate(180deg); stroke: var(--primary); }
+.csel-list { position: fixed; z-index: 400; max-width: min(420px, calc(100vw - 16px)); max-height: 300px; overflow: auto; padding: 6px; display: grid; gap: 1px;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line-strong); border-radius: 14px; box-shadow: 0 18px 40px -12px rgba(5, 18, 66, .28), 0 2px 6px rgba(5, 18, 66, .08);
+  animation: csel-in .14s ease-out; outline: none; }
+@keyframes csel-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .csel-list { animation: none; } .csel-chev { transition: none; } }
+.csel-opt { display: flex; align-items: center; gap: 10px; justify-content: space-between; padding: 9px 12px; border-radius: 9px; cursor: pointer; font-size: .9375rem; min-height: 40px; }
+.csel-opt:hover, .csel-opt.on { background: var(--primary-tint); }
+.csel-opt[aria-selected="true"] { font-weight: 600; color: var(--primary-ink); }
+.csel-opt[aria-disabled="true"] { color: var(--muted); cursor: not-allowed; background: none; }
+.csel-opt svg { flex: none; color: var(--primary); }
+.csel-g { font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); padding: 10px 12px 4px; }
+.csel-empty { padding: 12px; color: var(--muted); font-size: .875rem; }
+.csel-add { display: flex; align-items: center; gap: 8px; margin-top: 4px; padding: 10px 12px; border-top: 1px solid var(--line); border-radius: 0 0 9px 9px; color: var(--primary-ink); font-weight: 600; font-size: .875rem; text-decoration: none; }
+.csel-add:hover { background: var(--primary-tint); }
+.csel-addf { margin-top: 4px; border-top: 1px solid var(--line); padding: 4px 6px 6px; display: grid; gap: 6px; }
+.csel-addf .csel-g { padding: 8px 6px 2px; }
+.csel-addrow { display: flex; gap: 6px; }
+.csel-addrow input { flex: 1; min-width: 0; min-height: 40px; padding: 8px 12px; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; font-size: .9375rem; }
+.csel-addrow input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-tint); }
+
+/* Ask: one organisation or one application at a time */
+.ask-scope { display: grid; grid-template-columns: minmax(220px, 360px) minmax(0, 1fr); gap: 6px 16px; align-items: end; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.ask-scope p { padding-bottom: 12px; }
+@media (max-width: 640px) { .ask-scope { grid-template-columns: minmax(0, 1fr); } .ask-scope p { padding-bottom: 0; } }
+button.csel-add { width: 100%; background: none; border: 0; border-top: 1px solid var(--line); cursor: pointer; font: inherit; font-size: .875rem; text-align: left; }
