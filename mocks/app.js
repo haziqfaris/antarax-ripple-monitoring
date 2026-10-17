@@ -1808,7 +1808,7 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
   function appRows() {
     return companies().flatMap((c) => c.projects.flatMap((p) => p.solutions.map((x) => {
       const s = !demo() && simById(x.id), setting = !!s && s.stage === 'draft';
-      const step = setting && state.focusSim === s.id ? Math.min(state.wiz.step + 2, 6) : setting ? 3 : null;
+      const ww = setting ? (state.focusSim === s.id ? state.wiz : s.wiz) : null, step = setting ? (ww ? Math.min(ww.step + 2, 6) : 3) : null;
       const order = setting ? 0 : ['failing', 'stale'].includes(x.status) ? 1 : x.status === 'review' ? 2 : x.status === 'approved' ? 3 : x.status === 'not_connected' ? 5 : 4;
       return { c, p, x, s, setting, step, order };
     }))).sort((a, b) => a.order - b.order || a.x.name.localeCompare(b.x.name));
@@ -1838,6 +1838,13 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
   const trkUnit = (t) => { const u = (t.unit || '').trim().toLowerCase(); return u ? [u, plural(u)] : PATTERNS[t.patterns[0]].unit; };
   const trkObjective = (t) => { const u = trkUnit(t), d = t.dept && DEPTS[t.dept]; return `${d && t.dept !== 'other' ? `Free the ${d.name.toLowerCase()} team` : 'Free the team'} from handling ${u[1]} by hand, and get more of them right first time.`; };
   const trkKindOf = (t) => kindOf({ kind: PATTERNS[t.patterns[0]].base, patterns: t.patterns, unit: trkUnit(t) });
+  // Each application being set up keeps its own connection state, so several can wait at once and each resumes where it was.
+  function focusSimWiz(id) {
+    if (state.focusSim === id) return;
+    const cur = simById(state.focusSim); if (cur && cur.stage === 'draft') cur.wiz = state.wiz;
+    const s = simById(id); state.focusSim = id;
+    state.wiz = (s && s.wiz) || Object.assign(freshWizard(), { solName: s ? s.name : '' });
+  }
   const trkSim = () => { const t = state.trk; return t && t.simId ? simById(t.simId) : null; };
   // Steps 1 and 2 before anything exists (or while editing them), then the connection's own steps.
   function trkStep() { const t = state.trk, s = trkSim(); return t.sent && s ? 7 : t.editing ? t.step : s && s.stage === 'draft' ? 2 + state.wiz.step : t.step; }
@@ -1896,7 +1903,9 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
     </aside>`;
   }
   pages.track = (id) => {
-    if (id && simById(id) && (!state.trk || state.trk.simId !== id)) { state.trk = Object.assign(trkFresh(), { simId: id }); state.focusSim = id; }
+    if (id && simById(id) && (!state.trk || state.trk.simId !== id)) { state.trk = Object.assign(trkFresh(), { simId: id }); focusSimWiz(id); }
+    // "Track an application" always starts a new one; those already started wait in Applications, and here, to resume.
+    if (!id && state.trk && state.trk.simId) state.trk = trkFresh();
     state.trk = state.trk || trkFresh();
     const t = state.trk, n = trkStep(), s = trkSim(), w = state.wiz, K = trkKindOf(t);
     if (s && s.stage !== 'draft' && !t.sent) { state.trk = trkFresh(); return pages.track(); }
@@ -1910,7 +1919,9 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
     let body = '';
     if (n === 1) {
       const q = t.q.trim(), list = state.orgs, exact = list.some((o) => o.name.toLowerCase() === q.toLowerCase());
+      const started = t.editing ? [] : state.sims.filter((x) => x.stage === 'draft'), waiting = t.editing ? 0 : state.sims.filter((x) => x.stage === 'review' || x.stage === 'approved').length;
       body = `${tq(1, 'Which organisation is this for?', 'Pick one, or type a new name to add it.')}${why(1)}
+        ${started.length || waiting ? `<div class="tk-resume">${icon('clock', 'sm')}<span>${waiting ? `${waiting} waiting for approval or first data. ` : ''}${started.length ? 'Being set up, to pick up:' : ''}</span>${started.map((x) => { const ww = state.focusSim === x.id ? state.wiz : x.wiz; return `<a href="#track-${x.id}">${esc(x.name)} · step ${ww ? Math.min(ww.step + 2, 6) : 3} of 6</a>`; }).join('')}</div>` : ''}
         <div class="field"><label for="tk-q" class="sr-only">Organisation</label><div class="tk-search">${icon('search', 'sm')}<input id="tk-q" autocomplete="off" placeholder="Type an organisation’s name" value="${esc(t.q)}"></div></div>
         <div class="tk-orgs" role="listbox" aria-label="Organisations">
           ${list.map((o) => `<button type="button" class="tk-org" role="option" data-trk-org="${o.id}" aria-selected="${t.orgId === o.id && !t.isNew}" data-name="${esc(o.name.toLowerCase())}"><span class="avatar" style="border-radius:10px">${initials(o.name)}</span><span><b class="ink">${esc(o.name)}</b><small>${esc(o.industry)} · ${simsOf(o).length} application${simsOf(o).length === 1 ? '' : 's'}</small></span>${icon('check', 'sm')}</button>`).join('')}
@@ -2054,6 +2065,7 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
         w.solName = app; t.editing = false; t.orgId = org.id; t.copied = false; w.step = 1;
         log(`Changed ${app} for ${org.name} while setting it up`); render(); window.scrollTo(0, 0); return;
       }
+      const prev = simById(state.focusSim); if (prev && prev.stage === 'draft') prev.wiz = state.wiz;
       const sim = Object.assign(newSim(org, { kind, project, objective, sol: app }), shape);
       log(`Started tracking ${app} (${project}) for ${org.name}`);
       t.simId = sim.id; t.orgId = org.id; state.focusSim = sim.id;
@@ -3437,7 +3449,7 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
     if (page === 'connect' && state.mode) {
       const cs = (arg && simById(arg)) || simById(state.focusSim) || state.sims.find((x) => x.stage === 'draft');
       if (cs && cs.stage === 'draft') {
-        if (cs.id !== state.focusSim) { state.focusSim = cs.id; state.wiz = freshWizard(); }
+        focusSimWiz(cs.id);
         page = 'track'; arg = cs.id; raw = 'track-' + cs.id;
         try { history.replaceState(null, '', '#' + raw); } catch (err) { /* the page still shows the wizard */ }
       }
