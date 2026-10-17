@@ -6,7 +6,9 @@ const schema = z.object({
   CRON_SECRET: z.string().min(24, "CRON_SECRET must be at least 24 characters"),
   APP_URL: z.string().url(),
   RESEND_API_KEY: z.string().optional(),
-  MAIL_FROM: z.string().default("Outcomes <outcomes@localhost>"),
+  MAIL_FROM: z.string().default("AXLE · Outcomes <outcomes@antarax.ai>"),
+  /** antarax.ai only sends (brand kit 13 §2): replies go to support. */
+  MAIL_REPLY_TO: z.string().default("support@go.antarax.ai"),
   ALERT_TO: z.string().default(""),
   /** Tests only: sign-in e-mails are written to this file instead of sent. Never set it in a deployment. */
   MAIL_CAPTURE_FILE: z.string().optional(),

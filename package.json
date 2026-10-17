@@ -22,7 +22,8 @@
     "jobs:run": "tsx scripts/run-job.ts",
     "example-link": "tsx scripts/example-link.ts",
     "backup": "bash scripts/backup.sh",
-    "vendor:sync": "bash scripts/vendor-sync.sh"
+    "vendor:sync": "bash scripts/vendor-sync.sh",
+    "mail:colours": "node scripts/mail-colours.mjs"
   },
   "dependencies": {
     "@internationalized/date": "3.12.4",

@@ -19,7 +19,7 @@ export async function addStaff(email: string, name: string, role: Role): Promise
 }
 
 /** Step one: a link to e-mail. Only an active staff member gets one; the caller answers the same either way. */
-export async function requestLink(email: string): Promise<{ token: string; name: string; email: string } | null> {
+export async function requestLink(email: string): Promise<{ token: string; name: string; email: string; expiresAt: Date } | null> {
   const e = normal(email);
   if (e.length > 254 || !/^[^\s@]+@[^\s@]+$/.test(e)) return null;
   return plain(async (tx) => {
@@ -27,8 +27,8 @@ export async function requestLink(email: string): Promise<{ token: string; name:
     const [s] = await tx<{ id: string; name: string }[]>`select id, name from staff where email = ${e} and disabled_at is null`;
     if (!s) return null;
     const token = randomString(40);
-    await tx`insert into sign_in_links (token_hash, staff_id, expires_at) values (${await sha256Hex(token)}, ${s.id}, now() + make_interval(mins => ${LINK_MINUTES}))`;
-    return { token, name: s.name, email: e };
+    const [l] = await tx<{ expires_at: Date }[]>`insert into sign_in_links (token_hash, staff_id, expires_at) values (${await sha256Hex(token)}, ${s.id}, now() + make_interval(mins => ${LINK_MINUTES})) returning expires_at`;
+    return { token, name: s.name, email: e, expiresAt: l!.expires_at };
   });
 }
 

@@ -4,7 +4,7 @@
 
 ## Status, 17 Oct 2026
 
-**Built and tested in this repository:** V-01 and V-03 to V-30. The registry entry (V-04) is in `antarax-api`. Tests: 19 unit, 27 database (separation, sign-in links and the full loop), 7 browser end to end (desktop and 390px, axe clean). The backup and restore drill passed against a local database. How to deploy: `docs/DEPLOY.md`.
+**Built and tested in this repository:** V-01 and V-03 to V-30. The registry entry (V-04) is in `antarax-api`. Tests: 22 unit, 27 database (separation, sign-in links and the full loop), 7 browser end to end (desktop and 390px, axe clean). The backup and restore drill passed against a local database. How to deploy: `docs/DEPLOY.md`.
 
 **Not done, because it needs something outside the code:**
 

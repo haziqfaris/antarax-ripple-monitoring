@@ -16,7 +16,7 @@ This repository holds the product requirements and mocks for Performance Intelli
 - Every read and write goes through `inScope` (`lib/db.ts`): a transaction sees nothing until it names one organisation, or `all` for pages that list every organisation. Never connect as the owner.
 - Numbers come from `domain/kpi.ts`, never from a page or AI. A missing day is a gap, never a zero.
 - Never edit `vendor/lapisan/`; sync it from antarax-api (`npm run vendor:sync`).
-- No browser-default controls: dropdowns and dates use `app/_components/controls.tsx`. Colours only from `app/axle-tokens.css`.
+- No browser-default controls: dropdowns and dates use `app/_components/controls.tsx`. Colours only from `app/axle-tokens.css`; e-mail, which can't read CSS variables, uses `lib/mail/axle-colours.ts`, generated from it by `npm run mail:colours`.
 - Before pushing: `npm run check`, and `bash scripts/e2e.sh` for anything a person sees. There is no GitHub Actions; don't add a workflow.
 - Sign-in is an e-mailed link, then a two-step code; there are no passwords. A sign-in link is sent at once (`sendNow`), never through the outbox, which staff can read.
 

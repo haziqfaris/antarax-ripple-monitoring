@@ -46,7 +46,9 @@ The console must not connect as `postgres`, which bypasses row-level security; i
 
 ## 4 Set up e-mail
 
-In Resend, add and verify the sending domain (it shows the DNS records), then make an API key with **sending access** only. `MAIL_FROM` must be on that domain, for example `Outcomes <outcomes@reka.re>`.
+Product e-mail comes from `antarax.ai` through Resend (brand kit 13 §2), so use the AntaraX Resend account, where that domain is already verified (if it isn't, add it there and set the DNS records it shows). Make an API key with **sending access** only. Set `MAIL_FROM` to `AXLE · Outcomes <outcomes@antarax.ai>`. Replies go to `support@go.antarax.ai` (`MAIL_REPLY_TO`, the default), because `antarax.ai` doesn't receive mail.
+
+The sign-in e-mail uses the shared product template in AXLE's look: an orange button, what happens next, the link written out, and when it stops working in MYT (`lib/mail/sign-in-mail.ts`). Its colours come from `app/axle-tokens.css`: after syncing tokens from the brand kit, run `npm run mail:colours`.
 
 Sign-in links are sent at once and never kept in the outbox; alerts go through the outbox and leave on the next scheduled run. The console refuses to start in production without `RESEND_API_KEY`.
 
@@ -62,7 +64,7 @@ Sign-in links are sent at once and never kept in the outbox; alerts go through t
    | `CRON_SECRET` | `openssl rand -hex 24`. Vercel sends it to the scheduled jobs |
    | `APP_URL` | The console's public address, for example `https://outcomes.reka.re`. Use the `.vercel.app` address until the domain is set |
    | `ALERT_TO` | Who is e-mailed when a link stops answering, comma separated |
-   | `RESEND_API_KEY`, `MAIL_FROM` | From step 4. Needed: sign-in links go by e-mail |
+   | `RESEND_API_KEY`, `MAIL_FROM` | From step 4. Needed: sign-in links go by e-mail. `MAIL_REPLY_TO` defaults to support |
 
    **Never** set `ALLOW_LOCAL_HTTP_LINKS`, `ALLOW_OWNER_CONNECTION` or `MAIL_CAPTURE_FILE`: they exist for tests and scripts. `MAIL_CAPTURE_FILE` would write sign-in links to a file instead of sending them.
 3. **Deploy.** `vercel.json` puts the functions in `sin1`, next to the database, and registers the two jobs: collection at 22:00 UTC (06:00 MYT) and the health check at quarter past every hour.

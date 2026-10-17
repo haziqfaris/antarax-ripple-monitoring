@@ -5,6 +5,7 @@ import { dirname } from "node:path";
 import type { Tx } from "../db";
 import { inScope } from "../db";
 import { env } from "../env";
+import type { Mail } from "../mail/sign-in-mail";
 
 export async function queueAlert(tx: Tx, org: string | null, subject: string, body: string): Promise<void> {
   const to = env().ALERT_TO.split(",").map((s) => s.trim()).filter(Boolean);
@@ -34,14 +35,15 @@ export async function flushOutbox(fetcher: typeof fetch = fetch): Promise<{ sent
  * Sent at once, never through the outbox: a sign-in link must not sit where other staff can read it (the Jobs page
  * shows the outbox). Without Resend, tests write to MAIL_CAPTURE_FILE and development prints to the server's console.
  */
-export async function sendNow(to: string, subject: string, text: string, fetcher: typeof fetch = fetch): Promise<void> {
+export async function sendNow(to: string, mail: Mail, fetcher: typeof fetch = fetch): Promise<void> {
+  const { subject, text, html } = mail;
   const e = env();
   if (e.RESEND_API_KEY) {
-    const res = await fetcher("https://api.resend.com/emails", { method: "POST", headers: { authorization: `Bearer ${e.RESEND_API_KEY}`, "content-type": "application/json" }, body: JSON.stringify({ from: e.MAIL_FROM, to: [to], subject, text }), signal: AbortSignal.timeout(15_000) });
+    const res = await fetcher("https://api.resend.com/emails", { method: "POST", headers: { authorization: `Bearer ${e.RESEND_API_KEY}`, "content-type": "application/json" }, body: JSON.stringify({ from: e.MAIL_FROM, reply_to: e.MAIL_REPLY_TO, to: [to], subject, text, html }), signal: AbortSignal.timeout(15_000) });
     if (!res.ok) throw new Error(`Resend answered ${res.status}`);
   } else if (e.MAIL_CAPTURE_FILE) {
     await mkdir(dirname(e.MAIL_CAPTURE_FILE), { recursive: true });
-    await appendFile(e.MAIL_CAPTURE_FILE, JSON.stringify({ to, subject, text, at: new Date().toISOString() }) + "\n");
+    await appendFile(e.MAIL_CAPTURE_FILE, JSON.stringify({ to, subject, text, html, at: new Date().toISOString() }) + "\n");
   } else if (process.env.NODE_ENV !== "production") {
     console.info(`[e-mail to ${to}] ${subject}\n${text}`);
   } else {
