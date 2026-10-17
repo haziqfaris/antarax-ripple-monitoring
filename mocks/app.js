@@ -937,7 +937,39 @@
 
 
   // ------------------------------------------------------------------ HOME
-  pages.home = () => demo() ? homeDemo() : homeMine();
+  pages.home = () => { const c = state.scope && coById(state.scope); return c ? overviewScoped(c) : demo() ? homeDemo() : homeMine(); };
+  // The Overview follows the organisation scope like every Outcomes page: "Overview for" is the top bar's picker.
+  const ovScopeBar = (one) => { const cos = companies(); return cos.length ? `<section class="card ctx-scopebar"><div class="ask-scope" style="border:0;padding:0"><div class="field"><label for="ov-scope">Overview for</label><select id="ov-scope"${demo() ? '' : ' data-add="org"'}><option value="" ${!one ? 'selected' : ''}>All organisations (${cos.length})</option>${cos.map((c) => `<option value="${c.id}" ${one && one.id === c.id ? 'selected' : ''}>${esc(c.short)}</option>`).join('')}</select></div>
+      <p class="xs muted">${one ? `Only ${esc(one.short)}: its applications, what needs a person there, its figures and where it stands.` : 'Every organisation, and how Outcomes itself is running. Choose one to see only its own.'} The same as the organisation picker in the top bar.</p></div></section>` : ''; };
+  // One organisation: its applications' state, what needs a person there, its figures, where it stands, what happened.
+  function overviewScoped(c) {
+    const days = aWindow(state.range), prevDays = windowDays(state.range, M.addDays(days[0], -1)), hm = mByKey('hours');
+    const T = coTotals(c, days), P = coTotals(c, prevDays), h = hm.calc(T), rg = h === null ? null : hm.range(T), ch = h !== null && comparable(T, P) && hm.calc(P) ? chgPct(h, hm.calc(P)) : null;
+    const sols = coSolutions(c), sending = sols.filter((x) => x.status === 'fresh').length, kp = sols.reduce((a, x) => [a[0] + (x.kpis ? x.kpis[0] : 0), a[1] + (x.kpis ? x.kpis[1] : 0)], [0, 0]);
+    const att = coNeeds(c), waiting = apAll().filter((a) => apOrgId(a) === c.id && a.status === 'waiting').length, ctxN = ctxFor(c.id).length, reps = reportRows().filter((x) => x.cid === c.id), r = readiness(c), done = r.filter((x) => x[1]).length;
+    const names = [c.name, c.short].concat(c.projects.map((p) => p.name), sols.map((x) => x.name)), acts = auditList().filter(([, w, what]) => names.some((n) => what.includes(n))).slice(0, 6);
+    const lvl = { fault: ['Urgent', 'var(--fault-tint)', 'var(--fault-ink)'], warn: ['Soon', 'var(--warn-tint)', 'var(--warn-ink)'], info: ['To do', 'var(--axle-info-chip)', 'var(--ink)'] };
+    const tone = { fresh: 'ok', collecting: 'ok', stale: 'warn', failing: 'fault', review: 'info', approved: 'info', not_connected: 'idle' };
+    const fig = (label, value, hint, href, tag = '') => `<a class="card fig" href="${href}"><span class="label">${label} ${tag}</span><span class="value mono">${value}</span><span class="hint">${hint}</span></a>`;
+    return `${head({ title: `Overview · ${esc(c.short)}`, kind: 'data', lead: `What needs a person at ${esc(c.short)}, and how its applications are doing. Its figures in full are in Results.`, actions: `<a class="btn sm ghost" href="#results-${c.id}">${icon('analytics', 'sm')}Results</a>${rangeSeg()}` })}
+    ${ovScopeBar(c)}
+    ${sols.length ? `<section class="hstrip" aria-label="Its applications">${sols.map((x) => { const st = STATUS[x.status] || ['idle', cap(x.status)], pr = c.projects.find((p) => p.solutions.includes(x)); return `<a class="htile ${tone[x.status] || 'idle'}" href="${x.href || '#applications'}"><span class="n"><span class="hd"></span>${esc(x.name)}</span><span class="w">${esc(st[1])}</span><span class="d">${esc(pr ? pr.name : '')}</span></a>`; }).join('')}</section>`
+      : `<section class="card"><div class="row" style="border:0;padding:0"><span class="ico info">${icon('box', 'sm')}</span><div><div class="what">No applications for ${esc(c.short)} yet</div><div class="meta">Track one and its state shows here.</div></div>${demo() ? '' : `<button type="button" class="btn sm primary" data-act="proj-for" data-org="${c.id}">${icon('plus', 'sm')}Track an application</button>`}</div></section>`}
+    <section class="card ov-block" aria-labelledby="att-h"><div class="card-head"><h2 id="att-h">Needs a person at ${esc(c.short)}</h2>${att.length ? `<span class="ax-count loud">${att.length}</span>` : ''}</div>
+      ${att.length ? `<ul class="needs-list">${att.map(([sev, ic, t, m, href, a]) => `<li><span class="lvl" style="background:${(lvl[sev] || lvl.info)[1]};color:${(lvl[sev] || lvl.info)[2]}">${(lvl[sev] || lvl.info)[0]}</span><span class="w"><b>${esc(t)}</b><small>${esc(m)}</small></span><a class="btn sm" href="${href}">${a}</a></li>`).join('')}</ul>` : `<p class="small muted">Nothing needs a person at ${esc(c.short)}.</p>`}</section>
+    <section class="figs ov-figs5" aria-label="Figures">
+      ${fig('Hours saved', h === null ? '–' : nf(h) + '<small>h</small>', h === null ? 'No baseline approved yet' : `Likely ${nf(rg[0])} to ${nf(rg[1])}${ch !== null ? (Math.abs(ch) < 0.5 ? ' · level with the period before' : ` · ${ch >= 0 ? 'up' : 'down'} ${nf(Math.abs(ch), 0)}% on the period before`) : ''}`, '#results-' + c.id, h === null ? '' : q('estimated'))}
+      ${fig('Applications sending data', `${sending}<small>of ${sols.length}</small>`, sols.length ? `${sols.filter((x) => x.status === 'failing').length} not answering · ${sols.filter((x) => x.status === 'stale').length} late` : 'None tracked yet', '#applications')}
+      ${fig('KPIs live', `${kp[0]}<small>of ${kp[1]}</small>`, `${waiting} waiting for approval`, '#approvals')}
+      ${fig('Reports', String(reps.length), reps.some((x) => x.due) ? `${reps.filter((x) => x.due).length} ready to review` : reps.length ? 'Nothing to review' : 'None scheduled yet', '#reports')}
+      ${fig('Client context', String(ctxN), ctxN ? 'What they told the account team' : 'Nothing recorded yet', '#context')}
+    </section>
+    <section class="grid g2">
+      <section class="card"><div class="card-head"><div><h2>Where ${esc(c.short)} stands</h2><p class="sub">${done} of ${r.length} done</p></div><a class="small" href="#organisation-${c.id}">Account</a></div>
+        <ul class="ov-ready">${r.map(([t, ok]) => `<li class="${ok ? 'ok' : ''}"><span class="mk">${ok ? icon('check', 'sm') : ''}</span><span>${esc(t)}</span>${ok ? '' : '<span class="xs muted">Not yet</span>'}</li>`).join('')}</ul></section>
+      <section class="card"><div class="card-head"><h2>Recent actions</h2><a class="small" href="#audit">Audit</a></div>${acts.length ? `<div class="list">${acts.map(([t, w, what]) => `<div class="row"><span class="avatar">${w === 'Collector' ? icon('live', 'sm') : w === 'AI proposals' ? `<img src="${SPARK}" alt="" style="width:16px">` : initials(w.split(' · ')[0])}</span><div class="small"><b class="ink">${esc(w.split(' · ')[0])}</b> ${esc(what)}</div><span class="xs muted mono">${esc(t.replace(' 2026,', ''))}</span></div>`).join('')}</div>` : `<p class="small muted">Nothing yet for ${esc(c.short)}.</p>`}</section>
+    </section>`;
+  }
   function setupSteps() {
     const s = firstSim(), st = s ? s.stage : null;
     return [
@@ -960,7 +992,7 @@
     const collecting = state.sims.filter((s) => s.stage === 'collecting');
     const greet = head({ title: 'Overview', lead: collecting.length ? 'What needs a person, and how Outcomes is running. Each organisation’s figures are in Results.' : 'Outcomes is new here. Track your first application: a few steps take it from nothing to its first report.', actions: collecting.length ? rangeSeg() : '' });
     if (!collecting.length) {
-      return `${greet}
+      return `${greet}${ovScopeBar(null)}
       <section class="grid g-side">${checklistCard(false)}
         <div class="grid" style="gap:16px;align-content:start">
           <div class="card"><h3>How it works</h3><div class="list" style="margin-top:10px">
@@ -970,7 +1002,7 @@
       </section>
       ${state.orgs.length ? clientGrid(aWindow(state.range)) : ''}`;
     }
-    return overviewHtml(greet);
+    return overviewHtml(greet + ovScopeBar(null));
   }
   // ---------- Overview (AXLE SPEC §8): header, health strip, needs a person, platform figures, organisations at a glance, trend, recent actions, product block
   function readiness(c) {
@@ -1032,6 +1064,7 @@
     return `<div class="list">${list.map(([t, w, what]) => `<div class="row"><span class="avatar">${w === 'Collector' ? icon('live', 'sm') : w === 'AI proposals' ? `<img src="${SPARK}" alt="" style="width:16px">` : initials(w.split(' · ')[0])}</span><div class="small"><b class="ink">${esc(w.split(' · ')[0])}</b> ${esc(what)}</div><span class="xs muted mono">${esc(t.replace(' 2026,', ''))}</span></div>`).join('')}</div>`;
   }
   pages.home.after = () => {
+    const sc = $('#ov-scope'); if (sc) sc.addEventListener('change', (e) => setScope(e.target.value, true));
     if (demo()) {
       if (!$('#ch-home')) return;
       const daily = windowDays(state.range).map((d) => {
@@ -1054,7 +1087,7 @@
 
   // example workspace home
   function homeDemo() {
-    return overviewHtml(head({ title: 'Overview', lead: 'What needs a person, and how Outcomes is running. Each organisation’s figures are in Results.', actions: rangeSeg() }));
+    return overviewHtml(head({ title: 'Overview', lead: 'What needs a person, and how Outcomes is running. Each organisation’s figures are in Results.', actions: rangeSeg() }) + ovScopeBar(null));
   }
 
   // ------------------------------------------------------------------ CLIENTS: one model for every workspace (organisation → project → solution)
@@ -3784,7 +3817,7 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
     state.scope = id || null;
     state.an = Object.assign(state.an || { measure: 'hours', range: 90 }, { proj: id ? 'c:' + id : 'all' });
     const c = id && coById(id);
-    if (c && /^(home|organisations)$/.test(parse()[0])) location.hash = c.href; else render();
+    if (c && parse()[0] === 'organisations') location.hash = c.href; else render();
     if (!quiet) toast(c ? `Scoped to ${c.short}.` : 'Showing all organisations.');
   }
   const closePops = (except) => ['#new-pop', '#bell-pop', '#user-pop', '#ws-pop', '#scope-pop'].forEach((s) => { const p = $(s); if (p && s !== except) p.hidden = true; });

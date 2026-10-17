@@ -54,6 +54,7 @@ In the demo workspace, the dashed **Demo studio** button in the top bar shows th
 
 | Mode | Where | What it shows |
 |---|---|---|
+| Dashboard | **Overview** (`#home`), scoped | "Overview for" (the same as the top bar's picker) shows one organisation: a tile per application, what needs a person there, its figures, where it stands and its recent actions. All organisations is the AXLE overview |
 | Dashboard: client data (Outcomes only, first) | **Applications** (`#applications`) | Every tracked application and its state; resume one being set up. "Applications for" (the same as the top bar's picker) shows one organisation's, and tracking from there starts with it chosen |
 | | **Ask** (`#ask`) | About one thing at a time: every organisation, one organisation or one application ("Asking about"), each with its own conversation and suggestions. "Ask about…" on an organisation's results, an application's page or Analytics opens it scoped. With nothing collecting, it offers to track an application |
 | | **Capacity** (the last tab on an application's page) | Supplementary, never a monitor: did the platform affect the results, then a read-only summary of its limits from its `capacity.json`, linking to its own AXLE. The example Document workflow shares one; the rest show "Not shared, and that's fine". Cost needs the Commercial right (switch to Aisyah Rahman). Hidden in organisation view |

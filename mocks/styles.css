@@ -1323,3 +1323,11 @@ button.csel-add { width: 100%; background: none; border: 0; border-top: 1px soli
 .ap-g:first-child { padding-top: 0; }
 .ap-g > span:first-child { flex: 1; min-width: 0; }
 .ap-g .btn { font-family: var(--sans, inherit); letter-spacing: 0; text-transform: none; font-size: .75rem; min-height: 30px; padding: 4px 8px; }
+.htile.info .hd { background: var(--primary); } .htile.info .w { color: var(--primary-ink); }
+.ov-ready { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.ov-ready li { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 9px 0; border-top: 1px solid var(--line); color: var(--ink); }
+.ov-ready li:first-child { border-top: 0; }
+.ov-ready .mk { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; border: 1.5px dashed var(--line-strong); }
+.ov-ready li.ok .mk { border: 0; background: var(--ok-tint); color: var(--ok-ink); }
+.figs.ov-figs5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+@media (max-width: 1100px) { .figs.ov-figs5 { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); } }
