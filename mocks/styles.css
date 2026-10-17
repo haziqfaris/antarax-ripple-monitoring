@@ -1174,3 +1174,21 @@ details.ctx-att[open] .ctx-more { transform: rotate(180deg); }
 .bp-tier { min-width: 140px; }
 .bp-lines path { stroke: var(--primary); stroke-opacity: .45; }
 @media (max-width: 900px) { .bp-model { grid-template-columns: minmax(0, 1fr); gap: 14px; } .bp-arrow { flex-basis: 52px; } }
+
+/* What it does: kinds of work, the unit, the department */
+.tk-descrow { display: flex; gap: 8px; align-items: stretch; }
+.tk-descrow textarea { flex: 1; min-height: 64px; }
+.tk-descrow .btn { align-self: flex-start; }
+.tk-pats { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
+.tk-pat { position: relative; display: flex; gap: 8px; align-items: center; text-align: left; padding: 10px 12px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--surface); font-size: .8125rem; color: var(--body); cursor: pointer; transition: border-color .15s var(--ease), box-shadow .15s var(--ease); }
+.tk-pat .i { color: var(--muted); flex: none; }
+.tk-pat:hover { border-color: var(--primary-tint-2); }
+.tk-pat[aria-pressed="true"] { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-tint); color: var(--primary-ink); font-weight: 500; }
+.tk-pat[aria-pressed="true"] .i { color: var(--primary); }
+.tk-pat i { margin-left: auto; font-style: normal; font-size: .625rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--primary-ink); background: var(--primary-tint); padding: 2px 6px; border-radius: var(--r-pill); }
+.tk-two { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 16px; }
+.tk-chips span.w { background: var(--warn-tint); color: var(--warn-ink); }
+.bp-node.req { border-left-color: var(--axle-warn); border-style: dashed; border-left-style: solid; box-shadow: none; }
+.bp-node.req .bp-note { color: var(--warn-ink); }
+.bp-node.k.req { border-left-color: var(--axle-warn); }
+@media (max-width: 760px) { .tk-two { grid-template-columns: minmax(0, 1fr); } .tk-descrow { flex-direction: column; } .tk-pats { grid-template-columns: minmax(0, 1fr); } }

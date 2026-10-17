@@ -25,6 +25,8 @@ Sign in, skip through welcome, and choose **Watch the guided demo**. It opens th
 
 Once it connects, Outcomes draws the application's **blueprint**: a data model (each figure the link shares, the baseline, and lines to the KPIs that use them) and a topology (the application, the link, the collector, the store, what people see). Both download as `.md` with Mermaid diagrams, and the prompt downloads as `.md` too.
 
+**What an application does** is described on three axes that work for any industry or team: up to three of twelve kinds of work (reads documents, drafts replies, routes requests, answers people, finds knowledge, forecasts, schedules, spots anomalies, inspects images, reconciles records, recommends, runs a workflow), the unit of work in the organisation's word, and an optional department that adds its own business measures. A one-sentence description lets AI suggest all three.
+
 **All screens** (staff menu → All screens, or `#screens`) lists every screen in the order people meet them, and opens any one: the setup steps in the demo workspace with the guided demo at that step, the rest in example data.
 3. The KPIs are approved, and the first figures arrive.
 4. Five weeks pass, the data stops, then recovers.

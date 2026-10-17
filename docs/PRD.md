@@ -423,7 +423,7 @@ Detailed in [§11](#11-ai-assistance-and-approval-gates).
 | FR-ONB-2 | Welcome asks only for workspace name, time zone and optional invites, then offers "Connect my first project" or "Explore with example data" | MVP |
 | FR-ONB-3 | The example workspace is clearly labelled "Example data" on every screen and never mixes with real clients, audit or reports | MVP |
 | FR-ONB-4 | The connect flow gives the developer a copyable brief that matches the integration pack, and a developer link where they see the brief, get their own key once, and can paste the address so the test runs by itself. It moves on only when the connection test passes | MVP |
-| FR-ONB-5 | The project's kind of work steers which KPIs AI suggests; every suggestion explains why it matters and how it is worked out, in plain words | MVP |
+| FR-ONB-5 | What the application does (§10.5a) steers which KPIs AI suggests; every suggestion explains why it matters and how it is worked out, in plain words | MVP |
 | FR-ONB-6 | The baseline is captured inside the connect flow, with "not available yet" as an honest option that blocks only the impact KPI | MVP |
 | FR-ONB-7 | After sending for approval, the solution page shows where it is (connected, approved, first data, report) and what happens next, with no blank screens | MVP |
 | FR-ONB-8 | Progress in the connect flow is saved, so a person can leave while the developer works and come back | MVP |
@@ -751,6 +751,25 @@ Rollups always show "includes 3 of 4 solutions; 1 not rolled up" rather than sil
 - A figure for a period with missing data, without saying so.
 - A target as a result.
 
+### 10.5a What an application does: kinds of work, the unit, the department
+
+Four "kinds of work" (documents, triage, planning, quotations) came from the brief's first examples. They are not enough for projects in any industry or department, and they mixed what the AI does with the domain it works in. From 0.7 (owner feedback, 17 Oct 2026) an application is described on three independent axes:
+
+- **What it does:** up to three of twelve kinds of work that hold in any industry: reads documents, drafts documents or replies, sorts and routes requests, answers people (chat or voice), finds knowledge, forecasts and plans, schedules and allocates, spots risks and anomalies, inspects images or video, matches and reconciles records, recommends what to do next, runs a workflow end to end. The first is the main one. Each names its usual unit of work, what a person correcting it looks like ("sent back for correction", "handed to a person", "dismissed as a false alarm"), and one figure of its own for the prompt.
+- **The unit of work**, in the organisation's word: claim, lease, ticket, shipment, candidate. Every KPI uses it ("Claims handled each month").
+- **The department** (optional): finance, sales, customer service, operations, people and HR, procurement, legal and compliance, IT, marketing, supply chain and logistics, clinical and care, or another team. Each adds its own business measures (days to close the month, quotes won, time to first reply, days to hire…), asked for in the prompt and offered at "What to measure" as KPIs that start counting when their figure arrives.
+- **The industry** stays on the organisation (18 to choose from, or "Other").
+
+A one-sentence description ("Reads insurance claim forms, checks them against the policy and drafts a reply") lets AI suggest the kinds of work, the department and the unit; a person checks them. The product asks the model; the mock matches words.
+
+| Id | Requirement | Priority |
+|---|---|---|
+| FR-KIND-1 | An application is described by up to three kinds of work, a unit of work and an optional department; none of them is a fixed list of industries | MVP |
+| FR-KIND-2 | A one-sentence description suggests the kinds of work, the department and the unit, for a person to check and change | MVP |
+| FR-KIND-3 | The kinds of work and the department decide the prompt's starting catalog (standard figures, one per kind of work, the department's figures), the KPI suggestions, and the blueprint, which shows asked-for figures and KPIs waiting for them apart from what the link already shares | MVP |
+| FR-KIND-4 | The catalog of kinds of work, units, correction wording, figures and department measures is reviewed and versioned like the measure library (§10.6); adding one needs no code change | MVP |
+| FR-KIND-5 | Explore (§8.17) ranks ideas using every kind of work and the department, not only the main one | P2 |
+
 ### 10.6 The measure library
 
 The same definitions for every project, so projects and clients can be compared. A solution shares what it can; anything it can't is shown as not shared.
@@ -884,7 +903,7 @@ A new workspace must lead a person from sign-in to a measured project without re
 
 Each step says **why** it is asked, in one line. Back works on every step after the first; going back from the prompt edits what was created. **Exit** is always there: before anything is created it asks to leave or stay; afterwards it offers "Keep it and exit" (it waits in Applications as "Setting up", at that step, to resume), "Delete it" (the application, and the organisation if this wizard created it and nothing else uses it), or stay. On phones the main action is first and full width, and every footer lines up.
 
-**The prompt** is the integration pack's instruction (`integrations/measure/CLAUDE_CODE_INTEGRATION.md`) made specific to the application: its name and organisation, a `solution_id`, the time zone, a starting metric catalog for its kind of work, the five endpoints with their shapes and paging, daily-figure rules, the signing algorithm and keys, the error codes, the tests (its own and the contract test), the hand-over note and what "done" means. It asks the developer, or Claude Code, to inspect the application and propose its metrics, then **stop for a person to approve** before building. The page shows "How linking works" (five steps, drawn) and "What the prompt asks for" (six lines) above the copy button, with the full prompt one click away. "Start tracking" is the main action on Overview (first use) and Organisations; "New project" on an organisation opens it at the project step.
+**The prompt** is the integration pack's instruction (`integrations/measure/CLAUDE_CODE_INTEGRATION.md`) made specific to the application: its name and organisation, a `solution_id`, the time zone, what it does in the team's words, a starting metric catalog for its kinds of work, unit and department (§10.5a), the five endpoints with their shapes and paging, daily-figure rules, the signing algorithm and keys, the error codes, the tests (its own and the contract test), the hand-over note and what "done" means. It asks the developer, or Claude Code, to inspect the application and propose its metrics, then **stop for a person to approve** before building. The page shows "How linking works" (five steps, drawn) and "What the prompt asks for" (six lines) above the copy button, with the full prompt one click away. "Start tracking" is the main action on Overview (first use) and Organisations; "New project" on an organisation opens it at the project step.
 
 | Step | Screen | What happens |
 |---|---|---|
@@ -892,7 +911,7 @@ Each step says **why** it is asked, in one line. Back works on every step after 
 | 2 | Welcome, 3 short steps | Workspace name and time zone; invite the team with roles; choose "Connect my first project" or "Explore with example data" |
 | 3 | Home: getting started | A seven-step checklist with progress: workspace, client, project, connect, approval, first data, report. Each step has one button |
 | 4 | Track an application 1: the organisation | One search box: typing filters existing organisations; a name that doesn't exist offers "Add …", which asks only the industry and whether the data agreement is signed. Nothing is collected until it is |
-| 5 | Track an application 2: the application | Its name (Enter creates it), the kind of work (it steers the KPI suggestions), how it shares (measurement link, AntaraX product, spreadsheet, each with its effort), and the project it belongs to for reports (defaults to the application's name). The outcome in their words is optional here |
+| 5 | Track an application 2: the application | Its name (Enter creates it), what it does in a sentence (AI suggests the rest), up to three kinds of work, the unit of work and the department (§10.5a), how it shares (measurement link, AntaraX product, spreadsheet, each with its effort), and the project it belongs to for reports (defaults to the application's name). The outcome in their words is optional here |
 | 6 | Track an application 3: the prompt | How linking works (five steps) and what the prompt asks for; the full prompt one click away. Copy prompt, then "I've sent it" becomes the main action; the developer link is the alternative. An AntaraX product picks the product instead; a spreadsheet copies the column template |
 | 6a | Track an application 4: the connection | Listening for the link, with a pulse; the time the prompt was sent; email when it connects; test an address yourself. The person can leave. When every check passes: the solution is connected, each figure as a chip (ready, note, held back), and "Choose what to measure" |
 | 6b | Track an application 5: what to measure | AI-suggested KPIs, each with why and how it is worked out, kept or dropped with a switch; the picture lists the ones kept |

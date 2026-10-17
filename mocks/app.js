@@ -26,6 +26,45 @@
   Object.assign(KINDS.planning, { people: 4, tat: { from: 20, to: 6 }, sla: { from: 80, to: 97 }, runCost: 900 });
   Object.assign(KINDS.quotes, { people: 5, tat: { from: 48, to: 10 }, sla: { from: 55, to: 90 }, runCost: 1200 });
   const cap = (s) => s[0].toUpperCase() + s.slice(1);
+  // What an application does, as kinds of work that hold in any industry or department. An application can do up to
+  // three. Each maps onto one of the four simulated kinds (base) for the mock's figures, names its usual unit of work and
+  // what a person correcting it looks like, adds one figure to the prompt, and is recognised from a one-line description.
+  const PATTERNS = {
+    extract: { name: 'Reads documents', icon: 'documents', base: 'documents', unit: ['document', 'documents'], qual: 'sent back for correction', fig: ['fields.extracted', 'Fields read without a person', 'counter', 'item'], words: /extract|read|invoice|ocr|document|form|claim|lease|contract|receipt|scan|pdf|statement/ },
+    draft: { name: 'Drafts documents or replies', icon: 'reports', base: 'quotes', unit: ['draft', 'drafts'], qual: 'rewritten by a person', fig: ['drafts.sent_unchanged', 'Drafts sent without changes', 'counter', 'item'], words: /draft|write|generat|quot|proposal|reply|email|report|summar|letter|bid/ },
+    triage: { name: 'Sorts and routes requests', icon: 'ask', base: 'triage', unit: ['request', 'requests'], qual: 're-routed by a person', fig: ['routing.right_first_time', 'Routed right first time', 'counter', 'item'], words: /triage|route|sort|classif|ticket|enquir|inbox|assign|prioriti/ },
+    assistant: { name: 'Answers people (chat or voice)', icon: 'people', base: 'triage', unit: ['conversation', 'conversations'], qual: 'handed to a person', fig: ['conversations.rating', 'Rating after a conversation', 'gauge · mean', 'x.rating'], words: /chat|bot|assistant|answer|whatsapp|voice|call|faq|conversation|agent/ },
+    search: { name: 'Finds knowledge', icon: 'search', base: 'triage', unit: ['question', 'questions'], qual: 'marked unhelpful', fig: ['answers.with_source', 'Answers that cite a source', 'counter', 'item'], words: /search|knowledge|find|look ?up|rag|policy|manual|sop|q&a/ },
+    forecast: { name: 'Forecasts and plans', icon: 'plan', base: 'planning', unit: ['forecast', 'forecasts'], qual: 'changed by a person', fig: ['forecast.error', 'Forecast error', 'gauge · mean', 'percent'], words: /forecast|predict|demand|budget|projection/ },
+    schedule: { name: 'Schedules and allocates', icon: 'calendar', base: 'planning', unit: ['schedule', 'schedules'], qual: 'changed after publishing', fig: ['schedules.changed', 'Changes after publishing', 'counter', 'item'], words: /schedul|roster|shift|dispatch|timetable|allocat|rota|route plan/ },
+    detect: { name: 'Spots risks and anomalies', icon: 'alerts', base: 'triage', unit: ['case', 'cases'], qual: 'dismissed as a false alarm', fig: ['cases.confirmed', 'Cases confirmed by a person', 'counter', 'item'], words: /fraud|anomal|risk|detect|monitor|alert|suspicious|leak/ },
+    inspect: { name: 'Inspects images or video', icon: 'camera', base: 'documents', unit: ['inspection', 'inspections'], qual: 'overruled by a person', fig: ['defects.found', 'Defects found', 'counter', 'item'], words: /image|photo|video|camera|inspect|defect|visual|cctv/ },
+    match: { name: 'Matches and reconciles records', icon: 'link', base: 'documents', unit: ['match', 'matches'], qual: 'fixed by a person', fig: ['records.auto_matched', 'Matched without a person', 'counter', 'item'], words: /match|reconcil|dedup|compare|three.way|cross.check/ },
+    recommend: { name: 'Recommends what to do next', icon: 'target', base: 'triage', unit: ['recommendation', 'recommendations'], qual: 'not taken up', fig: ['recommendations.accepted', 'Recommendations taken up', 'counter', 'item'], words: /recommend|next best|personali|upsell|cross.sell|suggest/ },
+    automate: { name: 'Runs a workflow end to end', icon: 'system', base: 'documents', unit: ['run', 'runs'], qual: 'needing a person', fig: ['runs.completed', 'Runs finished end to end', 'counter', 'run'], words: /automat|workflow|end.to.end|rpa|onboard|process/ },
+  };
+  // The department adds the business measures that matter there: each needs a figure the prompt asks for.
+  const DEPTS = {
+    finance: { name: 'Finance', words: /financ|invoice|payable|receivable|account|ledger|month.end|payment|expense/, ideas: [['Days to close the month', 'close.days', 'gauge · last', 'day'], ['Invoices paid late', 'invoices.paid_late', 'counter', 'item']] },
+    sales: { name: 'Sales', words: /sales|quot|lead|deal|proposal|bid|crm|tender/, ideas: [['Hours from request to quote', 'quotes.turnaround', 'duration · median', 'hour'], ['Quotes won', 'quotes.won', 'counter', 'item']] },
+    service: { name: 'Customer service', words: /customer|enquir|ticket|support|complain|patient|guest|member/, ideas: [['Time to first reply', 'replies.first_response', 'duration · median', 'minute'], ['Resolved without a person', 'requests.self_resolved', 'counter', 'item']] },
+    operations: { name: 'Operations', words: /operation|production|plant|maintenance|factory|site/, ideas: [['Work redone', 'work.rework', 'counter', 'item'], ['Hours of downtime', 'downtime.hours', 'duration · mean', 'hour']] },
+    hr: { name: 'People and HR', words: /\bhr\b|hiring|recruit|candidate|leave|payroll|staff|employee/, ideas: [['Days to hire', 'hires.days_to_hire', 'duration · median', 'day'], ['Staff questions answered the same day', 'staff_queries.same_day', 'counter', 'item']] },
+    procurement: { name: 'Procurement', words: /procure|purchase|supplier|vendor|sourcing|po\b/, ideas: [['Purchase order cycle time', 'po.cycle_time', 'duration · median', 'hour'], ['Spend under contract', 'spend.under_contract', 'money', 'MYR']] },
+    legal: { name: 'Legal and compliance', words: /legal|contract|compliance|clause|regulat|audit/, ideas: [['Contract review turnaround', 'contracts.review_time', 'duration · median', 'hour'], ['Clauses sent to a lawyer', 'clauses.escalated', 'counter', 'item']] },
+    it: { name: 'IT', words: /\bit\b|helpdesk|incident|access request|password|devops/, ideas: [['Tickets fixed first time', 'tickets.first_time_fix', 'counter', 'item'], ['Time to resolve', 'tickets.resolution_time', 'duration · median', 'hour']] },
+    marketing: { name: 'Marketing', words: /marketing|campaign|content|social|brand|seo/, ideas: [['Pieces published', 'content.published', 'counter', 'item'], ['Days from brief to publish', 'content.lead_time', 'duration · median', 'day']] },
+    supply: { name: 'Supply chain and logistics', words: /logistic|shipment|delivery|warehouse|inventory|freight|fleet|driver/, ideas: [['On-time deliveries', 'deliveries.on_time', 'counter', 'item'], ['Exceptions handled', 'shipments.exceptions', 'counter', 'item']] },
+    clinical: { name: 'Clinical and care', words: /clinic|hospital|care|nurse|doctor|patient record|medical/, ideas: [['Minutes of clinician time freed', 'clinician.minutes_freed', 'duration · mean', 'minute'], ['Patients seen a day', 'patients.seen', 'counter', 'person']] },
+    other: { name: 'Another team', words: /^$/, ideas: [] },
+  };
+  // Picks kinds of work and a department from a one-line description. Deterministic: the product asks the model the same question.
+  function suggestFromText(text) {
+    const t = ' ' + String(text || '').toLowerCase() + ' ';
+    const pats = Object.entries(PATTERNS).map(([k, p]) => [k, (t.match(new RegExp(p.words.source, 'g')) || []).length]).filter((x) => x[1]).sort((a, b) => b[1] - a[1]).slice(0, 3).map((x) => x[0]);
+    const dept = Object.entries(DEPTS).map(([k, d]) => [k, (t.match(new RegExp(d.words.source, 'g')) || []).length]).filter((x) => x[1]).sort((a, b) => b[1] - a[1]).map((x) => x[0])[0] || null;
+    return { pats, dept };
+  }
   const SAMPLE_CLIENTS = [['Harapan Foods', 'Food and beverage', 'documents', 'Supplier invoices', 'Invoice reader'], ['Sinar Clinics', 'Healthcare', 'triage', 'Patient enquiries', 'Enquiry assistant'], ['Teguh Builders', 'Engineering and construction', 'quotes', 'Same-day quotations', 'Quote drafter'], ['Mutiara Freight', 'Logistics', 'planning', 'Driver rostering', 'Roster planner'], ['Cahaya Retail', 'Retail', 'triage', 'Customer service inbox', 'Inbox triage'], ['Delima Insurance', 'Insurance', 'documents', 'Claims intake', 'Claims reader'], ['Seri Hotels', 'Hospitality', 'planning', 'Housekeeping schedules', 'Shift planner'], ['Bistari Learning', 'Education', 'quotes', 'Training proposals', 'Proposal drafter']];
 
   // ------------------------------------------------------------------ state
@@ -150,7 +189,11 @@
   // ------------------------------------------------------------------ your workspace: projects and their simulated figures
   const orgOf = (sim) => state.orgs.find((o) => o.id === sim.orgId);
   const simById = (id) => state.sims.find((s) => s.id === id);
-  const kindOf = (sim) => KINDS[sim.kind];
+  const kindOf = (sim) => {
+    const B = KINDS[sim.kind]; if (!sim.patterns || !sim.patterns.length) return B;
+    const P = PATTERNS[sim.patterns[0]], u = sim.unit || P.unit;
+    return Object.assign({}, B, { noun: u[0], nouns: u[1], label: sim.patterns.map((k) => PATTERNS[k].name).join(' · '), qual: Object.assign({}, B.qual, { label: P.qual }) });
+  };
   const simsOf = (org) => state.sims.filter((s) => s.orgId === org.id);
   const firstSim = () => state.sims[0] || null;
   const hasBase = (sim) => sim.base && sim.base.method !== 'none';
@@ -1481,7 +1524,7 @@
     const K = kindOf(s), o = orgOf(s), app = state.wiz.solName || s.name, id = slug(o.name + ' ' + app), nk = K.nouns.replace(/\s+/g, '_'), unit = K.noun.replace(/\s+/g, '_');
     return `# Add a Measurement Link to ${app}
 
-You are adding a small, read-only measurement interface to ${app}, an application REKA built and runs for ${o.name} (${K.label.toLowerCase()}). REKA's Outcomes console will call it every night to collect daily totals, so ${o.name} can see what the application changed. Nothing Outcomes calls may change the application.
+You are adding a small, read-only measurement interface to ${app}, an application REKA built and runs for ${o.name}. What it does: ${K.label.toLowerCase()}${s.dept && DEPTS[s.dept] && s.dept !== 'other' ? `, for ${DEPTS[s.dept].name}` : ''}. One piece of its work is a ${K.noun}.${s.desc ? ` In the team's words: "${s.desc}"` : ''} REKA's Outcomes console will call it every night to collect daily totals, so ${o.name} can see what the application changed. Nothing Outcomes calls may change the application.
 
 Get the integration pack from the developer link (it is also in the antarax-ripple-monitoring repository, integrations/measure). It holds the contract (openapi.json), worked examples, a TypeScript kit, a Python signer, test vectors and the contract test. Read its CLAUDE_CODE_INTEGRATION.md first: this prompt is that instruction, made specific to ${app}.
 
@@ -1502,6 +1545,13 @@ Read the main workflows. Find where ${app} already records ${K.nouns}, runs, rev
 | reviewers.active | distinct (identity: operator) | person | People who reviewed at least one ${K.noun}, each counted once |
 | runs.failed | counter | run | Runs that failed and needed a person |
 
+${catalogExtra(s).length ? `
+For what ${app} does${s.dept && DEPTS[s.dept] && s.dept !== 'other' ? ` and for ${DEPTS[s.dept].name}` : ''}, also propose:
+
+| Key | Type | Unit | Means |
+|---|---|---|---|
+${catalogExtra(s).map((m) => `| ${m.key} | ${m.type} | ${m.unit} | ${m.name} (${m.from}) |`).join('\n')}
+` : ''}
 Use only what ${app} really records. If a metric can't be worked out from existing data, say so; don't invent it. Keys are two to four lower-case words joined by dots. At most 200 metrics.
 
 ## 2. Build the endpoints
@@ -1608,7 +1658,15 @@ A short note in the pull request: each metric and where it comes from; what you 
     document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0); toast(`Downloaded ${filename}.`);
   }
   // The metric catalog as the manifest describes it (the same six figures the connection test reads).
-  function catalogFor(K) {
+  const fid = (key) => key.replace(/[^a-z0-9]+/gi, '_');
+  // What the kinds of work and the department add to the catalog. Asked for in the prompt; each arrives when built.
+  function catalogExtra(sh) {
+    const out = [];
+    ((sh && sh.patterns) || []).forEach((k) => { const f = PATTERNS[k].fig; out.push({ id: fid(f[0]), key: f[0], name: f[1], type: f[2], unit: f[3], dims: [], st: 'req', note: `For “${PATTERNS[k].name.toLowerCase()}”, asked for in the prompt`, from: PATTERNS[k].name }); });
+    const d = sh && sh.dept && DEPTS[sh.dept]; if (d) d.ideas.forEach(([n, key, type, unit]) => out.push({ id: fid(key), key, name: n, type, unit, dims: [], st: 'req', note: `For ${d.name}, asked for in the prompt`, from: d.name }));
+    return out;
+  }
+  function catalogFor(K, sh) {
     const nk = K.nouns.replace(/\s+/g, '_'), unit = K.noun.replace(/\s+/g, '_');
     return [
       { id: 'processed', key: `${nk}.processed`, name: `${cap(K.nouns)} handled`, type: 'counter', unit, dims: [`${unit}_type`], st: 'ok' },
@@ -1617,7 +1675,7 @@ A short note in the pull request: each metric and where it comes from; what you 
       { id: 'reviewers', key: 'reviewers.active', name: 'People reviewing', type: 'distinct · operator', unit: 'person', dims: [], st: 'ok' },
       { id: 'pages', key: 'pages.read', name: 'Pages read', type: 'counter', unit: 'pages', dims: [], st: 'warn', note: 'Unit not on the standard list' },
       { id: 'byname', key: `${nk}.by_customer_name`, name: `${cap(K.nouns)} by customer name`, type: 'counter', unit, dims: ['customer_name'], st: 'fault', note: 'Held back: could identify people' },
-    ];
+    ].concat(catalogExtra(sh));
   }
   const BP_USES = { volume: ['processed'], quality: ['flagged', 'processed'], impact: ['processed', 'duration', 'baseline', 'review'] };
   const BP_KEPT = { baseline: 'baseline', review: 'review minutes' };
@@ -1626,17 +1684,21 @@ A short note in the pull request: each metric and where it comes from; what you 
     const K = opt.K || kindOf(s), w = opt.wiz;
     const kpiIds = opt.kpis || (w ? (w.proposals ? Object.keys(w.keep).filter((k) => w.keep[k]) : null) : s.kpis && s.kpis.length ? s.kpis : null);
     const base = opt.base !== undefined ? opt.base : w ? (w.keep.impact && w.baseline && w.baseline.method !== 'none' ? w.baseline : null) : s.base && s.base.method !== 'none' ? s.base : null;
-    return { app: opt.app || (w && w.solName) || s.name, org: opt.org || orgOf(s).name, project: s.project.name, K, method: opt.method || (w ? w.method : 'link'), product: w && w.product, suggested: !kpiIds,
-      kpis: kpiProposals({ kind: opt.kind || s.kind, project: s.project }).filter((p) => !kpiIds || kpiIds.includes(p.id)), base, id: slug(`${opt.org || orgOf(s).name} ${opt.app || (w && w.solName) || s.name}`) };
+    const sh = { patterns: s.patterns, dept: s.dept }, ideas = s.dept && DEPTS[s.dept] ? DEPTS[s.dept].ideas : [];
+    const xk = w ? Object.keys(w.xkeep || {}).filter((k) => w.xkeep[k]) : (s.extraKpis || []);
+    const extra = ideas.filter((i) => xk.includes(i[1])).map(([n, key, type]) => ({ id: 'x_' + fid(key), name: n, kind: DEPTS[s.dept].name, quality: /money/.test(type) ? 'measured' : 'measured', formula: `From ${key}, once the developer adds it`, uses: [fid(key)], waiting: true }));
+    return { app: opt.app || (w && w.solName) || s.name, org: opt.org || orgOf(s).name, project: s.project.name, K, sh, method: opt.method || (w ? w.method : 'link'), product: w && w.product, suggested: !kpiIds,
+      kpis: kpiProposals({ kind: opt.kind || s.kind, patterns: s.patterns, unit: s.unit, project: s.project }).filter((p) => !kpiIds || kpiIds.includes(p.id)).concat(extra), base, id: slug(`${opt.org || orgOf(s).name} ${opt.app || (w && w.solName) || s.name}`) };
   }
   function bpModel(b) {
-    const cat = catalogFor(b.K);
+    const cat = catalogFor(b.K, b.sh), uses = (p) => p.uses || BP_USES[p.id];
     const metric = (m, i) => `<div class="bp-node m ${m.st}" data-bp="m:${m.id}" style="--i:${i}"><span class="bp-k mono">${esc(m.key)}</span><b>${esc(m.name)}</b><span class="bp-t">${esc(m.type)} · ${esc(m.unit)}${m.dims.length ? ` · split by ${esc(m.dims.join(', '))}` : ''}</span>${m.note ? `<span class="bp-note">${esc(m.note)}</span>` : ''}</div>`;
-    const kpi = (p, i) => `<div class="bp-node k" data-bp-uses="${BP_USES[p.id].map((u) => (BP_KEPT[u] ? 'b:' : 'm:') + u).join(' ')}" style="--i:${i + 7}"><span class="bp-k">${esc(p.kind)}</span><b>${esc(p.name)}</b><span class="bp-t">${q(p.quality)} ${esc(p.formula)}</span><span class="bp-uses">Uses: ${BP_USES[p.id].map((u) => `<span>${BP_KEPT[u] || esc(cat.find((m) => m.id === u).key)}</span>`).join('')}</span></div>`;
+    const kpi = (p, i) => `<div class="bp-node k${p.waiting ? ' req' : ''}" data-bp-uses="${uses(p).map((u) => (BP_KEPT[u] ? 'b:' : 'm:') + u).join(' ')}" style="--i:${i + 7}"><span class="bp-k">${esc(p.kind)}${p.waiting ? ' · waiting for its figure' : ''}</span><b>${esc(p.name)}</b><span class="bp-t">${q(p.quality)} ${esc(p.formula)}</span><span class="bp-uses">Uses: ${uses(p).map((u) => `<span>${BP_KEPT[u] || esc((cat.find((m) => m.id === u) || { key: u }).key)}</span>`).join('')}</span></div>`;
     const baseCard = b.kpis.some((p) => p.id === 'impact') ? `<div class="bp-node b" data-bp="b:baseline" style="--i:6"><span class="bp-k">Recorded in Outcomes</span><b>Minutes by hand per ${esc(b.K.noun)}</b><span class="bp-t">${b.base ? `${b.base.mid} min, likely ${b.base.low} to ${b.base.high}` : 'Not recorded yet'} · approved by a second person</span></div>
       <div class="bp-node b" data-bp="b:review" style="--i:7"><span class="bp-k">Recorded in Outcomes</span><b>Review minutes per ${esc(b.K.noun)}</b><span class="bp-t">${b.K.review.mid} min, sampled · estimated</span></div>` : '';
     return `<div class="bp-model" id="bp-model"><svg class="bp-lines" aria-hidden="true"></svg>
-      <div class="bp-col"><span class="bp-h">${icon('link', 'sm')}Shared by the link · ${cat.length} figures</span>${cat.map(metric).join('')}
+      <div class="bp-col"><span class="bp-h">${icon('link', 'sm')}Shared by the link · ${cat.filter((m) => m.st !== 'req').length} figures</span>${cat.filter((m) => m.st !== 'req').map(metric).join('')}
+        ${cat.some((m) => m.st === 'req') ? `<span class="bp-h" style="margin-top:10px">${icon('connect-ai', 'sm')}Asked for in the prompt · arrive when built</span>${cat.filter((m) => m.st === 'req').map((m, i) => metric(m, i + 6)).join('')}` : ''}
         <span class="bp-h" style="margin-top:10px">${icon('lock', 'sm')}Kept by Outcomes</span>${baseCard || '<p class="small muted">Nothing extra: these KPIs need no baseline.</p>'}<div class="bp-node s" style="--i:8"><span class="bp-k">Every figure carries</span><b>Day, quality, source</b><span class="bp-t">local_period · measured or derived · application_aggregate</span></div></div>
       <div class="bp-col"><span class="bp-h">${icon('target', 'sm')}${b.suggested ? 'KPIs suggested' : 'KPIs'} · ${b.kpis.length}</span>${b.kpis.map(kpi).join('')}</div>
     </div>`;
@@ -1670,7 +1732,7 @@ A short note in the pull request: each metric and where it comes from; what you 
   }
   // The same blueprint as Markdown, with Mermaid diagrams, for the project's docs or a handover.
   function blueprintMd(b) {
-    const cat = catalogFor(b.K), nid = (k) => k.replace(/[^a-z0-9]/gi, '_');
+    const cat = catalogFor(b.K, b.sh), nid = (k) => k.replace(/[^a-z0-9]/gi, '_'), uses = (p) => p.uses || BP_USES[p.id];
     const door = b.method === 'axle' ? 'AXLE Link' : b.method === 'sheet' ? 'Weekly spreadsheet upload' : 'Measurement link /internal/measure/v1';
     return `# ${b.app}: blueprint
 
@@ -1678,7 +1740,8 @@ Generated by Outcomes on ${day(today())} from what the link reports (its manifes
 
 - Organisation: ${b.org}
 - Project: ${b.project}
-- Kind of work: ${b.K.label}
+- What it does: ${b.K.label}${b.sh && b.sh.dept ? `\n- Department: ${DEPTS[b.sh.dept].name}` : ''}
+- One piece of work: ${b.K.noun}
 - Shares by: ${door}
 - Solution id: ${b.id}
 - Time zone: Asia/Kuala_Lumpur
@@ -1698,9 +1761,9 @@ flowchart LR
 
 \`\`\`mermaid
 flowchart LR
-${cat.filter((m) => m.st !== 'fault').map((m) => `  ${nid(m.key)}["${m.key}<br/>${m.type} · ${m.unit}"]`).join('\n')}
+${cat.filter((m) => m.st !== 'fault').map((m) => `  ${nid(m.key)}["${m.key}<br/>${m.type} · ${m.unit}${m.st === 'req' ? '<br/>asked for' : ''}"]`).join('\n')}
 ${b.kpis.some((p) => p.id === 'impact') ? '  baseline[("Minutes by hand<br/>recorded in Outcomes, approved")]\n  review[("Review minutes<br/>sampled, estimated")]\n' : ''}${b.kpis.map((p) => `  kpi_${p.id}(["${p.name}<br/>${p.quality}"])`).join('\n')}
-${b.kpis.flatMap((p) => BP_USES[p.id].map((u) => `  ${BP_KEPT[u] ? u : nid(cat.find((m) => m.id === u).key)} --> kpi_${p.id}`)).join('\n')}
+${b.kpis.flatMap((p) => uses(p).map((u) => `  ${BP_KEPT[u] ? u : nid((cat.find((m) => m.id === u) || { key: u }).key)} --> kpi_${p.id}`)).join('\n')}
 \`\`\`
 
 ## Figures the link shares
@@ -1713,7 +1776,7 @@ ${cat.map((m) => `| ${m.key} | ${m.name} | ${m.type} | ${m.unit} | ${m.dims.join
 
 | KPI | Kind | Worked out as | Uses |
 |---|---|---|---|
-${b.kpis.map((p) => `| ${p.name} | ${p.quality} | ${p.formula} | ${BP_USES[p.id].map((u) => BP_KEPT[u] || cat.find((m) => m.id === u).key).join(', ')} |`).join('\n')}
+${b.kpis.map((p) => `| ${p.name} | ${p.quality} | ${p.formula} | ${uses(p).map((u) => BP_KEPT[u] || (cat.find((m) => m.id === u) || { key: u }).key).join(', ')} |`).join('\n')}
 ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${b.base.low} to ${b.base.high}), approved by a second person.\n` : ''}
 ## Rules this follows
 
@@ -1769,13 +1832,18 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
   // One question at a time on the left, each saying why it is asked; on the right, what is being set up builds itself
   // as you answer, animates the connection, and is the review before sending. Back on every step; Exit at any time.
   const TRK_STEPS = ['Organisation', 'Application', 'Prompt', 'Connection', 'What to measure', 'Baseline and send'];
-  const trkFresh = () => ({ step: 1, orgId: null, isNew: false, q: '', industry: 'Property and real estate', signed: true, name: '', kind: 'documents', sol: '', method: 'link', objective: '', simId: null, copied: false, createdOrg: null, editing: false });
+  const trkFresh = () => ({ step: 1, orgId: null, isNew: false, q: '', industry: 'Property and real estate', signed: true, name: '', patterns: ['extract'], dept: null, unit: '', desc: '', sol: '', method: 'link', objective: '', simId: null, copied: false, createdOrg: null, editing: false });
+  // The plural of a unit of work someone typed (claim → claims, enquiry → enquiries, box → boxes).
+  const plural = (w) => /[^aeiou]y$/i.test(w) ? w.slice(0, -1) + 'ies' : /(s|x|z|ch|sh)$/i.test(w) ? w + 'es' : w + 's';
+  const trkUnit = (t) => { const u = (t.unit || '').trim().toLowerCase(); return u ? [u, plural(u)] : PATTERNS[t.patterns[0]].unit; };
+  const trkObjective = (t) => { const u = trkUnit(t), d = t.dept && DEPTS[t.dept]; return `${d && t.dept !== 'other' ? `Free the ${d.name.toLowerCase()} team` : 'Free the team'} from handling ${u[1]} by hand, and get more of them right first time.`; };
+  const trkKindOf = (t) => kindOf({ kind: PATTERNS[t.patterns[0]].base, patterns: t.patterns, unit: trkUnit(t) });
   const trkSim = () => { const t = state.trk; return t && t.simId ? simById(t.simId) : null; };
   // Steps 1 and 2 before anything exists (or while editing them), then the connection's own steps.
   function trkStep() { const t = state.trk, s = trkSim(); return t.sent && s ? 7 : t.editing ? t.step : s && s.stage === 'draft' ? 2 + state.wiz.step : t.step; }
   const TRK_WHY = {
     1: 'Everything is reported per organisation, and nothing is collected until their data agreement is signed.',
-    2: 'The kind of work decides which KPIs AI suggests. How it shares decides what, if anything, a developer has to do.',
+    2: 'What it does decides which figures the developer is asked for and which KPIs AI suggests. The department adds the business measures that matter there. How it shares decides what, if anything, a developer has to do.',
     3: 'The application has to share its daily totals before anything can be measured. The prompt tells the developer, or Claude Code, exactly how.',
     4: 'Outcomes checks the link is real, signed and safe before it collects anything.',
     5: 'KPIs are what the organisation sees in its reports. Each one is worked out from the figures the application shares.',
@@ -1795,13 +1863,14 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
   function trkVisual(n) {
     const t = state.trk, s = trkSim(), w = state.wiz, o = s ? orgOf(s) : t.orgId ? state.orgs.find((x) => x.id === t.orgId) : null;
     const orgName = t.editing && t.isNew && t.q.trim() ? t.q.trim() : o ? o.name : t.isNew && t.q.trim() ? t.q.trim() : '';
-    const K = KINDS[t.editing || !s ? t.kind : s.kind], appName = s && !t.editing ? (w.solName || s.name) : t.sol.trim(), projName = s && !t.editing ? s.project.name : (t.name.trim() || appName);
+    const K = t.editing || !s ? trkKindOf(t) : kindOf(s), appName = s && !t.editing ? (w.solName || s.name) : t.sol.trim(), projName = s && !t.editing ? s.project.name : (t.name.trim() || appName);
     const m = WMETHODS[s && !t.editing ? w.method : t.method], tests = s ? w.tests : [], done = tests.filter((x) => x[1] === 'ok').length;
     const st = !s ? 'idle' : w.tested ? 'live' : tests.length ? 'test' : n >= 4 ? 'wait' : 'idle';
     const seen = t.vis || {}; t.vis = {};
     const props = s && w.proposals ? kpiProposals(s).filter((p) => w.keep[p.id]) : [], b = w.baseline, Kx = s ? kindOf(s) : K;
-    const kpiVal = !s || n < 5 ? '' : !w.proposals ? 'Suggesting…' : `${props.length} KPI${props.length === 1 ? '' : 's'}`;
-    const kpiSub = props.length ? `<span class="tk-chips">${props.map((p) => `<span>${esc(p.name)}</span>`).join('')}</span>` : '';
+    const xnames = s && s.dept && DEPTS[s.dept] ? DEPTS[s.dept].ideas.filter((i) => (w.xkeep || {})[i[1]]).map((i) => i[0]) : [], kn = props.length + xnames.length;
+    const kpiVal = !s || n < 5 ? '' : !w.proposals ? 'Suggesting…' : `${kn} KPI${kn === 1 ? '' : 's'}`;
+    const kpiSub = kn ? `<span class="tk-chips">${props.map((p) => `<span>${esc(p.name)}</span>`).join('')}${xnames.map((x) => `<span class="w">${esc(x)}</span>`).join('')}</span>` : '';
     const baseVal = !s || n < 6 || !b ? '' : !w.keep.impact ? 'Not needed' : b.method === 'none' ? 'Not available yet' : `${b.mid} min per ${Kx.noun}`;
     const baseSub = baseVal && w.keep.impact && b.method !== 'none' ? `${b.low} to ${b.high} min · ${({ sample: `timed sample of ${b.n}`, history: 'past records', estimate: 'their estimate' })[b.method]}` : '';
     const node = (id, ic, label, val, sub, on, cls = '') => { t.vis[id] = !!val; return `<div class="tnode ${on ? 'on' : ''} ${val && !seen[id] ? 'pop' : ''} ${cls}" id="${id}"><span class="cic">${icon(ic)}</span><span class="tl">${label}</span><b class="nm">${val ? esc(val) : '<span class="ph">Not chosen yet</span>'}</b>${sub ? `<span class="sub">${sub}</span>` : ''}</div>`; };
@@ -1829,7 +1898,7 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
   pages.track = (id) => {
     if (id && simById(id) && (!state.trk || state.trk.simId !== id)) { state.trk = Object.assign(trkFresh(), { simId: id }); state.focusSim = id; }
     state.trk = state.trk || trkFresh();
-    const t = state.trk, n = trkStep(), s = trkSim(), w = state.wiz, K = KINDS[t.kind];
+    const t = state.trk, n = trkStep(), s = trkSim(), w = state.wiz, K = trkKindOf(t);
     if (s && s.stage !== 'draft' && !t.sent) { state.trk = trkFresh(); return pages.track(); }
     if (s && !w.baseline) { const Kb = kindOf(s); w.baseline = { method: 'sample', mid: Kb.base.mid, low: Kb.base.low, high: Kb.base.high, n: 20, period: `${day(M.addDays(today(), 5))} to ${day(M.addDays(today(), 9))}`, note: '' }; }
     const shown = `${n}:${s ? w.tested : ''}:${s ? w.method : t.isNew}`, enter = t.shown !== shown; t.shown = shown;
@@ -1848,18 +1917,22 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
           <button type="button" class="tk-org add" data-trk-new="1" aria-selected="${t.isNew}" ${q && !exact ? '' : 'hidden'} id="tk-add"><span class="avatar" style="border-radius:10px;background:var(--primary-tint);color:var(--primary-ink)">${icon('plus', 'sm')}</span><span><b class="ink">Add “<span id="tk-add-name">${esc(q)}</span>”</b><small>A new organisation</small></span>${icon('check', 'sm')}</button>
         </div>
         ${!list.length && !q ? '<p class="small muted">No organisations yet. Type the first one’s name.</p>' : ''}
-        ${t.isNew ? `<div class="tk-new"><div class="field"><span class="lab">Industry</span><div class="tk-kinds">${['Property and real estate', 'Food and beverage', 'Logistics', 'Manufacturing', 'Healthcare', 'Engineering and construction', 'Retail', 'Other'].map((x) => `<button type="button" class="tk-kind sm" data-trk-ind="${x}" aria-pressed="${t.industry === x}">${x}</button>`).join('')}</div></div>
+        ${t.isNew ? `<div class="tk-new"><div class="field"><span class="lab">Industry</span><div class="tk-kinds">${['Property and real estate', 'Banking and finance', 'Insurance', 'Government and public sector', 'Healthcare', 'Education', 'Manufacturing', 'Engineering and construction', 'Energy and utilities', 'Logistics', 'Retail and e-commerce', 'Food and beverage', 'Hospitality and travel', 'Telecommunications', 'Professional services', 'Media', 'Agriculture', 'Other'].map((x) => `<button type="button" class="tk-kind sm" data-trk-ind="${x}" aria-pressed="${t.industry === x}">${x}</button>`).join('')}</div></div>
           <button type="button" class="tk-toggle" role="switch" aria-checked="${t.signed}" data-trk-signed="1"><span class="switch" aria-hidden="true"></span><span><b class="ink">Data agreement signed</b><span class="small muted">Nothing is collected until it is</span></span></button></div>` : ''}
         ${foot('Continue', `data-act="trk-next" ${t.orgId || (t.isNew && q) ? '' : 'disabled'}`)}`;
     }
     if (n === 2) {
       const orgName = t.isNew ? t.q.trim() : (state.orgs.find((o) => o.id === t.orgId) || {}).name || 'the organisation';
-      body = `${tq(2, 'Which application are you tracking?', `What your team calls the application you built for ${esc(orgName)}.`)}${why(2)}
-        <div class="field"><label for="tk-sol" class="sr-only">Application name</label><input id="tk-sol" class="tk-big" placeholder="e.g. ${esc(K.sol)}" value="${esc(t.sol)}" autocomplete="off"></div>
-        <div class="field"><span class="lab">Kind of work <span class="muted" style="font-weight:400">· steers the KPIs AI suggests</span></span><div class="tk-kinds">${Object.entries(KINDS).map(([k, x]) => `<button type="button" class="tk-kind" data-trk-kind="${k}" aria-pressed="${t.kind === k}">${icon(x.icon, 'sm')}<span>${x.label}</span></button>`).join('')}</div></div>
+      const u = trkUnit(t);
+      body = `${tq(2, 'Which application are you tracking?', `What your team calls the application you built for ${esc(orgName)}, and what it does.`)}${why(2)}
+        <div class="field"><label for="tk-sol" class="sr-only">Application name</label><input id="tk-sol" class="tk-big" placeholder="e.g. Claims reader" value="${esc(t.sol)}" autocomplete="off"></div>
+        <div class="field"><label for="tk-desc">What does it do, in a sentence? <span class="muted" style="font-weight:400">· AI fills in the rest, you check it</span></label><div class="tk-descrow"><textarea id="tk-desc" rows="2" placeholder="e.g. Reads insurance claim forms, checks them against the policy and drafts a reply to the customer">${esc(t.desc)}</textarea><button type="button" class="btn" data-act="trk-suggest"><img src="${SPARK}" alt="" style="width:16px">Suggest</button></div></div>
+        <div class="field"><span class="lab">What it does <span class="muted" style="font-weight:400">· pick up to three; the first is the main one</span></span><div class="tk-pats">${Object.entries(PATTERNS).map(([k, x]) => `<button type="button" class="tk-pat" data-trk-pat="${k}" aria-pressed="${t.patterns.includes(k)}">${icon(x.icon, 'sm')}<span>${x.name}</span>${t.patterns.length > 1 && t.patterns[0] === k ? '<i>Main</i>' : ''}</button>`).join('')}</div></div>
+        <div class="tk-two"><div class="field"><label for="tk-unit">One piece of work is called</label><input id="tk-unit" placeholder="${esc(PATTERNS[t.patterns[0]].unit[0])}" value="${esc(t.unit)}" autocomplete="off"><span class="help" id="tk-unit-help">Claim, lease, ticket, shipment… KPIs use it: “${esc(cap(u[1]))} handled”.</span></div>
+          <div class="field"><span class="lab">Department <span class="muted" style="font-weight:400">· optional; adds its own business measures</span></span><div class="tk-kinds">${Object.entries(DEPTS).map(([k, d]) => `<button type="button" class="tk-kind sm" data-trk-dept="${k}" aria-pressed="${t.dept === k}">${d.name}</button>`).join('')}</div></div></div>
         <div class="field"><span class="lab">How it will share its figures</span><div class="tk-methods">${Object.entries(WMETHODS).map(([k, x]) => `<button type="button" class="tk-method" data-trk-method="${k}" aria-pressed="${t.method === k}">${icon(x.ic, 'sm')}<b>${{ link: 'Measurement link', axle: 'AntaraX product', sheet: 'Spreadsheet' }[k]}</b><span>${esc(x.effort)}</span>${x.tag ? `<i>${x.tag}</i>` : ''}</button>`).join('')}</div></div>
         <div class="field"><label for="tk-name">The project it belongs to <span class="muted" style="font-weight:400">· the name ${esc(orgName)} uses, for reports</span></label><input id="tk-name" placeholder="${esc(t.sol.trim() || 'e.g. Lease abstraction')}" value="${esc(t.name)}" autocomplete="off"></div>
-        <details class="more"><summary>The outcome, in their words (you can add it later)</summary><div class="field" style="margin-top:8px"><textarea id="tk-obj" rows="2">${esc(t.objective || K.objective)}</textarea></div></details>
+        <details class="more"><summary>The outcome, in their words (you can add it later)</summary><div class="field" style="margin-top:8px"><textarea id="tk-obj" rows="2">${esc(t.objective || trkObjective(t))}</textarea></div></details>
         ${foot(t.simId ? 'Save and continue' : t.method === 'link' ? 'Create and get the prompt' : 'Create and connect', `data-act="trk-next" ${t.sol.trim() ? '' : 'disabled'}`)}`;
     }
     if (n === 3 && s) {
@@ -1902,8 +1975,10 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
       body = !w.proposals ? `${tq(5, 'What should we measure?')}<div class="thinking" style="padding:4px 0"><img src="${SPARK}" alt=""><span>Reading what ${esc(solName)} shares and what ${esc(s.project.name)} is for…</span></div><div class="grid" style="gap:10px"><div class="skel" style="height:64px"></div><div class="skel" style="height:64px"></div><div class="skel" style="height:64px"></div></div>`
         : `${tq(5, 'What should we measure?', `Suggested from what ${esc(solName)} shares and what ${esc(s.project.name)} is for. Keep or drop each.`)}${why(5)}${aiMark('Suggested by AI. You decide.')}
         <div class="tk-picks">${props.map((p, i) => `<div class="tk-pick ${w.keep[p.id] ? 'on' : ''}" style="--i:${i}"><div class="tk-pick-b"><b class="ink">${esc(p.name)}</b><span class="d">${esc(p.why)}</span><span class="meta-line" style="margin:2px 0 0"><span class="pill idle">${p.kind}</span>${q(p.quality)}${p.needsBaseline ? `<span class="small muted">${icon('target', 'sm')} Needs a baseline, next</span>` : ''}</span><details class="more"><summary>How it’s worked out</summary><div class="small">${esc(p.formula)}</div></details></div><button type="button" class="switch" role="switch" aria-checked="${!!w.keep[p.id]}" aria-label="Measure ${esc(p.name)}" data-keep="${p.id}"></button></div>`).join('')}</div>
+        ${s.dept && DEPTS[s.dept] && DEPTS[s.dept].ideas.length ? `<div class="tk-sec"><span class="lab">For ${esc(DEPTS[s.dept].name)}: the business measures that matter there</span><p class="small muted" style="margin:0">The prompt already asks the developer for these figures. Each KPI starts counting the day its figure arrives.</p>
+          <div class="tk-picks">${DEPTS[s.dept].ideas.map(([nm, key, type, unit], i) => `<div class="tk-pick ${(w.xkeep || {})[key] ? 'on' : ''}" style="--i:${i + 3}"><div class="tk-pick-b"><b class="ink">${esc(nm)}</b><span class="meta-line" style="margin:2px 0 0"><span class="pill idle">${esc(DEPTS[s.dept].name)}</span><span class="pill warn">Needs a figure</span><span class="mono xs muted">${esc(key)} · ${esc(type)} · ${esc(unit)}</span></span></div><button type="button" class="switch" role="switch" aria-checked="${!!(w.xkeep || {})[key]}" aria-label="Measure ${esc(nm)}" data-xkeep="${key}"></button></div>`).join('')}</div></div>` : ''}
         <div class="tk-gap">${icon('insight', 'sm')}<span><b class="ink">Accuracy</b> would be worth measuring, but ${esc(solName)} doesn’t count corrections yet.</span><button type="button" class="btn sm" data-act="add-gap">Ask the developer</button></div>
-        ${foot(`Continue with ${kept} KPI${kept === 1 ? '' : 's'}`, `data-act="w-next" ${kept ? '' : 'disabled'}`)}`;
+        ${foot(`Continue with ${kept + Object.values(w.xkeep || {}).filter(Boolean).length} KPI${kept + Object.values(w.xkeep || {}).filter(Boolean).length === 1 ? '' : 's'}`, `data-act="w-next" ${kept ? '' : 'disabled'}`)}`;
     }
     if (n === 6 && s) {
       const b = w.baseline, Ks = kindOf(s), o = orgOf(s);
@@ -1943,7 +2018,7 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
       sync(); if (!t.orgId && !t.isNew) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); }
     }
     // Application and project names update the picture as they are typed.
-    const paintApp = () => { const v = $('#tv-app .nm'), sub = $('#tv-app .sub'), a = t.sol.trim(); if (v) v.innerHTML = a ? esc(a) : '<span class="ph">Not chosen yet</span>'; const n = $('#tv-app'); if (n) n.classList.toggle('on', !!a); if (sub) sub.textContent = a ? `${t.name.trim() || a} · ${KINDS[t.kind].label}` : ''; else if (a && n) n.insertAdjacentHTML('beforeend', `<span class="sub">${esc(t.name.trim() || a)} · ${esc(KINDS[t.kind].label)}</span>`); const nx = $('[data-act=trk-next]'); if (nx) nx.disabled = !a; const pn = $('#tk-name'); if (pn) pn.placeholder = a || 'e.g. Lease abstraction'; };
+    const paintApp = () => { const v = $('#tv-app .nm'), sub = $('#tv-app .sub'), a = t.sol.trim(); if (v) v.innerHTML = a ? esc(a) : '<span class="ph">Not chosen yet</span>'; const n = $('#tv-app'); if (n) n.classList.toggle('on', !!a); if (sub) sub.textContent = a ? `${t.name.trim() || a} · ${trkKindOf(t).label}` : ''; else if (a && n) n.insertAdjacentHTML('beforeend', `<span class="sub">${esc(t.name.trim() || a)} · ${esc(trkKindOf(t).label)}</span>`); const nx = $('[data-act=trk-next]'); if (nx) nx.disabled = !a; const pn = $('#tk-name'); if (pn) pn.placeholder = a || 'e.g. Lease abstraction'; };
     const so = $('#tk-sol');
     if (so) {
       so.addEventListener('input', () => { t.sol = so.value; paintApp(); });
@@ -1952,6 +2027,8 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
     }
     const nm = $('#tk-name'); if (nm) { nm.addEventListener('input', () => { t.name = nm.value; paintApp(); }); nm.addEventListener('keydown', (e) => { if (e.key === 'Enter' && t.sol.trim()) { e.preventDefault(); trkNext(); } }); }
     const ob = $('#tk-obj'); if (ob) ob.addEventListener('input', () => { t.objective = ob.value; });
+    const de = $('#tk-desc'); if (de) de.addEventListener('input', () => { t.desc = de.value; });
+    const un = $('#tk-unit'); if (un) un.addEventListener('input', () => { t.unit = un.value; const h = $('#tk-unit-help'); if (h) h.textContent = `Claim, lease, ticket, shipment… KPIs use it: “${cap(trkUnit(t)[1])} handled”.`; });
     pages.connect.after(); requestAnimationFrame(drawBp);
     ['b-mid', 'b-low', 'b-high', 'b-n'].forEach((id) => { const el = $('#' + id); if (el) el.addEventListener('input', () => { const b = state.wiz.baseline, s = trkSim(), nm2 = $('#tv-base .nm'), sub = $('#tv-base .sub'); if (nm2 && s) nm2.textContent = `${b.mid} min per ${kindOf(s).noun}`; if (sub) sub.textContent = `${b.low} to ${b.high} min · ${({ sample: `timed sample of ${b.n}`, history: 'past records', estimate: 'their estimate' })[b.method]}`; }); });
     const dz = $('#tk-drop'); if (dz) {
@@ -1968,16 +2045,16 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
       state.mode = 'new';
       let org = state.orgs.find((o) => o.id === t.orgId && !t.isNew);
       if (!org) { org = newOrg(t.q.trim(), t.industry, t.signed); t.createdOrg = org.id; t.isNew = false; log(`Added organisation ${org.name}`); }
-      const project = t.name.trim() || app, objective = (t.objective || '').trim() || KINDS[t.kind].objective;
+      const project = t.name.trim() || app, objective = (t.objective || '').trim() || trkObjective(t), kind = PATTERNS[t.patterns[0]].base, shape = { patterns: t.patterns.slice(), dept: t.dept, unit: t.unit.trim() ? trkUnit(t) : null, desc: t.desc.trim() };
       if (t.simId && trkSim()) {
         // Back from the prompt: change what was created, and start the connection again if how it shares changed.
         const s = trkSim(), w = state.wiz;
-        Object.assign(s, { orgId: org.id, kind: t.kind, name: app }); Object.assign(s.project, { name: project, objective });
+        Object.assign(s, { orgId: org.id, kind, name: app }, shape); Object.assign(s.project, { name: project, objective });
         if (w.method !== t.method) Object.assign(w, { method: t.method, tests: [], tested: false, proposals: null, step: 1 });
         w.solName = app; t.editing = false; t.orgId = org.id; t.copied = false; w.step = 1;
         log(`Changed ${app} for ${org.name} while setting it up`); render(); window.scrollTo(0, 0); return;
       }
-      const sim = newSim(org, { kind: t.kind, project, objective, sol: app });
+      const sim = Object.assign(newSim(org, { kind, project, objective, sol: app }), shape);
       log(`Started tracking ${app} (${project}) for ${org.name}`);
       t.simId = sim.id; t.orgId = org.id; state.focusSim = sim.id;
       state.wiz = Object.assign(freshWizard(), { method: t.method, solName: app });
@@ -1999,10 +2076,11 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
     const w = state.wiz, s = wizSim();
     s.name = w.solName || s.name;
     s.base = w.keep.impact ? Object.assign({}, w.baseline) : { method: 'none' };
+    s.extraKpis = Object.keys(w.xkeep || {}).filter((k) => w.xkeep[k]);
     const n = sendSimForApproval(s, w.keep, false);
     state.approvalSel = state.myApprovals[0] && state.myApprovals[0].id;
     log(`Connected ${s.name} and sent ${n} KPIs to Aisyah Rahman`);
-    state.trk = Object.assign(state.trk && state.trk.simId === s.id ? state.trk : trkFresh(), { simId: s.id, sent: { kpis: n, base: !!w.keep.impact && w.baseline.method !== 'none' } });
+    state.trk = Object.assign(state.trk && state.trk.simId === s.id ? state.trk : trkFresh(), { simId: s.id, sent: { kpis: n + s.extraKpis.length, base: !!w.keep.impact && w.baseline.method !== 'none' } });
     go('track-' + s.id); window.scrollTo(0, 0); toast(`Sent ${n} KPIs for approval.`);
   }
 
@@ -3184,8 +3262,8 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
   const TOUR = [
     { t: 'Meet Outcomes', d: 'REKA builds AI solutions for organisations. Outcomes shows each organisation what their solution changed. Let’s take a new organisation from nothing to their first report.', go() { setWs('sandbox'); resetWorkspace(true); go('home'); } },
     { t: 'Track an application: the organisation', d: 'Tracking an application is the main action, at the top of the menu. One wizard, one question at a time. Type the organisation’s name: pick it if it exists, or add it. The picture on the right builds as you answer.', mark: '#wpanel', go() { state.trk = Object.assign(trkFresh(), { q: 'Harapan Foods', isNew: true, industry: 'Food and beverage' }); go('track'); } },
-    { t: 'Name the application', d: 'The application’s name, the kind of work (it steers which KPIs AI suggests) and how it will share its figures. Each step says why it is asked.', mark: '#wpanel', go() { state.trk = Object.assign(trkFresh(), { step: 2, q: 'Harapan Foods', isNew: true, industry: 'Food and beverage', name: 'Supplier invoices', kind: 'documents', sol: 'Invoice reader', solTouched: true }); go('track'); } },
-    { t: 'Copy the prompt', d: 'How linking works, in five steps, and what the prompt asks the developer, or Claude Code, to do. One button copies the full prompt.', mark: '#wpanel', go() { if (!T.simId && state.trk && state.trk.simId && simById(state.trk.simId)) { T.simId = state.trk.simId; T.orgId = simById(T.simId).orgId; } if (!T.orgId) { const o = newOrg('Harapan Foods', 'Food and beverage'); T.orgId = o.id; log('Added organisation Harapan Foods'); } if (!T.simId) { const s = newSim(state.orgs.find((o) => o.id === T.orgId), { kind: 'documents', project: 'Supplier invoices', sol: 'Invoice reader', vol: 220, history: 14 }); T.simId = s.id; state.focusSim = s.id; state.wiz = freshWizard(); log('Created project Supplier invoices for Harapan Foods'); } wizTo(1); } },
+    { t: 'Name the application', d: 'Its name, and what it does in a sentence: AI suggests the kinds of work (up to three), the unit and the department, which decide the figures the developer is asked for and the KPIs. Works for any industry or team.', mark: '#wpanel', go() { state.trk = Object.assign(trkFresh(), { step: 2, q: 'Harapan Foods', isNew: true, industry: 'Food and beverage', name: 'Supplier invoices', patterns: ['extract', 'match'], dept: 'finance', unit: 'invoice', desc: 'Reads supplier invoices, matches them to purchase orders and flags the ones that don’t match', sol: 'Invoice reader' }); go('track'); } },
+    { t: 'Copy the prompt', d: 'How linking works, in five steps, and what the prompt asks the developer, or Claude Code, to do. One button copies the full prompt.', mark: '#wpanel', go() { if (!T.simId && state.trk && state.trk.simId && simById(state.trk.simId)) { T.simId = state.trk.simId; T.orgId = simById(T.simId).orgId; } if (!T.orgId) { const o = newOrg('Harapan Foods', 'Food and beverage'); T.orgId = o.id; log('Added organisation Harapan Foods'); } if (!T.simId) { const s = newSim(state.orgs.find((o) => o.id === T.orgId), { kind: 'documents', project: 'Supplier invoices', sol: 'Invoice reader', vol: 220, history: 14 }); Object.assign(s, { patterns: ['extract', 'match'], dept: 'finance', unit: ['invoice', 'invoices'] }); T.simId = s.id; state.focusSim = s.id; state.wiz = freshWizard(); log('Created project Supplier invoices for Harapan Foods'); } wizTo(1); } },
     { t: 'Wait for the connection', d: 'The developer adds a small read-only link, about a day of work. Outcomes listens for it; you can leave and are told when it connects.', mark: '#wpanel', go() { wizTo(2); } },
     { t: 'Connected', d: 'Outcomes checks the link is signed and reads one day of figures; each part of the picture lights up as it passes. Anything that could identify people is held back. Then on to what to measure.', mark: '#wpanel', go() { wizTo(2); setTimeout(() => { if (state.tour === 5) runTests(); }, 300); } },
     { t: 'AI suggests the KPIs', d: 'AI reads the figures and the project, and suggests what to measure and why. People keep or drop each one.', mark: '#wpanel', go() { wizTo(3); } },
@@ -3417,12 +3495,21 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
     'trk-back': () => {
       const t = state.trk, n = trkStep(), s = trkSim(), w = state.wiz;
       if (n === 2) t.step = 1;
-      else if (n === 3 && s) Object.assign(t, { editing: true, step: 2, orgId: s.orgId, isNew: false, q: orgOf(s).name, sol: w.solName || s.name, name: s.project.name === (w.solName || s.name) ? '' : s.project.name, kind: s.kind, method: w.method, objective: s.project.objective });
+      else if (n === 3 && s) Object.assign(t, { editing: true, step: 2, orgId: s.orgId, isNew: false, q: orgOf(s).name, sol: w.solName || s.name, name: s.project.name === (w.solName || s.name) ? '' : s.project.name, patterns: s.patterns || [Object.keys(PATTERNS).find((k) => PATTERNS[k].base === s.kind)], dept: s.dept || null, unit: s.unit ? s.unit[0] : '', desc: s.desc || '', method: w.method, objective: s.project.objective });
       else if (n === 4) { w.step = 1; t.copied = false; }
       else if (n >= 5) w.step--;
       render(); window.scrollTo(0, 0);
     },
     'trk-exit': () => trkExit(),
+    'trk-suggest': () => {
+      const t = state.trk, de = $('#tk-desc'); if (de) t.desc = de.value;
+      const r = suggestFromText(`${t.desc} ${t.sol}`);
+      if (!t.desc.trim()) { toast('Write a sentence about what it does first.'); if (de) de.focus(); return; }
+      if (!r.pats.length && !r.dept) { toast('Couldn’t tell from that. Pick below, or say more.'); return; }
+      if (r.pats.length) t.patterns = r.pats; if (r.dept) t.dept = r.dept;
+      if (!t.unit.trim()) { const m = /\b(claims?|leases?|invoices?|tickets?|shipments?|orders?|applications?|contracts?|enquir(?:y|ies)|quotes?|quotations?|cases?|candidates?|patients?|reports?|forms?|policies|policy|receipts?|requests?)\b/i.exec(t.desc); if (m) t.unit = m[1].toLowerCase().replace(/ies$/, 'y').replace(/(?<!s)s$/, ''); }
+      render(); toast(`Suggested: ${t.patterns.map((k) => PATTERNS[k].name.toLowerCase()).join(', ')}${t.dept ? `, for ${DEPTS[t.dept].name}` : ''}. Change anything that’s wrong.`);
+    },
     'prompt-md': () => { const s = trkSim() || wizSim(); if (!s) return; saveFile(`${slug(state.wiz.solName || s.name)}-measurement-link-prompt.md`, devPrompt(s)); },
     'bp-md': () => { const b = state.bpCur; if (b) saveFile(`${b.id}-blueprint.md`, blueprintMd(b)); },
     'bp-jump': () => { const el = $('#bp'); if (el) el.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' }); },
@@ -3551,7 +3638,13 @@ ${b.base ? `\nBaseline: ${b.base.mid} minutes per ${b.K.noun} by hand (likely ${
     if (d.scr) { screenOpen(d.scr); return; }
     if (d.trkOrg) { const t = state.trk, o = state.orgs.find((x) => x.id === d.trkOrg); t.orgId = d.trkOrg; t.isNew = false; t.q = o ? o.name : t.q; render(); return; }
     if (d.trkNew) { const t = state.trk, q = $('#tk-q'); if (q) t.q = q.value; t.isNew = true; t.orgId = null; render(); return; }
-    if (d.trkKind) { const t = state.trk; t.kind = d.trkKind; if (!t.solTouched) t.sol = ''; t.objective = ''; render(); return; }
+    if (d.trkPat) {
+      const t = state.trk, i = t.patterns.indexOf(d.trkPat);
+      if (i >= 0) { if (t.patterns.length > 1) t.patterns.splice(i, 1); } else if (t.patterns.length >= 3) { toast('Up to three. Take one off first.'); return; } else t.patterns.push(d.trkPat);
+      render(); return;
+    }
+    if (d.xkeep) { const w = state.wiz; w.xkeep = w.xkeep || {}; w.xkeep[d.xkeep] = !w.xkeep[d.xkeep]; render(); return; }
+    if (d.trkDept) { const t = state.trk; t.dept = t.dept === d.trkDept ? null : d.trkDept; render(); return; }
     if (d.trkInd) { state.trk.industry = d.trkInd; render(); return; }
     if (d.appf) { state.appF = d.appf; render(); return; }
     if (d.bptab) { state.bpTab = d.bptab; render(); return; }
