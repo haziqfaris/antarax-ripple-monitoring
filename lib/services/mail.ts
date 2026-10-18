@@ -1,11 +1,16 @@
 // E-mail (V-27). Alerts go to the outbox first, so nothing is lost and tests can read it; with RESEND_API_KEY set,
 // flushOutbox sends them, without it they stay in the outbox for staff to see. Sign-in links never touch the outbox.
+// With ANTARAX_EMAIL_URL and AX_SVC_KEY both set, both go through AntaraX email instead (lib/mail/antarax-switch.ts),
+// on its templates; otherwise the Resend path below runs exactly as before.
 import { appendFile, mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
 import type { Tx } from "../db";
 import { inScope } from "../db";
 import { env } from "../env";
-import type { Mail } from "../mail/sign-in-mail";
+import { signInMail, type Mail } from "../mail/sign-in-mail";
+import { antaraxEmailClient } from "../mail/antarax-switch";
+import { alertRequest, signInRequest, type OutboxRow } from "../mail/antarax-requests";
+import type { EmailClient } from "../mail/antarax-email";
 
 export async function queueAlert(tx: Tx, org: string | null, subject: string, body: string): Promise<void> {
   const to = env().ALERT_TO.split(",").map((s) => s.trim()).filter(Boolean);
@@ -17,9 +22,18 @@ export async function queueAlert(tx: Tx, org: string | null, subject: string, bo
 export async function flushOutbox(fetcher: typeof fetch = fetch): Promise<{ sent: number; failed: number; skipped: number }> {
   const e = env();
   return inScope("all", async (tx) => {
-    const rows = await tx<{ id: string; to_addr: string; subject: string; body: string }[]>`select id, to_addr, subject, body from outbox where sent_at is null and error is null order by created_at limit 50`;
+    const rows = await tx<OutboxRow[]>`select id, organisation_id, to_addr, subject, body from outbox where sent_at is null and error is null order by created_at limit 50`;
     let sent = 0, failed = 0, skipped = 0;
+    const service = antaraxEmailClient(e, fetcher);
     for (const m of rows) {
+      if (service) {
+        if (!m.to_addr.includes("@")) { skipped++; continue; }
+        const outcome = await sendAlertThroughService(service, m, e.APP_URL);
+        if (outcome === "sent") { await tx`update outbox set sent_at = now() where id = ${m.id}`; sent++; }
+        else if (outcome === "again") failed++; // left as it is: the next run sends it again with the same key
+        else { await tx`update outbox set error = ${outcome.error} where id = ${m.id}`; failed++; }
+        continue;
+      }
       if (!e.RESEND_API_KEY || !m.to_addr.includes("@")) { skipped++; continue; }
       try {
         const res = await fetcher("https://api.resend.com/emails", { method: "POST", headers: { authorization: `Bearer ${e.RESEND_API_KEY}`, "content-type": "application/json" }, body: JSON.stringify({ from: e.MAIL_FROM, to: [m.to_addr], subject: m.subject, text: m.body }), signal: AbortSignal.timeout(15_000) });
@@ -49,4 +63,39 @@ export async function sendNow(to: string, mail: Mail, fetcher: typeof fetch = fe
   } else {
     throw new Error("E-mail is not set up: set RESEND_API_KEY.");
   }
+}
+
+/** What became of one e-mail sent through AntaraX email: never the address, the link or anything typed into it. */
+type Outcome = "sent" | "again" | { error: string };
+
+const DONE = new Set(["accepted", "sent", "delivered", "delayed"]);
+
+async function throughService(service: EmailClient, input: Parameters<EmailClient["send"]>[0], key: string): Promise<Outcome> {
+  const r = await service.send(input, key);
+  if (!r.ok) return r.retry ? "again" : { error: `AntaraX email answered ${r.status}${r.error ? ` (${r.error})` : ""}` };
+  const status = String(r.body?.status ?? "");
+  if (DONE.has(status)) return "sent";
+  if (status === "retryable") return "again";
+  const code = typeof r.body?.error_code === "string" ? ` (${r.body.error_code})` : "";
+  return { error: `AntaraX email: ${status || "unknown"}${code}` };
+}
+
+function sendAlertThroughService(service: EmailClient, row: OutboxRow, appUrl: string): Promise<Outcome> {
+  const { input, key } = alertRequest(row, appUrl);
+  return throughService(service, input, key);
+}
+
+/**
+ * The sign-in link. With the switch on it goes through AntaraX email (auth.sign_in.v1); otherwise it is the console's
+ * own sign-in e-mail, sent by sendNow exactly as before. Either way it is sent at once and never kept in the outbox.
+ * A failure throws a message with no address and no link in it, for the caller to log.
+ */
+export async function sendSignInLink(o: { to: string; name: string; link: string; expiresAt: Date; minutes: number }, fetcher: typeof fetch = fetch): Promise<void> {
+  const e = env();
+  const service = antaraxEmailClient(e, fetcher);
+  if (!service) return sendNow(o.to, signInMail({ ...o, appUrl: e.APP_URL }), fetcher);
+  const { input, key } = signInRequest(o);
+  const outcome = await throughService(service, input, key);
+  if (outcome === "again") throw new Error("AntaraX email could not be reached or was busy; ask for a new link");
+  if (outcome !== "sent") throw new Error(outcome.error);
 }

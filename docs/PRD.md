@@ -193,6 +193,8 @@ The brand kit (01) says: "a capability moves to AntaraX when it has a repeatable
 
 Proposed for the MVP: inside AXLE the area is called **Outcomes** (`AXLE · Outcomes`), which describes what staff go there for. The code id is `outcomes` (one lower-case word, as the API registry requires). The public product name is decided at graduation. See [§20](#20-open-decisions), D1.
 
+**Decided 18 Oct 2026 (owner):** the product is **Gauge** (Ripple Gauge in full; Gauge for short), at `gauge.antarax.ai`, sending its e-mail through AntaraX email as `Gauge <gauge@mail.antarax.ai>` (antarax-api docs/15). The screens and the code id still say Outcomes until they are renamed.
+
 ### 6.3 AXLE and AXLE Central
 
 | | AXLE (per product) | AXLE Central | Performance Intelligence |
@@ -1101,7 +1103,7 @@ Matching what AntaraX products already run (antarax-api 08):
 | Speech to text | For client-context voice notes (FR-CTX-13): a provider that handles Malaysian English and Malay, processes in the region and keeps no audio. Not chosen (D21) |
 | Files | Supabase Storage (Singapore), private buckets, signed links that expire in minutes, malware scan on upload |
 | PDF | Server-side HTML to PDF from the same widget library |
-| E-mail | Resend, as other products |
+| E-mail | AntaraX email (antarax-api docs/15), as other products, sending as Gauge; the console's own Resend sending stays behind the switch until it is retired |
 | Backups | R2, as other products |
 
 Time-series storage (Timescale or ClickHouse) only if NFR-2 is outgrown.
@@ -1184,7 +1186,7 @@ The brief's §16, extended with points this review raised. Each needs the owner.
 
 | # | Decision | Recommendation |
 |---|---|---|
-| D1 | **Name**, and its relation to Frame and AXLE. "Ripple" is a family name and cannot be the product name (brand kit 12); "AX Ripple" was a retired meaning | "Outcomes" as the AXLE area for the MVP; product name at graduation, recorded in the brand kit |
+| D1 | **Name**, and its relation to Frame and AXLE. "Ripple" is a family name and cannot be the product name (brand kit 12); "AX Ripple" was a retired meaning | **Decided 18 Oct 2026:** Gauge (Ripple Gauge in full), at `gauge.antarax.ai` (§6.2) |
 | D2 | **Where it lives**: its own host now, inside AXLE Central later? | Yes: AXLE shell now, a group in Central when Central ships |
 | D3 | **Contract path and id**: `/internal/measure/v1` for REKA-built solutions; for AntaraX products, extend AXLE Link with `metrics` and `observations`? | Yes to both. **Written and tested** as antarax-api docs/14, decision 0013 (proposed), with the kit and contract test |
 | D4 | **Authentication**: AXLE Link's HMAC signing with a per-integration `ax_msr_` key by default, bearer token for third parties, OAuth2 only on request? | Yes (decision 0013, proposed) |
