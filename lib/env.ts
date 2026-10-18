@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { antaraxEmailOn } from "./mail/antarax-switch";
 
 const schema = z.object({
   DATABASE_URL: z.string().min(1, "DATABASE_URL is not set"),
@@ -12,7 +13,11 @@ const schema = z.object({
   ALERT_TO: z.string().default(""),
   /** Tests only: sign-in e-mails are written to this file instead of sent. Never set it in a deployment. */
   MAIL_CAPTURE_FILE: z.string().optional(),
-}).refine((e) => process.env.NODE_ENV !== "production" || e.RESEND_API_KEY || e.MAIL_CAPTURE_FILE, { message: "RESEND_API_KEY is needed: sign-in is by e-mailed link", path: ["RESEND_API_KEY"] });
+  /** AntaraX email (antarax-api docs/15): with both set, every e-mail goes through the service; otherwise Resend. */
+  ANTARAX_EMAIL_URL: z.string().optional(),
+  /** Gauge's service key, ax_svc_gauge_…, from the AntaraX email service. A secret. */
+  AX_SVC_KEY: z.string().optional(),
+}).refine((e) => process.env.NODE_ENV !== "production" || e.RESEND_API_KEY || e.MAIL_CAPTURE_FILE || antaraxEmailOn(e), { message: "RESEND_API_KEY, or ANTARAX_EMAIL_URL and AX_SVC_KEY, are needed: sign-in is by e-mailed link", path: ["RESEND_API_KEY"] });
 
 export type Env = z.infer<typeof schema>;
 let cached: Env | null = null;
