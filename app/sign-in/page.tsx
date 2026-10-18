@@ -1,10 +1,9 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { requestLink, rateLimit, actorFor, LINK_MINUTES } from "@/lib/services/staff";
-import { sendNow } from "@/lib/services/mail";
+import { sendSignInLink } from "@/lib/services/mail";
 import { sessionToken } from "@/lib/auth/session";
 import { env } from "@/lib/env";
-import { signInMail } from "@/lib/mail/sign-in-mail";
 import { Submit } from "../_components/controls";
 import { Notice, sp } from "../_components/ui";
 
@@ -23,7 +22,7 @@ async function sendLinkAction(form: FormData) {
     if (link) {
       const url = `${env().APP_URL.replace(/\/+$/, "")}/sign-in/link?t=${link.token}`;
       try {
-        await sendNow(link.email, signInMail({ to: link.email, name: link.name, link: url, expiresAt: link.expiresAt, minutes: LINK_MINUTES, appUrl: env().APP_URL }));
+        await sendSignInLink({ to: link.email, name: link.name, link: url, expiresAt: link.expiresAt, minutes: LINK_MINUTES });
       } catch (err) {
         console.error("sign-in e-mail not sent:", err instanceof Error ? err.message : "failed");
       }

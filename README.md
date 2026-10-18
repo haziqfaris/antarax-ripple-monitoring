@@ -1,6 +1,6 @@
-# Performance Intelligence (working name)
+# Gauge (Ripple Gauge)
 
-REKA's console for measuring what its client AI solutions actually deliver: whether each is healthy and used, how it performs, and what business outcome it produces against an agreed baseline. It starts inside REKA, supporting the Managed AI service's "we watch it, we improve it" promise, and is built so it can graduate to an AntaraX product later.
+Gauge, formerly "Performance Intelligence (working name)" and "Ripple Monitoring", is REKA's console for measuring what its client AI solutions actually deliver: whether each is healthy and used, how it performs, and what business outcome it produces against an agreed baseline. It starts inside REKA, supporting the Managed AI service's "we watch it, we improve it" promise, and is built so it can graduate to an AntaraX product later. It will live at `https://gauge.antarax.ai` and sends its e-mail through AntaraX email as `Gauge <gauge@mail.antarax.ai>` (docs/DEPLOY.md, step 4). Inside the code and on screen it is still AXLE · Outcomes until those are renamed.
 
 > **Status, 17 Oct 2026:** lean version 1 is built (docs/GO_LIVE_ENGINEERING.md): connect an application, collect its daily figures, three KPIs against an approved baseline, approvals by a second person, six pages, a monthly report frozen with its hash. Tested end to end against the kit's example application. Not deployed yet: see docs/DEPLOY.md. The clickable mock (`mocks/`) remains the roadmap; every client, person and figure in it is invented.
 
@@ -57,6 +57,6 @@ There is no hosted CI (no GitHub Actions): run both before pushing. Each Vercel 
 
 ## Name
 
-"Performance Intelligence" is the brief's working name. The brand kit does not allow a family name (Ripple) as a product name, so this repository's name is not a product name. The PRD proposes "Outcomes" as the area inside AXLE for now; see [PRD §6.2](docs/PRD.md#62-name).
+**Gauge** (Ripple Gauge in full; Gauge for short), decided by the owner on 18 Oct 2026, at `gauge.antarax.ai`. "Performance Intelligence" was the brief's working name, and "Outcomes" the area inside AXLE the PRD proposed; see [PRD §6.2](docs/PRD.md#62-name). The repository keeps its name.
 
 Private. Owned by REKA Inisiatif Sdn Bhd.
