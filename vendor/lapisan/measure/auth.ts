@@ -2,7 +2,7 @@ import { hmacHex, randomString, sha256Hex, timingSafeEqual } from "../crypto";
 
 /**
  * How Outcomes signs its calls to a solution's Measurement Link, and how the
- * solution checks them (decision 0013, proposed). The same signature as
+ * solution checks them (decision 0013). The same signature as
  * AXLE Link (src/service-auth.ts), with one difference: the key belongs to
  * one integration, not to an AntaraX product, because the solutions measured
  * are mostly REKA-built client systems that are not in the registry.
