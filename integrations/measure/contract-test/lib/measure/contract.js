@@ -6,7 +6,7 @@
  * sides use, so the kit that serves the interface, the contract test that
  * checks one, and the collector that reads one cannot disagree.
  *
- * Proposed (decision 0013). Imports nothing but Web standards, so a
+ * Decision 0013. Imports nothing but Web standards, so a
  * solution that is not an AntaraX product can copy this folder as it is.
  */
 /** Where the endpoints live on the solution's own host. */

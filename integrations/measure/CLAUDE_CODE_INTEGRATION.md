@@ -1,6 +1,6 @@
 # Instruction: add a Measurement Link to this solution
 
-For Claude Code, Codex or a developer. It is the master brief's §13 instruction, made specific to the contract as written (antarax-api docs/14, proposed).
+For Claude Code, Codex or a developer. It is the master brief's §13 instruction, made specific to the contract as written (antarax-api docs/14, decision 0013).
 
 ## The job
 

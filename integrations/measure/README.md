@@ -2,7 +2,7 @@
 
 Everything a developer needs to add a **Measurement Link** to a solution, so Outcomes (Performance Intelligence) can collect its daily figures: what to build, a kit that builds most of it, examples, and the test to run before handing over.
 
-> **Status: proposed.** The contract is written and tested (antarax-api [docs/14](https://github.com/haziqfaris/antarax-api/blob/claude/practical-thompson-qsu01b/docs/14-measurement-link.md), [decision 0013](https://github.com/haziqfaris/antarax-api/blob/claude/practical-thompson-qsu01b/docs/decisions/0013-measurement-link.md)). It waits on the owner's decisions D3 and D4 (PRD §20). Build against it for pilots; the shapes will only change additively.
+> **Status: accepted** (antarax-api [docs/14](https://github.com/haziqfaris/antarax-api/blob/main/docs/14-measurement-link.md), [decision 0013](https://github.com/haziqfaris/antarax-api/blob/main/docs/decisions/0013-measurement-link.md), signed off 23 Oct 2026). The shapes change only additively, in minor versions.
 
 ## What you build
 

@@ -133,8 +133,8 @@ Add at least **two approvers** as well: whoever proposed or edited a baseline or
 ## 10 Before the first pilot (the plan's section 2)
 
 - **D9:** name the two pilot applications.
-- **D3, D4:** sign off the Measurement Link (antarax-api decision 0013) and make the `ax_msr_` key kind active in the registry.
-- **D1:** confirm the product id `outcomes` (registry entry on antarax-api's `claude/practical-thompson-qsu01b`).
+- ~~**D3, D4:** sign off the Measurement Link (antarax-api decision 0013) and make the `ax_msr_` key kind active in the registry.~~ Done 23 Oct 2026 (antarax-api registry 0.9.1).
+- **D1:** confirm the product id `outcomes` (registry entry on antarax-api `main` since v0.9.0).
 
 ## When something goes wrong
 

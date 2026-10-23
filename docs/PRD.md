@@ -621,7 +621,7 @@ Open in the mock: the metric catalog is the same six figures for every applicati
 
 The brief's L2 contract, written to the AntaraX API framework (`antarax-api` docs 03, 04 and 07) so a REKA-built solution and an AntaraX product speak the same way. Working name **Measurement Link**, by analogy with AXLE Link.
 
-**Status: written and tested, proposed.** The full contract is `antarax-api` [docs/14-measurement-link.md](https://github.com/haziqfaris/antarax-api/blob/claude/practical-thompson-qsu01b/docs/14-measurement-link.md), with [decision 0013](https://github.com/haziqfaris/antarax-api/blob/claude/practical-thompson-qsu01b/docs/decisions/0013-measurement-link.md) (proposed). The kit, the checks and the contract test are in `antarax-api` `packages/lapisan-core/src/measure`. The integration pack built from them is [`integrations/measure/`](../integrations/measure/README.md) in this repository. Where this section and docs/14 differ, docs/14 wins. Signing it off closes D3 and D4.
+**Status: written, tested and accepted** (antarax-api decision 0013, signed off 23 Oct 2026, which closed D3 and D4). The full contract is `antarax-api` [docs/14-measurement-link.md](https://github.com/haziqfaris/antarax-api/blob/main/docs/14-measurement-link.md), with [decision 0013](https://github.com/haziqfaris/antarax-api/blob/main/docs/decisions/0013-measurement-link.md). The kit, the checks and the contract test are in `antarax-api` `packages/lapisan-core/src/measure`. The integration pack built from them is [`integrations/measure/`](../integrations/measure/README.md) in this repository. Where this section and docs/14 differ, docs/14 wins.
 
 ### 9.1 Shape
 
@@ -699,7 +699,7 @@ Units come from a fixed list (`item`, `document`, `page`, `request`, `run`, `mes
 
 ### 9.5 Authentication
 
-The brief proposed OAuth2 client credentials or scoped service tokens. The AntaraX API framework does not use OAuth2 (antarax-api decision 0010). Proposal (antarax-api decision 0013):
+The brief proposed OAuth2 client credentials or scoped service tokens. The AntaraX API framework does not use OAuth2 (antarax-api decision 0010). Decided (antarax-api decision 0013, accepted 23 Oct 2026):
 
 - **Signed exactly as AXLE Link** (`AntaraX-Service`, `AntaraX-Timestamp`, `AntaraX-Service-Signature: v1=<HMAC-SHA256>` over the timestamp, method, path with query, and body hash; refused after five minutes), with `AntaraX-Service: measure`.
 - **Keyed per integration**, not per product: a new key kind, `ax_msr_` and 32 characters. Outcomes makes one when a solution is connected and keeps it sealed; the developer sets it on the solution as `AX_MEASURE_KEY`. Most measured solutions are client systems that will never be AntaraX products, and one shared key would let one leak open every client.
@@ -1188,8 +1188,8 @@ The brief's §16, extended with points this review raised. Each needs the owner.
 |---|---|---|
 | D1 | **Name**, and its relation to Frame and AXLE. "Ripple" is a family name and cannot be the product name (brand kit 12); "AX Ripple" was a retired meaning | **Decided 18 Oct 2026:** Gauge (Ripple Gauge in full), at `gauge.antarax.ai` (§6.2) |
 | D2 | **Where it lives**: its own host now, inside AXLE Central later? | Yes: AXLE shell now, a group in Central when Central ships |
-| D3 | **Contract path and id**: `/internal/measure/v1` for REKA-built solutions; for AntaraX products, extend AXLE Link with `metrics` and `observations`? | Yes to both. **Written and tested** as antarax-api docs/14, decision 0013 (proposed), with the kit and contract test |
-| D4 | **Authentication**: AXLE Link's HMAC signing with a per-integration `ax_msr_` key by default, bearer token for third parties, OAuth2 only on request? | Yes (decision 0013, proposed) |
+| D3 | **Contract path and id**: `/internal/measure/v1` for REKA-built solutions; for AntaraX products, extend AXLE Link with `metrics` and `observations`? | **Decided 23 Oct 2026:** yes to both. Written and tested as antarax-api docs/14, decision 0013 (accepted), with the kit and contract test |
+| D4 | **Authentication**: AXLE Link's HMAC signing with a per-integration `ax_msr_` key by default, bearer token for third parties, OAuth2 only on request? | **Decided 23 Oct 2026:** yes (antarax-api decision 0013, accepted) |
 | D5 | **Data residency, contractual permissions, retention and publication approval** | Singapore; the retention table in §16; a template data agreement before Phase 1 |
 | D6 | **Frame**: authoritative for anything? | Yes, for what REKA pays: every plan's and asset's cost and renewal (AXLE kit 1.4.0), read REKA-only with agreement. Health stays with the solution; Frame's site check may sit beside it as a linked provider (§6.4) |
 | D7 | **Hosting and AI provider**, and costs after pilot volumes | §15.2; cost review at the end of Phase 1 |
