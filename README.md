@@ -204,4 +204,4 @@ There is no hosted CI (no GitHub Actions): run both before pushing. Each Vercel 
 - **E-mail from Gauge** replies to `support@go.antarax.ai`.
 
 <p align="center"><img src=".github/readme/footer.svg" width="100%" alt="AntaraX, put intelligence to work. AntaraX is the product line of REKA Inisiatif Sdn Bhd."></p>
-<p align="center"><sub>AntaraX is the product line of REKA Inisiatif Sdn Bhd · <a href="https://antarax.ai">antarax.ai</a> · <a href="https://reka.re">reka.re</a><br>Private and proprietary. © 2026 REKA Inisiatif Sdn Bhd. All rights reserved. Owned by REKA Inisiatif Sdn Bhd. · Last updated 26 October 2026</sub></p>
+<p align="center"><sub>AntaraX is the product line of REKA Inisiatif Sdn Bhd · <a href="https://antarax.ai">antarax.ai</a> · <a href="https://reka.re">reka.re</a><br>Private and proprietary. © 2026 REKA Inisiatif Sdn Bhd. All rights reserved. Owned by REKA Inisiatif Sdn Bhd. · Last updated 11 November 2026</sub></p>

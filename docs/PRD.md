@@ -5,7 +5,7 @@
 | | |
 |---|---|
 | **Source brief** | [MASTER_BRIEF.md](MASTER_BRIEF.md), version 0.1, 15 Oct 2026 |
-| **Aligned with** | AntaraX brand kit 1.4 (`haziqfaris/AntaraX-brand-kit`), AXLE standard v1.0 and kit 1.4.0 (`haziqfaris/AntaraX-Dashboard-kit`, default branch `claude/beautiful-newton-siixyo`: `axle/SPEC.md`, `capacity/`), AntaraX API framework v0.6.0 (`haziqfaris/antarax-api`), website strategy (`haziqfaris/antarax-ai/docs/strategy/`) |
+| **Aligned with** | AntaraX brand kit tokens 1.11.0 (`haziqfaris/AntaraX-brand-kit`, commit `931844f`, the source of `app/axle-tokens.css`), AXLE standard v1.0 and Dashboard kit 1.4.0 (`haziqfaris/AntaraX-Dashboard-kit`, tag `v1.4.0`, commit `55532bc`: `axle/SPEC.md`, `capacity/`), AntaraX API framework v0.6.0 (`haziqfaris/antarax-api`), website strategy (`haziqfaris/antarax-ai/docs/strategy/`) |
 | **Mocks** | [../mocks/](../mocks/README.md): a clickable product, from sign-in through first project to the example workspace |
 | **Decision rules** | Where this PRD and the brief disagree, the PRD records why and lists the point in [§20 Open decisions](#20-open-decisions). Nothing here is decided until the owner signs it off. Brand decisions are recorded in the brand kit, not here. |
 
